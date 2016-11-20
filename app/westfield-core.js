@@ -5,67 +5,56 @@
 //define westfield namespace as wf
 const wf = wf || {};
 
-//TODO display scoped object id generator
-
-wf.connect = function (url) {
-    const socket = new WebSocket(url, "westfield");
-    return new Display(1, socket);
-}
-
-wf.connectToSocket = function (webSocket) {
-    return new Display(1, webSocket);
-}
-
-wf.Proxy = function (objectId) {
-    Object.defineProperty(this, "objectId", {
-        value: objectId,
-        writable: false
-    });
+wf.Registry = function () {
+    //more empty public functions are added by the protocol generator
 };
 
-wf.Registry = function (id) {
-    //--constructor--
-    Proxy.call(this, id);
+wf._Message = function () {
+    //TODO define message format
+};
 
-    //more empty public functions are added by the protocol generator
-}
-wf.Registry.prototype = Object.create(wf.Proxy.prototype);
+wf._Connection = function (display) {
 
-wf.Dispatcher = function (nextObjectid) {
-    this.onWireMessage = function (blob) {
-        //TODO parse blob
-        //TODO find proxy object and call it
+    //--private properties--
+    let lastObjectId = 1;
+
+    //--public properties--
+    this.objects = new Map();
+
+    //--private functions--
+    const parseWireMessage = function (blob) {
+        //TODO convert blob to wf._Message;
+
+        return new wf._Message();
+    };
+
+    //--public functions--
+    this.insertObject = function (object) {
+        object._id = lastObjectId++;
+        this.objects.set(lastObjectId, object);
+        return object;
+    };
+
+    this.dispatch = function (blob) {
+        const message = parseWireMessage(blob);
+        //TODO interpret message => find object & invoke it's function
     };
 
     //--constructor--
-    const nextObjectId = nextObjectid;
+    this.insertObject(display);//insert display to make sure it receives id 1;
 };
 
 //westfield display core functionality
-wf.Display = function (id, webSocket) {
+wf.Display = function (webSocket) {
 
-    //--object management--
-    const proxyRegistry = new Map();
-    var lastObjectId = 1;
-    const nextObjectId = function () {
-        return lastObjectId++;
-    };
+    //--private properties--
+    let connection = new wf._Connection(this);
 
     //--public properties--
     Object.defineProperty(this, "registry", {
-        value: new wf.Registry(nextObjectId()),
+        value: connection.insertObject(wf.Registry),
         writable: false
     });
-
-    //--private properties--
-    const dispatcher = new Dispatcher(nextObjectId);
-
-    //--public functions--
-    this.disconnect = function () {
-        socket.close();
-    };
-
-    //more empty public functions are added by the protocol generator
 
     //--private functions--
     const onSocketOpen = function (event) {
@@ -80,18 +69,33 @@ wf.Display = function (id, webSocket) {
 
     };
 
+    const onSocketMessage = function (event) {
+        if (event instanceof Blob) {
+            connection.dispatch(event);
+        }
+    };
+
     const setupSocket = function (socket) {
         socket.onopen = onSocketOpen;
         socket.onclose = onSocketClose;
         socket.onerror = onSocketError;
-
-        socket.onmessage = dispatcher.onWireMessage;
+        socket.onmessage = onSocketMessage;
 
         return socket;
     };
 
+    //--public functions--
+    this.disconnect = function () {
+        socket.close();
+    };
+
+    //more empty public functions are added by the protocol generator
+
     //--constructor--
-    Proxy.call(this, id);
     const socket = setupSocket(webSocket);
 };
-wf.Display.prototype = Object.create(wf.Proxy.prototype);
+
+wf.connect = function (socketUrl) {
+    const socket = new WebSocket(socketUrl, "westfield");
+    return new Display(socket);
+};
