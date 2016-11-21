@@ -13,7 +13,7 @@ wf._Message = function () {
     //TODO define message format
 };
 
-wf._Connection = function (display) {
+wf._Connection = function () {
 
     //--private properties--
     let lastObjectId = 1;
@@ -39,20 +39,17 @@ wf._Connection = function (display) {
         const message = parseWireMessage(blob);
         //TODO interpret message => find object & invoke it's function
     };
-
-    //--constructor--
-    this.insertObject(display);//insert display to make sure it receives id 1;
 };
 
 //westfield display core functionality
 wf.Display = function (webSocket) {
 
     //--private properties--
-    let connection = new wf._Connection(this);
+    const connection = new wf._Connection();
 
     //--public properties--
     Object.defineProperty(this, "registry", {
-        value: connection.insertObject(wf.Registry),
+        value: new wf.Registry(),
         writable: false
     });
 
@@ -93,6 +90,8 @@ wf.Display = function (webSocket) {
 
     //--constructor--
     const socket = setupSocket(webSocket);
+    connection.insertObject(this);
+    connection.insertObject(this.registry);
 };
 
 wf.connect = function (socketUrl) {
