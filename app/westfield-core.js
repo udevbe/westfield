@@ -1,4 +1,3 @@
-//TODO wire protocol
 //TODO wire protocol parser & handler
 
 //define westfield namespace as wf
@@ -7,20 +6,28 @@ const wf = wf || {};
 wf._Object = function (connection) {
 
     //--public functions--
+    /**
+     *
+     */
     this.delete = function () {
-        this.objects.remove(this._id);
-        connection.marshall(this._id, 0, []);//opcode 0 is reserved for deletion
+        this._connection._objects.remove(this._id);
+        this._connection._marshall(this._id, 0, []);//opcode 0 is reserved for deletion
     };
 
+    /**
+     *
+     * @param {Number} errorCode an integer error code
+     * @param {String} errorMsg the error message
+     */
     this.postError = function (errorCode, errorMsg) {
-        connection.marshallTo(this._id, 255, [//opcode 255 is reserved for error
+        this._connection.marshallTo(this._id, 255, [//opcode 255 is reserved for error
             {
                 value: errorCode,
                 type: "i",
                 size: 4,
                 optional: false,
                 marshallTo: function (dataView, offset) {
-                    dataView.setInt32(offset, this.value, connection.littleEndian);
+                    dataView.setInt32(offset, this.value, this._connection._littleEndian);
                 }
             },
             {
@@ -29,7 +36,7 @@ wf._Object = function (connection) {
                 size: 4 + errorMsg.length,
                 optional: false,
                 marshallTo: function (dataView, offset) {
-                    dataView.setInt32(offset, 4, connection.littleEndian);
+                    dataView.setInt32(offset, 4, this._connection._littleEndian);
                     let writeOffset = offset + 4;
                     this.value.forEach(new function (char) {
                         dataView.setUint8(writeOffset, char);
@@ -41,13 +48,23 @@ wf._Object = function (connection) {
     };
 
     //--constructor--
-    const connection = connection;
+    this._connection = connection;
 };
 
-wf.Connection = function (webSocket) {
+wf.Connection = function (socketUrl) {
     //--public properties--
-    this.objects = new Map();
-    this.littleEndian = true;
+    /**
+     *
+     * @type {Map}
+     * @private
+     */
+    this._objects = new Map();
+    /**
+     *
+     * @type {boolean}
+     * @private
+     */
+    this._littleEndian = true;
 
     //--private functions--
     const unmarshall = function (blob) {
@@ -94,7 +111,15 @@ wf.Connection = function (webSocket) {
     };
 
     //--public functions--
-    this.marshall = function (id, opcode, argsArray) {
+    /**
+     * Marshall a js function call into a binary message and send it to the remote host.
+     *
+     * @param {Number} id the object._id
+     * @param {Number} opcode the wire protocol opcode of the function
+     * @param {Array} argsArray An array of private argument literals
+     * @private
+     */
+    this._marshall = function (id, opcode, argsArray) {
         //determine required wire message length
         let size = 2 + 1;  //id+opcode
         argsArray.forEach(function (arg) {
@@ -110,7 +135,7 @@ wf.Connection = function (webSocket) {
         let offset = 0;
 
         //write actual wire message
-        wireMsgView.setUint16(offset, id, this.littleEndian);//id
+        wireMsgView.setUint16(offset, id, this._littleEndian);//id
         offset += 2;
         wireMsgView.setUint8(offset, opcode);//opcode
         offset += 1;
@@ -129,35 +154,34 @@ wf.Connection = function (webSocket) {
         socket.send(wireMsgBuffer);
     };
 
+    /**
+     * Close the connection to the remote host. All objects will be deleted before the connection is closed.
+     */
     this.close = function () {
-        this.objects.values().slice().forEach(function (object) {
+        this._objects.values().slice().forEach(function (object) {
             object.delete();
         });
         socket.close();
     };
 
+    /**
+     * Register an object and give it a new id.
+     * @param {Object} object
+     * @private
+     */
     this._registerObject = function (object) {
         //find unused id.
         let id = 1;
-        while (this.objects.has(id)) {
+        while (this._objects.has(id)) {
             id++;
         }
         object._id = id;
-        this.objects.set(object._id, object);
+        this._objects.set(object._id, object);
     };
 
     //--constructor--
-    const socket = setupSocket(webSocket);
-};
-
-wf.connect = function (socketUrl) {
-    const socket = new WebSocket(socketUrl, "westfield");
-    const connection = new wf.Connection(socket);
-
+    const socket = setupSocket(new WebSocket(socketUrl, "westfield"));
     //registry will be defined by the protocol generator
-    const registry = new wf.Registry();
-    connection._registerObject(registry);
-    connection.registry = registry;
-
-    return connection;
+    this.registry = new wf.Registry();
+    this._registerObject(this.registry);
 };
