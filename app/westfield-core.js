@@ -3,6 +3,15 @@
 //define westfield namespace as wf
 const wf = wf || {};
 
+/**
+ *
+ * @param {Number} number
+ * @constructor
+ */
+wf.Fixed = function (number) {
+    //TODO
+};
+
 wf._Object = function (connection) {
 
     //--public functions--
@@ -20,7 +29,7 @@ wf._Object = function (connection) {
      * @param {String} errorMsg the error message
      */
     this.postError = function (errorCode, errorMsg) {
-        this._connection.marshallTo(this._id, 255, [//opcode 255 is reserved for error
+        this._connection._marshall(this._id, 255, [//opcode 255 is reserved for error
             {
                 value: errorCode,
                 type: "i",
@@ -52,7 +61,8 @@ wf._Object = function (connection) {
 };
 
 wf.Connection = function (socketUrl) {
-    //--public properties--
+
+    //--properties--
     /**
      *
      * @type {Map}
@@ -66,51 +76,126 @@ wf.Connection = function (socketUrl) {
      */
     this._littleEndian = true;
 
-    //--private functions--
-    const unmarshall = function (blob) {
+    //--functions--
+    /**
+     *
+     * @param {DataView} wireMsg
+     * @returns {*}
+     * @private
+     */
+    this._unmarshallArg = function (wireMsg) {
+        const typeAscii = wireMsg.getUint8(wireMsg.offset);
+        wireMsg.offset += 1;
+
+        switch (String.fromCharCode(typeAscii)) {
+            case "i"://{Number}
+                const arg = wireMsg.getInt32(wireMsg.offset, this._littleEndian);
+                wireMsg.offset += 4;
+                return arg;
+            case "f"://{wf.Fixed}
+                const arg = wireMsg.getInt32(wireMsg.offset, this._littleEndian);
+                wireMsg.offset += 4;
+                return new wf.Fixed(arg);
+            case "o"://existing object, subtype of {wf._Object}
+                const id = wireMsg.getUint16(wireMsg.offset, this._littleEndian);
+                wireMsg.offset += 2;
+                return this._objects.get(id);
+            case "n":///new object, subtype of {wf._Object}
+                const id = wireMsg.getUint16(wireMsg.offset, this._littleEndian);
+                wireMsg.offset += 2;
+                const typeNameSize = wireMsg.getUint8(wireMsg.offset);
+                wireMsg.offset += 1;
+                const byteArray = new Uint8Array(wireMsg.buffer, wireMsg.offset, typeNameSize);
+                wireMsg.offset += typeNameSize;
+
+                const type = String.fromCharCode.apply(null, byteArray);
+                const object = new wf[type](this);
+                object._id = id;
+                this._objects.set(object._id, object);
+
+                return object;
+            case "s"://{String}
+                const stringSize = wireMsg.getInt32(wireMsg.offset, this._littleEndian);
+                wireMsg.offset += 4;
+                const byteArray = new Uint8Array(wireMsg.buffer, wireMsg.offset, stringSize);
+                wireMsg.offset += stringSize;
+
+                return String.fromCharCode.apply(null, byteArray);
+            case "a"://{ArrayBuffer}
+                //TODO
+                break;
+        }
+    };
+
+    /**
+     *
+     * @param {ArrayBuffer} message
+     * @private
+     */
+    this._unmarshall = function (message) {
         //example wire message
-        //00 03 01 6e 00 07 69 00 00 04 00 61 00 00 00 03 ef fa 7e
+        //[00 03] [01] [6e 00 07 03 66 6f 6f] [69 00 00 04 00] [61 00 00 00 03 ef fa 7e]
         //translates to:
-        //3 (=id),1 (=opcode),n (=new object id) 7 (id value), i (integer) 1024 (integer value), a (array) 3 (array size) [0xef 0xfa 0x7e] (array value)
+        //3 (=id),1 (=opcode),n (=new object id) 7 (id value) 3 (object name lenght) foo (object type), i (integer) 1024 (integer value), a (array) 3 (array size) [0xef 0xfa 0x7e] (array value)
 
         //TODO convert blob to message;
-    };
-
-    const dispatch = function (message) {
         //TODO interpret message => find object & invoke it's function
+        const wireMsg = new DataView(message);
+        wireMsg.offset = 0;
+
+        const id = wireMsg.getUint16(wireMsg.offset, this._littleEndian);
+        wireMsg.offset += 2;
+
+        const opcode = wireMsg.getUint8(wireMsg.offset);
+        wireMsg.offset += 1;
+
+        const args = [];
+        let argi = 0;
+
+        while (wireMsg.offset < message.byteLength) {
+            args[argi] = this._unmarshallArg(wireMsg);
+            argi++;
+        }
+
+        const obj = this._objects.get(id);
+        return {
+            obj: obj,
+            opcode: opcode,
+            args: args
+        };
     };
 
-    const onSocketOpen = function (event) {
+    this._onSocketOpen = function (event) {
         //TODO send back-end minimal required browser info (we start with screen size)
         //TODO the first request shall be a json informing the host of our properties.
     };
 
-    const onSocketClose = function (event) {
+    this._onSocketClose = function (event) {
 
     };
 
-    const onSocketError = function (event) {
+    this._onSocketError = function (event) {
 
     };
 
-    const onSocketMessage = function (event) {
+    this._onSocketMessage = function (event) {
         //TODO as a first response we expect the hosts' wire message endianess
         //TODO the first response shall be a json informing us of the host's properties.
+        //all subsequent message will be in the binary wire format.
 
-        const message = unmarshall(event);
-        dispatch(message);
+        const message = this._unmarshall(event);
+        message.obj[message.opcode](message.args);
     };
 
-    const setupSocket = function (socket) {
-        socket.onopen = onSocketOpen;
-        socket.onclose = onSocketClose;
-        socket.onerror = onSocketError;
-        socket.onmessage = onSocketMessage;
+    this._setupSocket = function (socket) {
+        socket.onopen = this._onSocketOpen;
+        socket.onclose = this._onSocketClose;
+        socket.onerror = this._onSocketError;
+        socket.onmessage = this._onSocketMessage;
 
         return socket;
     };
 
-    //--public functions--
     /**
      * Marshall a js function call into a binary message and send it to the remote host.
      *
@@ -171,7 +256,7 @@ wf.Connection = function (socketUrl) {
      */
     this._registerObject = function (object) {
         //find unused id.
-        let id = 1;
+        let id = 0x10000; //host constructed object ids will be below this range.
         while (this._objects.has(id)) {
             id++;
         }
@@ -180,7 +265,7 @@ wf.Connection = function (socketUrl) {
     };
 
     //--constructor--
-    const socket = setupSocket(new WebSocket(socketUrl, "westfield"));
+    const socket = this._setupSocket(new WebSocket(socketUrl, "westfield"));
     //registry will be defined by the protocol generator
     this.registry = new wf.Registry();
     this._registerObject(this.registry);
