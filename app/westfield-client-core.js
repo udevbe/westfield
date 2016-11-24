@@ -1,5 +1,5 @@
-//westfield namespace
-const wf = wf || {};
+//westfield client namespace
+const wfc = wfc || {};
 
 //-- js argument to wire format literals: integer (number), float (number), object (wf._Object), new object (wf._Object), string (string), array (ArrayBuffer) --
 /**
@@ -8,7 +8,7 @@ const wf = wf || {};
  * @returns {{value: number, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._int = function (arg) {
+wfc._int = function (arg) {
     return {
         value: arg,
         type: "i",
@@ -31,7 +31,7 @@ wf._int = function (arg) {
  * @returns {{value: number, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._intOptional = function (arg) {
+wfc._intOptional = function (arg) {
     return {
         value: arg,
         type: "i",
@@ -58,7 +58,7 @@ wf._intOptional = function (arg) {
  * @returns {{value: number, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._float = function (arg) {
+wfc._float = function (arg) {
     return {
         value: arg,
         type: "f",
@@ -81,7 +81,7 @@ wf._float = function (arg) {
  * @returns {{value: Number, type: string, size: Number, optional: Boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._floatOptional = function (arg) {
+wfc._floatOptional = function (arg) {
     return {
         value: arg,
         type: "f",
@@ -105,11 +105,11 @@ wf._floatOptional = function (arg) {
 
 /**
  *
- * @param {wf._Object} arg
- * @returns {{value: wf._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
+ * @param {wfc._Object} arg
+ * @returns {{value: wfc._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._object = function (arg) {
+wfc._object = function (arg) {
     return {
         value: arg,
         type: "o",
@@ -128,11 +128,11 @@ wf._object = function (arg) {
 
 /**
  *
- * @param {wf._Object} arg
- * @returns {{value: wf._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
+ * @param {wfc._Object} arg
+ * @returns {{value: wfc._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._objectOptional = function (arg) {
+wfc._objectOptional = function (arg) {
     return {
         value: arg,
         type: "o",
@@ -155,11 +155,11 @@ wf._objectOptional = function (arg) {
 
 /**
  *
- * @param {wf._Object} arg
- * @returns {{value: wf._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
+ * @param {wfc._Object} arg
+ * @returns {{value: wfc._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._newObject = function (arg) {
+wfc._newObject = function (arg) {
     return {
         value: arg,
         type: "n",
@@ -186,11 +186,11 @@ wf._newObject = function (arg) {
 
 /**
  *
- * @param {wf._Object} arg
- * @returns {{value: wf._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
+ * @param {wfc._Object} arg
+ * @returns {{value: wfc._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._newObjectOptional = function (arg) {
+wfc._newObjectOptional = function (arg) {
     return {
         value: arg,
         type: "n",
@@ -231,7 +231,7 @@ wf._newObjectOptional = function (arg) {
  * @returns {{value: String, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._string = function (arg) {
+wfc._string = function (arg) {
     return {
         value: arg,
         type: "s",
@@ -259,7 +259,7 @@ wf._string = function (arg) {
  * @returns {{value: String, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._stringOptional = function (arg) {
+wfc._stringOptional = function (arg) {
     return {
         value: arg,
         type: "s",
@@ -297,7 +297,7 @@ wf._stringOptional = function (arg) {
  * @returns {{value: TypedArray, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._array = function (arg) {
+wfc._array = function (arg) {
     return {
         value: arg,
         type: "a",
@@ -325,7 +325,7 @@ wf._array = function (arg) {
  * @returns {{value: ArrayBuffer, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._arrayOptional = function (arg) {
+wfc._arrayOptional = function (arg) {
     return {
         value: arg,
         type: "a",
@@ -359,10 +359,10 @@ wf._arrayOptional = function (arg) {
 
 /**
  *
- * @param {wf.Connection} connection
+ * @param {wfc.Connection} connection
  * @private
  */
-wf._Object = function (connection) {
+wfc._Object = function (connection) {
 
     //--functions--
     /**
@@ -381,14 +381,14 @@ wf._Object = function (connection) {
      * @param {String} errorMsg the error message
      */
     this.postError = function (errorCode, errorMsg) {
-        this._connection._marshall(this._id, 255, [wf._int(errorCode), wf._string(errorMsg)]);//opcode 255 is reserved for error
+        this._connection._marshall(this._id, 255, [wfc._int(errorCode), wfc._string(errorMsg)]);//opcode 255 is reserved for error
     };
 
     //--constructor--
     this._connection = connection;
 };
 
-wf.Connection = function (socketUrl) {
+wfc.Connection = function (socketUrl) {
 
     //--properties--
     let nextId = 1;
@@ -451,7 +451,7 @@ wf.Connection = function (socketUrl) {
                     wireMsg.offset += typeNameSize;
 
                     const type = String.fromCharCode.apply(null, byteArray);
-                    const newObject = new wf[type](this);
+                    const newObject = new wfc[type](this);
                     newObject._id = id;
                     this._objects.set(newObject._id, newObject);
                     arg = newObject;
@@ -631,6 +631,6 @@ wf.Connection = function (socketUrl) {
     //--constructor--
     const socket = this._setupSocket(new WebSocket(socketUrl, "westfield"));
     //registry will be defined by the protocol generator
-    this.registry = new wf.Registry();
+    this.registry = new wfc.Registry();
     this._registerObject(this.registry);
 };
