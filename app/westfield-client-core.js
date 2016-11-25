@@ -1,7 +1,5 @@
-//TODO wire protocol parser & handler
-
-//define westfield namespace as wf
-const wf = wf || {};
+//westfield client namespace
+const wfc = wfc || {};
 
 //-- js argument to wire format literals: integer (number), float (number), object (wf._Object), new object (wf._Object), string (string), array (ArrayBuffer) --
 /**
@@ -10,7 +8,7 @@ const wf = wf || {};
  * @returns {{value: number, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._int = function (arg) {
+wfc._int = function (arg) {
     return {
         value: arg,
         type: "i",
@@ -33,7 +31,7 @@ wf._int = function (arg) {
  * @returns {{value: number, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._intOptional = function (arg) {
+wfc._intOptional = function (arg) {
     return {
         value: arg,
         type: "i",
@@ -60,7 +58,7 @@ wf._intOptional = function (arg) {
  * @returns {{value: number, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._float = function (arg) {
+wfc._float = function (arg) {
     return {
         value: arg,
         type: "f",
@@ -83,7 +81,7 @@ wf._float = function (arg) {
  * @returns {{value: number, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._floatOptional = function (arg) {
+wfc._floatOptional = function (arg) {
     return {
         value: arg,
         type: "f",
@@ -107,15 +105,15 @@ wf._floatOptional = function (arg) {
 
 /**
  *
- * @param {wf._Object} arg
- * @returns {{value: wf._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
+ * @param {wfc._Object} arg
+ * @returns {{value: wfc._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._object = function (arg) {
+wfc._object = function (arg) {
     return {
         value: arg,
         type: "o",
-        size: 2,
+        size: 4,
         optional: false,
         /**
          *
@@ -123,22 +121,22 @@ wf._object = function (arg) {
          * @param {Number} offset
          */
         marshallTo: function (dataView, offset) {
-            dataView.setUint16(offset, this.value._id);
+            dataView.setUint32(offset, this.value._id);
         }
     };
 };
 
 /**
  *
- * @param {wf._Object} arg
- * @returns {{value: wf._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
+ * @param {wfc._Object} arg
+ * @returns {{value: wfc._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._objectOptional = function (arg) {
+wfc._objectOptional = function (arg) {
     return {
         value: arg,
         type: "o",
-        size: 2,
+        size: 4,
         optional: true,
         /**
          *
@@ -147,9 +145,9 @@ wf._objectOptional = function (arg) {
          */
         marshallTo: function (dataView, offset) {
             if (arg == null) {
-                dataView.setUint16(offset, 0);
+                dataView.setUint32(offset, 0);
             } else {
-                dataView.setUint16(offset, this.value._id);
+                dataView.setUint32(offset, this.value._id);
             }
         }
     };
@@ -157,15 +155,15 @@ wf._objectOptional = function (arg) {
 
 /**
  *
- * @param {wf._Object} arg
- * @returns {{value: wf._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
+ * @param {wfc._Object} arg
+ * @returns {{value: wfc._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._newObject = function (arg) {
+wfc._newObject = function (arg) {
     return {
         value: arg,
         type: "n",
-        size: 2 + 1 + (typeof arg).length,//id+length+name
+        size: 4 + 1 + (typeof arg).length,//id+length+name
         optional: false,
         /**
          *
@@ -173,7 +171,7 @@ wf._newObject = function (arg) {
          * @param {Number} offset
          */
         marshallTo: function (dataView, offset) {
-            dataView.setUint16(offset, this.value._id);
+            dataView.setUint32(offset, this.value._id);
             let writeOffset = offset + 2;
             const objType = (typeof this.value);
             dataView.setUint8(writeOffset, objType.length);
@@ -188,15 +186,15 @@ wf._newObject = function (arg) {
 
 /**
  *
- * @param {wf._Object} arg
- * @returns {{value: wf._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
+ * @param {wfc._Object} arg
+ * @returns {{value: wfc._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._newObjectOptional = function (arg) {
+wfc._newObjectOptional = function (arg) {
     return {
         value: arg,
         type: "n",
-        size: 2 + (function () {
+        size: 4 + (function () {
             if (arg == null) {
                 return 0;
             } else {
@@ -211,9 +209,9 @@ wf._newObjectOptional = function (arg) {
          */
         marshallTo: function (dataView, offset) {
             if (this.value == null) {
-                dataView.setUint16(offset, 0);
+                dataView.setUint32(offset, 0);
             } else {
-                dataView.setUint16(offset, this.value._id);
+                dataView.setUint32(offset, this.value._id);
                 let writeOffset = offset + 2;
                 const objType = (typeof this.value);
                 dataView.setUint8(writeOffset, objType.length);
@@ -233,7 +231,7 @@ wf._newObjectOptional = function (arg) {
  * @returns {{value: String, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._string = function (arg) {
+wfc._string = function (arg) {
     return {
         value: arg,
         type: "s",
@@ -261,7 +259,7 @@ wf._string = function (arg) {
  * @returns {{value: String, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._stringOptional = function (arg) {
+wfc._stringOptional = function (arg) {
     return {
         value: arg,
         type: "s",
@@ -299,7 +297,7 @@ wf._stringOptional = function (arg) {
  * @returns {{value: TypedArray, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._array = function (arg) {
+wfc._array = function (arg) {
     return {
         value: arg,
         type: "a",
@@ -327,7 +325,7 @@ wf._array = function (arg) {
  * @returns {{value: ArrayBuffer, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
  * @private
  */
-wf._arrayOptional = function (arg) {
+wfc._arrayOptional = function (arg) {
     return {
         value: arg,
         type: "a",
@@ -361,10 +359,10 @@ wf._arrayOptional = function (arg) {
 
 /**
  *
- * @param {wf.Connection} connection
+ * @param {wfc.Connection} connection
  * @private
  */
-wf._Object = function (connection) {
+wfc._Object = function (connection) {
 
     //--functions--
     /**
@@ -383,16 +381,18 @@ wf._Object = function (connection) {
      * @param {String} errorMsg the error message
      */
     this.postError = function (errorCode, errorMsg) {
-        this._connection._marshall(this._id, 255, [wf._int(errorCode), wf._string(errorMsg)]);//opcode 255 is reserved for error
+        this._connection._marshall(this._id, 255, [wfc._int(errorCode), wfc._string(errorMsg)]);//opcode 255 is reserved for error
     };
 
     //--constructor--
     this._connection = connection;
 };
 
-wf.Connection = function (socketUrl) {
+wfc.Connection = function (socketUrl) {
 
     //--properties--
+    let nextId = 1;
+
     /**
      * Pool of objects that live on this connection.
      * Key: Number, Value: a subtype of wf._Object with wf._Object._id === Key
@@ -430,8 +430,8 @@ wf.Connection = function (socketUrl) {
                 wireMsg.offset += 4;
                 break;
             case "o"://existing object, subtype of {wf._Object}
-                const id = wireMsg.getUint16(wireMsg.offset);
-                wireMsg.offset += 2;
+                const id = wireMsg.getUint32(wireMsg.offset);
+                wireMsg.offset += 4;
                 if (optional && id === 0) {
                     arg = null;
                 } else {
@@ -439,8 +439,8 @@ wf.Connection = function (socketUrl) {
                 }
                 break;
             case "n":///new object, subtype of {wf._Object}
-                const id = wireMsg.getUint16(wireMsg.offset);
-                wireMsg.offset += 2;
+                const id = wireMsg.getUint32(wireMsg.offset);
+                wireMsg.offset += 4;
                 if (optional && id === 0) {
                     arg = null;
                 } else {
@@ -450,7 +450,7 @@ wf.Connection = function (socketUrl) {
                     wireMsg.offset += typeNameSize;
 
                     const type = String.fromCharCode.apply(null, byteArray);
-                    const newObject = new wf[type](this);
+                    const newObject = new wfc[type](this);
                     newObject._id = id;
                     this._objects.set(newObject._id, newObject);
                     arg = newObject;
@@ -495,7 +495,7 @@ wf.Connection = function (socketUrl) {
      */
     this._unmarshall = function (message) {
         //example wire message
-        //[00 03] [01] [6e 00 07 03 66 6f 6f] [69 00 00 04 00] [61 00 00 00 03 ef fa 7e]
+        //[00 00 00 03] [01] [6e 00 07 03 66 6f 6f] [69 00 00 04 00] [61 00 00 00 03 ef fa 7e]
         //translates to:
         //3 (=id),1 (=opcode),n (=new object id) 7 (id value) 3 (object name lenght) foo (object type), i (integer) 1024 (integer value), a (array) 3 (array size) [0xef 0xfa 0x7e] (array value)
 
@@ -504,8 +504,8 @@ wf.Connection = function (socketUrl) {
         const wireMsg = new DataView(message);
         wireMsg.offset = 0;
 
-        const id = wireMsg.getUint16(wireMsg.offset);
-        wireMsg.offset += 2;
+        const id = wireMsg.getUint32(wireMsg.offset);
+        wireMsg.offset += 4;
 
         const opcode = wireMsg.getUint8(wireMsg.offset);
         wireMsg.offset += 1;
@@ -530,6 +530,9 @@ wf.Connection = function (socketUrl) {
         //TODO send back-end minimal required browser info (we start with screen size)
         //TODO the first request shall be a json informing the host of our properties.
         //all subsequent message will be in the binary wire format.
+        socket.send(JSON.stringify({
+            id: "client1"
+        }));
     };
 
     this._onSocketClose = function (event) {
@@ -566,7 +569,7 @@ wf.Connection = function (socketUrl) {
      */
     this._marshall = function (id, opcode, argsArray) {
         //determine required wire message length
-        let size = 2 + 1;  //id+opcode
+        let size = 4 + 1;  //id+opcode
         argsArray.forEach(function (arg) {
             if (arg.optional) {
                 size += 1; //add one for the optional (=?) ascii char
@@ -580,8 +583,8 @@ wf.Connection = function (socketUrl) {
         let offset = 0;
 
         //write actual wire message
-        wireMsgView.setUint16(offset, id);//id
-        offset += 2;
+        wireMsgView.setUint32(offset, id);//id
+        offset += 4;
         wireMsgView.setUint8(offset, opcode);//opcode
         offset += 1;
 
@@ -615,18 +618,18 @@ wf.Connection = function (socketUrl) {
      * @private
      */
     this._registerObject = function (object) {
-        //find unused id.
-        let id = 0x10000; //host constructed object ids will be below this range.
-        while (this._objects.has(id)) {
-            id++;
-        }
-        object._id = id;
+        /*
+         * IDs allocated by the client are in the range [1, 0xfeffffff] while IDs allocated by the server are
+         * in the range [0xff000000, 0xffffffff]. The 0 ID is reserved to represent a null or non-existant object
+         */
+        object._id = nextId;
         this._objects.set(object._id, object);
+        nextId++;
     };
 
     //--constructor--
     const socket = this._setupSocket(new WebSocket(socketUrl, "westfield"));
     //registry will be defined by the protocol generator
-    this.registry = new wf.Registry();
+    this.registry = new wfc.Registry();
     this._registerObject(this.registry);
 };
