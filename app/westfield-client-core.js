@@ -268,8 +268,7 @@ wfc.Connection = function (socketUrl) {
 
     /**
      * Pool of objects that live on this connection.
-     * Key: Number, Value: a subtype of wf._Object
-     * wf._Object._id == Key
+     * Key: Number, Value: a subtype of wf._Object with wf._Object._id === Key
      *
      * @type {Map}
      * @private
@@ -281,7 +280,7 @@ wfc.Connection = function (socketUrl) {
         let typeAscii = wireMsg.getUint8(wireMsg.offset);
         wireMsg.offset += 1;
 
-        const optional = String.fromCharCode(typeAscii) == "?";
+        const optional = String.fromCharCode(typeAscii) === "?";
         if (optional) {
             typeAscii = wireMsg.getUint8(wireMsg.offset);
             wireMsg.offset += 1;
@@ -300,7 +299,7 @@ wfc.Connection = function (socketUrl) {
             case "o"://existing object, subtype of {wf._Object}
                 const id = wireMsg.getUint32(wireMsg.offset);
                 wireMsg.offset += 4;
-                if (optional && id == 0) {
+                if (optional && id === 0) {
                     arg = null;
                 } else {
                     arg = this._objects.get(id);
@@ -309,7 +308,7 @@ wfc.Connection = function (socketUrl) {
             case "n":///new object, subtype of {wf._Object}
                 const id = wireMsg.getUint32(wireMsg.offset);
                 wireMsg.offset += 4;
-                if (optional && id == 0) {
+                if (optional && id === 0) {
                     arg = null;
                 } else {
                     const typeNameSize = wireMsg.getUint8(wireMsg.offset);
@@ -327,7 +326,7 @@ wfc.Connection = function (socketUrl) {
             case "s"://{String}
                 const stringSize = wireMsg.getInt32(wireMsg.offset);
                 wireMsg.offset += 4;
-                if (optional && stringSize == 0) {
+                if (optional && stringSize === 0) {
                     arg = null;
                 }
                 else {
@@ -339,7 +338,7 @@ wfc.Connection = function (socketUrl) {
             case "a"://{Uint8Array}
                 const arraySize = wireMsg.getInt32(wireMsg.offset);
                 wireMsg.offset += 4;
-                if (optional && arraySize == 0) {
+                if (optional && arraySize === 0) {
                     arg = null;
                 } else {
                     const byteArray = new Uint8Array(wireMsg.buffer, wireMsg.offset, arraySize);

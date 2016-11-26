@@ -1,5 +1,5 @@
 {
-  "name": "westham",
+  "name": "westfield",
   "version": "1.0.0",
   "description": "Wayland HTML5 protocol generator",
   "main": "index.js",
@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Zubnix/westham.git"
+    "url": "git+https://github.com/Zubnix/westfield.git"
   },
   "keywords": [
     "wayland",
@@ -23,7 +23,7 @@
   "author": "Erik De Rijcke",
   "license": "AGPL-3.0",
   "bugs": {
-    "url": "https://github.com/Zubnix/westham/issues"
+    "url": "https://github.com/Zubnix/westfield/issues"
   },
-  "homepage": "https://github.com/Zubnix/westham#readme"
+  "homepage": "https://github.com/Zubnix/westfield#readme"
 }
