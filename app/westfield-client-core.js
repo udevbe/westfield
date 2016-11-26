@@ -2,194 +2,118 @@
 const wfc = wfc || {};
 
 //-- js argument to wire format literals: integer (number), float (number), object (wf._Object), new object (wf._Object), string (string), array (ArrayBuffer) --
-/**
- *
- * @param {Number} arg
- * @returns {{value: number, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
- * @private
- */
+
 wfc._int = function (arg) {
     return {
         value: arg,
         type: "i",
         size: 4,
         optional: false,
-        /**
-         *
-         * @param {DataView} dataView
-         * @param {Number} offset
-         */
-        marshallTo: function (dataView, offset) {
-            dataView.setInt32(offset, this.value);
+        _marshallArg: function (dataView) {
+            dataView.setInt32(dataView.offset, this.value);
+            dataView.offset += this.size;
         }
     };
 };
 
-/**
- *
- * @param {Number} arg
- * @returns {{value: number, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
- * @private
- */
 wfc._intOptional = function (arg) {
     return {
         value: arg,
         type: "i",
         size: 4,
         optional: true,
-        /**
-         *
-         * @param {DataView} dataView
-         * @param {Number} offset
-         */
-        marshallTo: function (dataView, offset) {
+        _marshallArg: function (dataView) {
             if (arg == null) {
-                dataView.setInt32(offset, 0);
+                dataView.setInt32(dataView.offset, 0);
             } else {
-                dataView.setInt32(offset, this.value);
+                dataView.setInt32(dataView.offset, this.value);
             }
+            dataView.offset += this.size;
         }
     }
 };
 
-/**
- *
- * @param {Number} arg
- * @returns {{value: number, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
- * @private
- */
 wfc._float = function (arg) {
     return {
         value: arg,
         type: "f",
         size: 4,
         optional: false,
-        /**
-         *
-         * @param {DataView} dataView
-         * @param {Number} offset
-         */
-        marshallTo: function (dataView, offset) {
-            dataView.setFloat32(offset, this.value);
+        _marshallArg: function (dataView) {
+            dataView.setFloat32(dataView.offset, this.value);
+            dataView.offset += this.size;
         }
     };
 };
 
-/**
- *
- * @param {Number} arg
- * @returns {{value: Number, type: string, size: Number, optional: Boolean, marshallTo: marshallTo}}
- * @private
- */
 wfc._floatOptional = function (arg) {
     return {
         value: arg,
         type: "f",
         size: 4,
         optional: true,
-        /**
-         *
-         * @param {DataView} dataView
-         * @param {Number} offset
-         */
-        marshallTo: function (dataView, offset) {
+        _marshallArg: function (dataView) {
             if (arg == null) {
-                dataView.setFloat32(offset, 0);
+                dataView.setFloat32(dataView.offset, 0);
             }
             else {
-                dataView.setFloat32(offset, this.value);
+                dataView.setFloat32(dataView.offset, this.value);
             }
+            dataView.offset += this.size;
         }
     };
 };
 
-/**
- *
- * @param {wfc._Object} arg
- * @returns {{value: wfc._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
- * @private
- */
 wfc._object = function (arg) {
     return {
         value: arg,
         type: "o",
         size: 4,
         optional: false,
-        /**
-         *
-         * @param {DataView} dataView
-         * @param {Number} offset
-         */
-        marshallTo: function (dataView, offset) {
-            dataView.setUint32(offset, this.value._id);
+        _marshallArg: function (dataView) {
+            dataView.setUint32(dataView.offset, this.value._id);
+            dataView.offset += this.size;
         }
     };
 };
 
-/**
- *
- * @param {wfc._Object} arg
- * @returns {{value: wfc._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
- * @private
- */
 wfc._objectOptional = function (arg) {
     return {
         value: arg,
         type: "o",
         size: 4,
         optional: true,
-        /**
-         *
-         * @param {DataView} dataView
-         * @param {Number} offset
-         */
-        marshallTo: function (dataView, offset) {
+        _marshallArg: function (dataView) {
             if (arg == null) {
-                dataView.setUint32(offset, 0);
+                dataView.setUint32(dataView.offset, 0);
             } else {
-                dataView.setUint32(offset, this.value._id);
+                dataView.setUint32(dataView.offset, this.value._id);
             }
+            dataView.offset += this.size;
         }
     };
 };
 
-/**
- *
- * @param {wfc._Object} arg
- * @returns {{value: wfc._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
- * @private
- */
 wfc._newObject = function (arg) {
     return {
         value: arg,
         type: "n",
         size: 4 + 1 + (typeof arg).length,//id+length+name
         optional: false,
-        /**
-         *
-         * @param {DataView} dataView
-         * @param {Number} offset
-         */
-        marshallTo: function (dataView, offset) {
-            dataView.setUint32(offset, this.value._id);
-            let writeOffset = offset + 2;
+        _marshallArg: function (dataView) {
+            dataView.setUint32(dataView.offset, this.value._id);
+            dataView.offset += 4;
             const objType = (typeof this.value);
-            dataView.setUint8(writeOffset, objType.length);
-            writeOffset += 1;
+            dataView.setUint8(dataView.offset, objType.length);
+            dataView.offset += 1;
             objType.forEach(new function (char) {
-                dataView.setUint8(writeOffset, char.codePointAt(0));
-                writeOffset += 1;
+                dataView.setUint8(dataView.offset, char.codePointAt(0));
+                dataView.offset += 1;
             });
         }
     };
 };
 
-/**
- *
- * @param {wfc._Object} arg
- * @returns {{value: wfc._Object, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
- * @private
- */
 wfc._newObjectOptional = function (arg) {
     return {
         value: arg,
@@ -202,63 +126,42 @@ wfc._newObjectOptional = function (arg) {
             }
         })(),//id+length+name
         optional: true,
-        /**
-         *
-         * @param {DataView} dataView
-         * @param {Number} offset
-         */
-        marshallTo: function (dataView, offset) {
+        _marshallArg: function (dataView) {
             if (this.value == null) {
-                dataView.setUint32(offset, 0);
+                dataView.setUint32(dataView.offset, 0);
+                dataView.offset += 4;
             } else {
-                dataView.setUint32(offset, this.value._id);
-                let writeOffset = offset + 2;
+                dataView.setUint32(dataView.offset, this.value._id);
+                dataView.offset += 4;
                 const objType = (typeof this.value);
-                dataView.setUint8(writeOffset, objType.length);
-                writeOffset += 1;
+                dataView.setUint8(dataView.offset, objType.length);
+                dataView.offset += 1;
                 objType.forEach(new function (char) {
-                    dataView.setUint8(writeOffset, char.codePointAt(0));
-                    writeOffset += 1;
+                    dataView.setUint8(dataView.offset, char.codePointAt(0));
+                    dataView.offset += 1;
                 });
             }
         }
     };
 };
 
-/**
- *
- * @param {String} arg
- * @returns {{value: String, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
- * @private
- */
 wfc._string = function (arg) {
     return {
         value: arg,
         type: "s",
         size: 4 + arg.length,
         optional: false,
-        /**
-         *
-         * @param {DataView} dataView
-         * @param {Number} offset
-         */
-        marshallTo: function (dataView, offset) {
-            dataView.setInt32(offset, this.value.length);
-            let writeOffset = offset + 4;
+        _marshallArg: function (dataView) {
+            dataView.setInt32(dataView.offset, this.value.length);
+            dataView.offset += 4;
             this.value.forEach(new function (char) {
-                dataView.setUint8(writeOffset, char.codePointAt(0));
-                writeOffset += 1;
+                dataView.setUint8(dataView.offset, char.codePointAt(0));
+                dataView.offset += 1;
             });
         }
     };
 };
 
-/**
- *
- * @param {String} arg
- * @returns {{value: String, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
- * @private
- */
 wfc._stringOptional = function (arg) {
     return {
         value: arg,
@@ -271,60 +174,39 @@ wfc._stringOptional = function (arg) {
             }
         })(),
         optional: false,
-        /**
-         *
-         * @param {DataView} dataView
-         * @param {Number} offset
-         */
-        marshallTo: function (dataView, offset) {
+        _marshallArg: function (dataView, offset) {
             if (this.value == null) {
-                dataView.setInt32(offset, 0);
+                dataView.setInt32(dataView.offset, 0);
+                dataView.offset += 4;
             } else {
-                dataView.setInt32(offset, this.value.length);
-                let writeOffset = offset + 4;
+                dataView.setInt32(dataView.offset, this.value.length);
+                dataView.offset += 4;
                 this.value.forEach(new function (char) {
-                    dataView.setUint8(writeOffset, char.codePointAt(0));
-                    writeOffset += 1;
+                    dataView.setUint8(dataView.offset, char.codePointAt(0));
+                    dataView.offset += 1;
                 });
             }
         }
     };
 };
 
-/**
- *
- * @param {TypedArray} arg
- * @returns {{value: TypedArray, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
- * @private
- */
 wfc._array = function (arg) {
     return {
         value: arg,
         type: "a",
         size: 4 + arg.buffer.byteLength,
         optional: false,
-        /**
-         *
-         * @param {DataView} dataView
-         * @param {Number} offset
-         */
-        marshallTo: function (dataView, offset) {
-            dataView.setInt32(offset, this.value.buffer.byteLength);
-            let writeOffset = offset + 4;
+        _marshallArg: function (dataView) {
+            dataView.setInt32(dataView.offset, this.value.buffer.byteLength);
+            dataView.offset += 4;
             new Uint8Array(this.value.buffer, 0, this.value.buffer.byteLength).forEach(new function (byte) {
-                dataView.setUint8(writeOffset, byte);
-                writeOffset += 1;
+                dataView.setUint8(dataView.offset, byte);
+                dataView.offset += 1;
             });
         }
     };
 };
 
-/**
- *
- * @param {TypedArray} arg
- * @returns {{value: ArrayBuffer, type: string, size: number, optional: boolean, marshallTo: marshallTo}}
- * @private
- */
 wfc._arrayOptional = function (arg) {
     return {
         value: arg,
@@ -337,31 +219,22 @@ wfc._arrayOptional = function (arg) {
             }
         })(),
         optional: true,
-        /**
-         *
-         * @param {DataView} dataView
-         * @param {Number} offset
-         */
-        marshallTo: function (dataView, offset) {
+        _marshallArg: function (dataView) {
             if (this.value == null) {
-                dataView.setInt32(offset, 0);
+                dataView.setInt32(dataView.offset, 0);
+                dataView.offset += 4;
             } else {
-                dataView.setInt32(offset, this.value.buffer.byteLength);
-                let writeOffset = offset + 4;
+                dataView.setInt32(dataView.offset, this.value.buffer.byteLength);
+                dataView.offset += 4;
                 new Uint8Array(this.value.buffer, 0, this.value.buffer.byteLength).forEach(new function (byte) {
-                    dataView.setUint8(writeOffset, byte);
-                    writeOffset += 1;
+                    dataView.setUint8(dataView.offset, byte);
+                    dataView.offset += 1;
                 });
             }
         }
     };
 };
 
-/**
- *
- * @param {wfc.Connection} connection
- * @private
- */
 wfc._Object = function (connection) {
 
     //--functions--
@@ -404,12 +277,6 @@ wfc.Connection = function (socketUrl) {
     this._objects = new Map();
 
     //--functions--
-    /**
-     *
-     * @param {DataView} wireMsg
-     * @returns {*}
-     * @private
-     */
     this._unmarshallArg = function (wireMsg) {
         let typeAscii = wireMsg.getUint8(wireMsg.offset);
         wireMsg.offset += 1;
@@ -560,14 +427,6 @@ wfc.Connection = function (socketUrl) {
         return socket;
     };
 
-    /**
-     * Marshall a js function call into a binary message and send it to the remote host.
-     *
-     * @param {Number} id the object._id
-     * @param {Number} opcode the wire protocol opcode of the function
-     * @param {Array} argsArray An array of private argument literals
-     * @private
-     */
     this._marshall = function (id, opcode, argsArray) {
         //determine required wire message length
         let size = 4 + 1;  //id+opcode
@@ -581,23 +440,22 @@ wfc.Connection = function (socketUrl) {
 
         const wireMsgBuffer = new ArrayBuffer(size);
         const wireMsgView = new DataView(wireMsgBuffer);
-        let offset = 0;
+        wireMsgView.offset = 0;
 
         //write actual wire message
         wireMsgView.setUint32(offset, id);//id
-        offset += 4;
+        wireMsgView.offset += 4;
         wireMsgView.setUint8(offset, opcode);//opcode
-        offset += 1;
+        wireMsgView.offset += 1;
 
         argsArray.forEach(function (arg) {
             if (arg.optional) {
-                wireMsgView.setUint8(offset, "?".codePointAt(0)); //optional ascii char
-                offset += 1;
+                wireMsgView.setUint8(wireMsgView.offset, "?".codePointAt(0)); //optional ascii char
+                wireMsgView.offset += 1;
             }
-            wireMsgView.setUint8(offset, arg.type.codePointAt(0)); //argument type ascii char
-            offset += 1;
-            arg.marshallTo(wireMsgView, offset); //write actual argument value to buffer
-            offset += arg.size;
+            wireMsgView.setUint8(wireMsgView.offset, arg.type.codePointAt(0)); //argument type ascii char
+            wireMsgView.offset += 1;
+            arg._marshallArg(wireMsgView); //write actual argument value to buffer
         });
 
         socket.send(wireMsgBuffer);
@@ -613,11 +471,6 @@ wfc.Connection = function (socketUrl) {
         socket.close();
     };
 
-    /**
-     * Register an object and give it a new id.
-     * @param {Object} object
-     * @private
-     */
     this._registerObject = function (object) {
         /*
          * IDs allocated by the client are in the range [1, 0xfeffffff] while IDs allocated by the server are
