@@ -98,18 +98,18 @@ wfc._newObject = function (arg) {
     return {
         value: arg,
         type: "n",
-        size: 4 + 1 + (typeof arg).length,//id+length+name
+        size: 4 + 1 + arg.iface.length,//id+length+name
         optional: false,
         _marshallArg: function (dataView) {
             dataView.setUint32(dataView.offset, this.value._id);
             dataView.offset += 4;
-            const objType = (typeof this.value);
+            const objType = this.value.iface;
             dataView.setUint8(dataView.offset, objType.length);
             dataView.offset += 1;
-            objType.forEach(new function (char) {
-                dataView.setUint8(dataView.offset, char.codePointAt(0));
+            for (var i = 0, len = objType.length; i < len; i++) {
+                dataView.setUint8(dataView.offset, objType[i].codePointAt(0));
                 dataView.offset += 1;
-            });
+            }
         }
     };
 };
@@ -122,7 +122,7 @@ wfc._newObjectOptional = function (arg) {
             if (arg == null) {
                 return 0;
             } else {
-                return 1 + (typeof arg).length;
+                return 1 + arg.iface.length;
             }
         })(),//id+length+name
         optional: true,
@@ -133,13 +133,13 @@ wfc._newObjectOptional = function (arg) {
             } else {
                 dataView.setUint32(dataView.offset, this.value._id);
                 dataView.offset += 4;
-                const objType = (typeof this.value);
+                const objType = this.value.iface;
                 dataView.setUint8(dataView.offset, objType.length);
                 dataView.offset += 1;
-                objType.forEach(new function (char) {
-                    dataView.setUint8(dataView.offset, char.codePointAt(0));
+                for (var i = 0, len = objType.length; i < len; i++) {
+                    dataView.setUint8(dataView.offset, objType[i].codePointAt(0));
                     dataView.offset += 1;
-                });
+                }
             }
         }
     };
@@ -154,10 +154,10 @@ wfc._string = function (arg) {
         _marshallArg: function (dataView) {
             dataView.setInt32(dataView.offset, this.value.length);
             dataView.offset += 4;
-            this.value.forEach(new function (char) {
-                dataView.setUint8(dataView.offset, char.codePointAt(0));
+            for (var i = 0, len = this.value.length; i < len; i++) {
+                dataView.setUint8(dataView.offset, this.value[i].codePointAt(0));
                 dataView.offset += 1;
-            });
+            }
         }
     };
 };
@@ -181,32 +181,35 @@ wfc._stringOptional = function (arg) {
             } else {
                 dataView.setInt32(dataView.offset, this.value.length);
                 dataView.offset += 4;
-                this.value.forEach(new function (char) {
-                    dataView.setUint8(dataView.offset, char.codePointAt(0));
+                for (let i = 0, len = this.value.length; i < len; i++) {
+                    dataView.setUint8(dataView.offset, this.value[i].codePointAt(0));
                     dataView.offset += 1;
-                });
+                }
             }
         }
     };
 };
 
+//TODO fixup array endianess problem
 wfc._array = function (arg) {
     return {
         value: arg,
         type: "a",
-        size: 4 + arg.buffer.byteLength,
+        size: 4 + arg.byteLength,
         optional: false,
         _marshallArg: function (dataView) {
-            dataView.setInt32(dataView.offset, this.value.buffer.byteLength);
+            dataView.setUint32(dataView.offset, this.value.byteLength);
             dataView.offset += 4;
-            new Uint8Array(this.value.buffer, 0, this.value.buffer.byteLength).forEach(new function (byte) {
-                dataView.setUint8(dataView.offset, byte);
+
+            for (let i = 0, len = this.value.byteLength; i < len; i++) {
+                dataView.setUint8(dataView.offset, this.value.getUint8(i));
                 dataView.offset += 1;
-            });
+            }
         }
     };
 };
 
+//TODO fixup array endianess problem
 wfc._arrayOptional = function (arg) {
     return {
         value: arg,
@@ -215,7 +218,7 @@ wfc._arrayOptional = function (arg) {
             if (arg == null) {
                 return 0;
             } else {
-                return arg.buffer.byteLength;
+                return arg.byteLength;
             }
         })(),
         optional: true,
@@ -224,18 +227,18 @@ wfc._arrayOptional = function (arg) {
                 dataView.setInt32(dataView.offset, 0);
                 dataView.offset += 4;
             } else {
-                dataView.setInt32(dataView.offset, this.value.buffer.byteLength);
+                dataView.setInt32(dataView.offset, this.value.byteLength);
                 dataView.offset += 4;
-                new Uint8Array(this.value.buffer, 0, this.value.buffer.byteLength).forEach(new function (byte) {
-                    dataView.setUint8(dataView.offset, byte);
+                for (let i = 0, len = this.value.byteLength; i < len; i++) {
+                    dataView.setUint8(dataView.offset, this.value.getUint8(i));
                     dataView.offset += 1;
-                });
+                }
             }
         }
     };
 };
 
-wfc._Object = function (connection) {
+wfc._Object = function (connection, iface) {
 
     //--functions--
     /**
@@ -259,6 +262,7 @@ wfc._Object = function (connection) {
 
     //--constructor--
     this._connection = connection;
+    this.iface = iface;
 };
 
 wfc.Connection = function (socketUrl) {
@@ -488,7 +492,7 @@ wfc.Connection = function (socketUrl) {
 };
 
 //make this module available in both nodejs & browser
-(function() {
+(function () {
     if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
         module.exports = wfc;
     else
