@@ -1,5 +1,5 @@
 //westfield client namespace
-const wfc = wfc || {};
+const wfc = {};
 
 //-- js argument to wire format literals: integer (number), float (number), object (wf._Object), new object (wf._Object), string (string), array (ArrayBuffer) --
 
@@ -297,18 +297,18 @@ wfc.Connection = function (socketUrl) {
                 wireMsg.offset += 4;
                 break;
             case "o"://existing object, subtype of {wf._Object}
-                const id = wireMsg.getUint32(wireMsg.offset);
+                const objectId = wireMsg.getUint32(wireMsg.offset);
                 wireMsg.offset += 4;
-                if (optional && id === 0) {
+                if (optional && objectId === 0) {
                     arg = null;
                 } else {
-                    arg = this._objects.get(id);
+                    arg = this._objects.get(objectId);
                 }
                 break;
             case "n":///new object, subtype of {wf._Object}
-                const id = wireMsg.getUint32(wireMsg.offset);
+                const newObjectId = wireMsg.getUint32(wireMsg.offset);
                 wireMsg.offset += 4;
-                if (optional && id === 0) {
+                if (optional && newObjectId === 0) {
                     arg = null;
                 } else {
                     const typeNameSize = wireMsg.getUint8(wireMsg.offset);
@@ -318,7 +318,7 @@ wfc.Connection = function (socketUrl) {
 
                     const type = String.fromCharCode.apply(null, byteArray);
                     const newObject = new wfc[type](this);
-                    newObject._id = id;
+                    newObject._id = newObjectId;
                     this._objects.set(newObject._id, newObject);
                     arg = newObject;
                 }
@@ -486,3 +486,11 @@ wfc.Connection = function (socketUrl) {
     this.registry = new wfc.Registry();
     this._registerObject(this.registry);
 };
+
+//make this module available in both nodejs & browser
+(function() {
+    if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
+        module.exports = wfc;
+    else
+        window.wfc = wfc;
+})();

@@ -4,7 +4,8 @@
   "description": "Wayland HTML5 protocol generator",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "pretest": "npm install",
+    "test": "jasmine"
   },
   "dependencies": {
     "escodegen": "1.8.1",
@@ -25,5 +26,9 @@
   "bugs": {
     "url": "https://github.com/Zubnix/westfield/issues"
   },
-  "homepage": "https://github.com/Zubnix/westfield#readme"
+  "homepage": "https://github.com/Zubnix/westfield#readme",
+  "devDependencies": {
+    "jasmine": "^2.5.2",
+    "jasmine-core": "^2.5.2"
+  }
 }
