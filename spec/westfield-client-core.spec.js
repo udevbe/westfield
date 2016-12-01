@@ -281,24 +281,60 @@ describe("westfield-client-core", function () {
 
     //--Array marshalling--//
 
-    //TODO fixup array endianess problem
-    // it("marshalls an array type to an array of 8bit unsigned integers, using the data view offset", function () {
-    //     //given
-    //     const dataView = new DataView(new ArrayBuffer(14));
-    //     dataView.offset = 2;
-    //     const argValue = new Uint32Array(new ArrayBuffer(8));
-    //     argValue[0] = 0xF1234567;
-    //     argValue[1] = 0x1234567F;
-    //
-    //     const arg = wf._array(argValue);
-    //
-    //     //when
-    //     arg._marshallArg(dataView);
-    //
-    //     //then
-    //     expect(dataView.offset).toBe(14);//2+4+8
-    //     expect(dataView.getUint32(2)).toBe(argValue.buffer.byteLength);
-    //     expect(dataView.getUint32(6)).toBe(0xF1234567);//0xF1234567
-    //     expect(dataView.getUint32(10)).toBe(0x1234567F);//0x1234567F
-    // });
+    it("marshalls a typed array to an array of 8bit unsigned integers, using the data view offset", function () {
+        //given
+        const dataView = new DataView(new ArrayBuffer(14));
+        dataView.offset = 2;
+        const argValue = new Uint32Array(new ArrayBuffer(8));
+        argValue[0] = 0xF1234567;
+        argValue[1] = 0x1234567F;
+
+        const arg = wf._array(argValue);
+
+        //when
+        arg._marshallArg(dataView);
+
+        //then
+        expect(dataView.offset).toBe(14);//2+4+8
+        expect(dataView.getInt32(2)).toBe(argValue.buffer.byteLength);
+        let intArray = new Uint32Array(dataView.buffer.slice(6, 14), 0, 2);
+        expect(intArray[0]).toBe(0xF1234567);//0xF1234567
+        expect(intArray[1]).toBe(0x1234567F);//0x1234567F
+    });
+
+    it("marshalls an optional typed array to an array of 8bit unsigned integers, using the data view offset", function () {
+        //given
+        const dataView = new DataView(new ArrayBuffer(14));
+        dataView.offset = 2;
+        const argValue = new Uint32Array(new ArrayBuffer(8));
+        argValue[0] = 0xF1234567;
+        argValue[1] = 0x1234567F;
+
+        const arg = wf._arrayOptional(argValue);
+
+        //when
+        arg._marshallArg(dataView);
+
+        //then
+        expect(dataView.offset).toBe(14);//2+4+8
+        expect(dataView.getInt32(2)).toBe(argValue.buffer.byteLength);
+        let intArray = new Uint32Array(dataView.buffer.slice(6, 14), 0, 2);
+        expect(intArray[0]).toBe(argValue[0]);//0xF1234567
+        expect(intArray[1]).toBe(argValue[1]);//0x1234567F
+    });
+
+    it("marshalls an optional null typed array to an array of 8bit unsigned integers, using the data view offset", function () {
+        //given
+        const dataView = new DataView(new ArrayBuffer(6));
+        dataView.offset = 2;
+
+        const arg = wf._arrayOptional(null);
+
+        //when
+        arg._marshallArg(dataView);
+
+        //then
+        expect(dataView.offset).toBe(6);//2+4
+        expect(dataView.getInt32(2)).toBe(0);
+    });
 });

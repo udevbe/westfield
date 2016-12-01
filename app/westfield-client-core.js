@@ -190,7 +190,6 @@ wfc._stringOptional = function (arg) {
     };
 };
 
-//TODO fixup array endianess problem
 wfc._array = function (arg) {
     return {
         value: arg,
@@ -201,15 +200,14 @@ wfc._array = function (arg) {
             dataView.setUint32(dataView.offset, this.value.byteLength);
             dataView.offset += 4;
 
-            for (let i = 0, len = this.value.byteLength; i < len; i++) {
-                dataView.setUint8(dataView.offset, this.value.getUint8(i));
+            new Uint8Array(arg.buffer, 0, arg.byteLength).forEach(function (byte) {
+                dataView.setUint8(dataView.offset, byte);
                 dataView.offset += 1;
-            }
+            });
         }
     };
 };
 
-//TODO fixup array endianess problem
 wfc._arrayOptional = function (arg) {
     return {
         value: arg,
@@ -229,10 +227,11 @@ wfc._arrayOptional = function (arg) {
             } else {
                 dataView.setInt32(dataView.offset, this.value.byteLength);
                 dataView.offset += 4;
-                for (let i = 0, len = this.value.byteLength; i < len; i++) {
-                    dataView.setUint8(dataView.offset, this.value.getUint8(i));
+
+                new Uint8Array(arg.buffer, 0, arg.byteLength).forEach(function (byte) {
+                    dataView.setUint8(dataView.offset, byte);
                     dataView.offset += 1;
-                }
+                });
             }
         }
     };
