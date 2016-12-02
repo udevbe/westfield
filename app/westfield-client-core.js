@@ -291,6 +291,8 @@ wfc.Connection = function (socketUrl) {
 
         let arg = null;
         switch (String.fromCharCode(typeAscii)) {
+            //TODO int64 (long)
+            //TODO float64 (double)
             case "i"://integer {Number}
                 arg = wireMsg.getInt32(wireMsg.offset);
                 wireMsg.offset += 4;
@@ -334,8 +336,8 @@ wfc.Connection = function (socketUrl) {
                 }
                 else {
                     const byteArray = new Uint8Array(wireMsg.buffer, wireMsg.offset, stringSize);
-                    wireMsg.offset += stringSize;
                     arg = String.fromCharCode.apply(null, byteArray);
+                    wireMsg.offset += stringSize;
                 }
                 break;
             case "a"://{Uint8Array}
@@ -344,15 +346,10 @@ wfc.Connection = function (socketUrl) {
                 if (optional && arraySize === 0) {
                     arg = null;
                 } else {
-                    const byteArray = new Uint8Array(wireMsg.buffer, wireMsg.offset, arraySize);
+                    arg = wireMsg.buffer.slice(wireMsg.offset, wireMsg.offset + arraySize);
                     wireMsg.offset += arraySize;
-                    arg = byteArray;
                 }
                 break;
-        }
-
-        if (arg == null) {
-            //TODO throw unmarshalling exception
         }
 
         return arg;
@@ -369,8 +366,6 @@ wfc.Connection = function (socketUrl) {
         //translates to:
         //3 (=id),1 (=opcode),n (=new object id) 7 (id value) 3 (object name lenght) foo (object type), i (integer) 1024 (integer value), a (array) 3 (array size) [0xef 0xfa 0x7e] (array value)
 
-        //TODO convert blob to message;
-        //TODO interpret message => find object & invoke it's function
         const wireMsg = new DataView(message);
         wireMsg.offset = 0;
 

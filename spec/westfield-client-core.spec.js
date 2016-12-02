@@ -1,7 +1,7 @@
 const wf = require('../app/westfield-client-core.js');
 
 describe("westfield-client-core", function () {
-    describe("argument", function () {
+    describe("argument marshalling", function () {
 
         //--Integer marshalling --//
 
@@ -209,132 +209,450 @@ describe("westfield-client-core", function () {
             expect(dataView.offset).toBe(6);//2+4
             expect(dataView.getUint32(2)).toBe(0);
         });
+
+        //--String marshalling--//
+
+        it("marshalls a string to an array of 8bit unsigned integers, using the data view offset", function () {
+            //given
+            const dataView = new DataView(new ArrayBuffer(17));
+            dataView.offset = 2;
+            const argValue = "lorem ipsum";
+            const arg = wf._string(argValue);
+
+            //when
+            arg._marshallArg(dataView);
+
+            //then
+            expect(dataView.offset).toBe(17);//2+4+11
+            expect(dataView.getUint32(2)).toBe(argValue.length);
+            expect(dataView.getUint8(6)).toBe(argValue[0].codePointAt(0));//l
+            expect(dataView.getUint8(7)).toBe(argValue[1].codePointAt(0));//o
+            expect(dataView.getUint8(8)).toBe(argValue[2].codePointAt(0));//r
+            expect(dataView.getUint8(9)).toBe(argValue[3].codePointAt(0));//e
+            expect(dataView.getUint8(10)).toBe(argValue[4].codePointAt(0));//m
+            expect(dataView.getUint8(11)).toBe(argValue[5].codePointAt(0));//
+            expect(dataView.getUint8(12)).toBe(argValue[6].codePointAt(0));//i
+            expect(dataView.getUint8(13)).toBe(argValue[7].codePointAt(0));//p
+            expect(dataView.getUint8(14)).toBe(argValue[8].codePointAt(0));//s
+            expect(dataView.getUint8(15)).toBe(argValue[9].codePointAt(0));//u
+            expect(dataView.getUint8(16)).toBe(argValue[10].codePointAt(0));//m
+        });
+
+        it("marshalls an optional string to an array of 8bit unsigned integers, using the data view offset", function () {
+            //given
+            const dataView = new DataView(new ArrayBuffer(17));
+            dataView.offset = 2;
+            const argValue = "lorem ipsum";
+            const arg = wf._stringOptional(argValue);
+
+            //when
+            arg._marshallArg(dataView);
+
+            //then
+            expect(dataView.offset).toBe(17);//2+4+11
+            expect(dataView.getUint32(2)).toBe(argValue.length);
+            expect(dataView.getUint8(6)).toBe(argValue[0].codePointAt(0));//l
+            expect(dataView.getUint8(7)).toBe(argValue[1].codePointAt(0));//o
+            expect(dataView.getUint8(8)).toBe(argValue[2].codePointAt(0));//r
+            expect(dataView.getUint8(9)).toBe(argValue[3].codePointAt(0));//e
+            expect(dataView.getUint8(10)).toBe(argValue[4].codePointAt(0));//m
+            expect(dataView.getUint8(11)).toBe(argValue[5].codePointAt(0));//
+            expect(dataView.getUint8(12)).toBe(argValue[6].codePointAt(0));//i
+            expect(dataView.getUint8(13)).toBe(argValue[7].codePointAt(0));//p
+            expect(dataView.getUint8(14)).toBe(argValue[8].codePointAt(0));//s
+            expect(dataView.getUint8(15)).toBe(argValue[9].codePointAt(0));//u
+            expect(dataView.getUint8(16)).toBe(argValue[10].codePointAt(0));//m
+        });
+
+        it("marshalls an optional null string to an array of 8bit unsigned integers, using the data view offset", function () {
+            //given
+            const dataView = new DataView(new ArrayBuffer(6));
+            dataView.offset = 2;
+            const arg = wf._stringOptional(null);
+
+            //when
+            arg._marshallArg(dataView);
+
+            //then
+            expect(dataView.offset).toBe(6);//2+4
+            expect(dataView.getUint32(2)).toBe(0);
+        });
+
+        //--Array marshalling--//
+
+        it("marshalls a typed array to an array of 8bit unsigned integers, using the data view offset", function () {
+            //given
+            const dataView = new DataView(new ArrayBuffer(14));
+            dataView.offset = 2;
+            const argValue = new Uint32Array(new ArrayBuffer(8));
+            argValue[0] = 0xF1234567;
+            argValue[1] = 0x1234567F;
+
+            const arg = wf._array(argValue);
+
+            //when
+            arg._marshallArg(dataView);
+
+            //then
+            expect(dataView.offset).toBe(14);//2+4+8
+            expect(dataView.getInt32(2)).toBe(argValue.buffer.byteLength);
+            let intArray = new Uint32Array(dataView.buffer.slice(6, 14), 0, 2);
+            expect(intArray[0]).toBe(0xF1234567);//0xF1234567
+            expect(intArray[1]).toBe(0x1234567F);//0x1234567F
+        });
+
+        it("marshalls an optional typed array to an array of 8bit unsigned integers, using the data view offset", function () {
+            //given
+            const dataView = new DataView(new ArrayBuffer(14));
+            dataView.offset = 2;
+            const argValue = new Uint32Array(new ArrayBuffer(8));
+            argValue[0] = 0xF1234567;
+            argValue[1] = 0x1234567F;
+
+            const arg = wf._arrayOptional(argValue);
+
+            //when
+            arg._marshallArg(dataView);
+
+            //then
+            expect(dataView.offset).toBe(14);//2+4+8
+            expect(dataView.getInt32(2)).toBe(argValue.buffer.byteLength);
+            let intArray = new Uint32Array(dataView.buffer.slice(6, 14), 0, 2);
+            expect(intArray[0]).toBe(argValue[0]);//0xF1234567
+            expect(intArray[1]).toBe(argValue[1]);//0x1234567F
+        });
+
+        it("marshalls an optional null typed array to an array of 8bit unsigned integers, using the data view offset", function () {
+            //given
+            const dataView = new DataView(new ArrayBuffer(6));
+            dataView.offset = 2;
+
+            const arg = wf._arrayOptional(null);
+
+            //when
+            arg._marshallArg(dataView);
+
+            //then
+            expect(dataView.offset).toBe(6);//2+4
+            expect(dataView.getInt32(2)).toBe(0);
+        });
     });
 
-    //--String marshalling--//
 
-    it("marshalls a string to an array of 8bit unsigned integers, using the data view offset", function () {
-        //given
-        const dataView = new DataView(new ArrayBuffer(17));
-        dataView.offset = 2;
-        const argValue = "lorem ipsum";
-        const arg = wf._string(argValue);
+    describe("argument unmarshalling", function () {
 
-        //when
-        arg._marshallArg(dataView);
+        //--Integer Unmarshalling--//
 
-        //then
-        expect(dataView.offset).toBe(17);//2+4+11
-        expect(dataView.getUint32(2)).toBe(argValue.length);
-        expect(dataView.getUint8(6)).toBe(argValue[0].codePointAt(0));//l
-        expect(dataView.getUint8(7)).toBe(argValue[1].codePointAt(0));//o
-        expect(dataView.getUint8(8)).toBe(argValue[2].codePointAt(0));//r
-        expect(dataView.getUint8(9)).toBe(argValue[3].codePointAt(0));//e
-        expect(dataView.getUint8(10)).toBe(argValue[4].codePointAt(0));//m
-        expect(dataView.getUint8(11)).toBe(argValue[5].codePointAt(0));//
-        expect(dataView.getUint8(12)).toBe(argValue[6].codePointAt(0));//i
-        expect(dataView.getUint8(13)).toBe(argValue[7].codePointAt(0));//p
-        expect(dataView.getUint8(14)).toBe(argValue[8].codePointAt(0));//s
-        expect(dataView.getUint8(15)).toBe(argValue[9].codePointAt(0));//u
-        expect(dataView.getUint8(16)).toBe(argValue[10].codePointAt(0));//m
-    });
+        it("unmarshalls a non optional 32bit integer to a number, using the data view wire argument", function () {
+            //given
+            global.WebSocket = function () {
+            };//mock WebSocket
+            wf.Registry = function () {
+            };//mock Registry
+            const connection = new wf.Connection("dummyURL");
 
-    it("marshalls an optional string to an array of 8bit unsigned integers, using the data view offset", function () {
-        //given
-        const dataView = new DataView(new ArrayBuffer(17));
-        dataView.offset = 2;
-        const argValue = "lorem ipsum";
-        const arg = wf._stringOptional(argValue);
+            const wireArg = new DataView(new ArrayBuffer(5));//1+4
+            wireArg.offset = 0;
+            wireArg.setUint8(0, "i".codePointAt(0));
+            const argValue = -6553699;
+            wireArg.setInt32(1, argValue);
 
-        //when
-        arg._marshallArg(dataView);
+            //when
+            const arg = connection._unmarshallArg(wireArg);
 
-        //then
-        expect(dataView.offset).toBe(17);//2+4+11
-        expect(dataView.getUint32(2)).toBe(argValue.length);
-        expect(dataView.getUint8(6)).toBe(argValue[0].codePointAt(0));//l
-        expect(dataView.getUint8(7)).toBe(argValue[1].codePointAt(0));//o
-        expect(dataView.getUint8(8)).toBe(argValue[2].codePointAt(0));//r
-        expect(dataView.getUint8(9)).toBe(argValue[3].codePointAt(0));//e
-        expect(dataView.getUint8(10)).toBe(argValue[4].codePointAt(0));//m
-        expect(dataView.getUint8(11)).toBe(argValue[5].codePointAt(0));//
-        expect(dataView.getUint8(12)).toBe(argValue[6].codePointAt(0));//i
-        expect(dataView.getUint8(13)).toBe(argValue[7].codePointAt(0));//p
-        expect(dataView.getUint8(14)).toBe(argValue[8].codePointAt(0));//s
-        expect(dataView.getUint8(15)).toBe(argValue[9].codePointAt(0));//u
-        expect(dataView.getUint8(16)).toBe(argValue[10].codePointAt(0));//m
-    });
+            //then
+            expect(wireArg.offset).toBe(5);
+            expect(arg).toBe(argValue);
+        });
 
-    it("marshalls an optional null string to an array of 8bit unsigned integers, using the data view offset", function () {
-        //given
-        const dataView = new DataView(new ArrayBuffer(6));
-        dataView.offset = 2;
-        const arg = wf._stringOptional(null);
+        it("unmarshalls a non null optional 32bit integer to a number, using the data view wire argument", function () {
+            //given
+            global.WebSocket = function () {
+            };//mock WebSocket
+            wf.Registry = function () {
+            };//mock Registry
+            const connection = new wf.Connection("dummyURL");
 
-        //when
-        arg._marshallArg(dataView);
+            const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
+            wireArg.offset = 0;
+            wireArg.setUint8(0, "?".codePointAt(0));
+            wireArg.setUint8(1, "i".codePointAt(0));
+            const argValue = -6553699;
+            wireArg.setInt32(2, argValue);
 
-        //then
-        expect(dataView.offset).toBe(6);//2+4
-        expect(dataView.getUint32(2)).toBe(0);
-    });
+            //when
+            const arg = connection._unmarshallArg(wireArg);
 
-    //--Array marshalling--//
+            //then
+            expect(wireArg.offset).toBe(6);
+            expect(arg).toBe(argValue);
+        });
 
-    it("marshalls a typed array to an array of 8bit unsigned integers, using the data view offset", function () {
-        //given
-        const dataView = new DataView(new ArrayBuffer(14));
-        dataView.offset = 2;
-        const argValue = new Uint32Array(new ArrayBuffer(8));
-        argValue[0] = 0xF1234567;
-        argValue[1] = 0x1234567F;
+        it("unmarshalls a zero optional 32bit integer to a number, using the data view wire argument", function () {
+            //given
+            global.WebSocket = function () {
+            };//mock WebSocket
+            wf.Registry = function () {
+            };//mock Registry
+            const connection = new wf.Connection("dummyURL");
 
-        const arg = wf._array(argValue);
+            const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
+            wireArg.offset = 0;
+            wireArg.setUint8(0, "?".codePointAt(0));
+            wireArg.setUint8(1, "i".codePointAt(0));
+            const argValue = 0;
+            wireArg.setInt32(2, argValue);
 
-        //when
-        arg._marshallArg(dataView);
+            //when
+            const arg = connection._unmarshallArg(wireArg);
 
-        //then
-        expect(dataView.offset).toBe(14);//2+4+8
-        expect(dataView.getInt32(2)).toBe(argValue.buffer.byteLength);
-        let intArray = new Uint32Array(dataView.buffer.slice(6, 14), 0, 2);
-        expect(intArray[0]).toBe(0xF1234567);//0xF1234567
-        expect(intArray[1]).toBe(0x1234567F);//0x1234567F
-    });
+            //then
+            expect(wireArg.offset).toBe(6);
+            expect(arg).toBe(argValue);
+        });
 
-    it("marshalls an optional typed array to an array of 8bit unsigned integers, using the data view offset", function () {
-        //given
-        const dataView = new DataView(new ArrayBuffer(14));
-        dataView.offset = 2;
-        const argValue = new Uint32Array(new ArrayBuffer(8));
-        argValue[0] = 0xF1234567;
-        argValue[1] = 0x1234567F;
+        //--Float Unmarshalling--//
 
-        const arg = wf._arrayOptional(argValue);
+        it("unmarshalls a non optional 32bit float to a number, using the data view wire argument", function () {
+            //given
+            global.WebSocket = function () {
+            };//mock WebSocket
+            wf.Registry = function () {
+            };//mock Registry
+            const connection = new wf.Connection("dummyURL");
 
-        //when
-        arg._marshallArg(dataView);
+            const wireArg = new DataView(new ArrayBuffer(5));//1+4
+            wireArg.offset = 0;
+            wireArg.setUint8(0, "f".codePointAt(0));
+            const argValue = 1234.567;
+            wireArg.setFloat32(1, argValue);
 
-        //then
-        expect(dataView.offset).toBe(14);//2+4+8
-        expect(dataView.getInt32(2)).toBe(argValue.buffer.byteLength);
-        let intArray = new Uint32Array(dataView.buffer.slice(6, 14), 0, 2);
-        expect(intArray[0]).toBe(argValue[0]);//0xF1234567
-        expect(intArray[1]).toBe(argValue[1]);//0x1234567F
-    });
+            //when
+            const arg = connection._unmarshallArg(wireArg);
 
-    it("marshalls an optional null typed array to an array of 8bit unsigned integers, using the data view offset", function () {
-        //given
-        const dataView = new DataView(new ArrayBuffer(6));
-        dataView.offset = 2;
+            //then
+            expect(wireArg.offset).toBe(5);
+            expect(arg.toFixed(3)).toBe(argValue.toFixed(3));
+        });
 
-        const arg = wf._arrayOptional(null);
+        it("unmarshalls a non zero optional 32bit float to a number, using the data view wire argument", function () {
+            //given
+            global.WebSocket = function () {
+            };//mock WebSocket
+            wf.Registry = function () {
+            };//mock Registry
+            const connection = new wf.Connection("dummyURL");
 
-        //when
-        arg._marshallArg(dataView);
+            const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
+            wireArg.offset = 0;
+            wireArg.setUint8(0, "?".codePointAt(0));
+            wireArg.setUint8(1, "f".codePointAt(0));
+            const argValue = 1234.567;
+            wireArg.setFloat32(2, argValue);
 
-        //then
-        expect(dataView.offset).toBe(6);//2+4
-        expect(dataView.getInt32(2)).toBe(0);
+            //when
+            const arg = connection._unmarshallArg(wireArg);
+
+            //then
+            expect(wireArg.offset).toBe(6);
+            expect(arg.toFixed(3)).toBe(argValue.toFixed(3));
+        });
+
+        it("unmarshalls a zero optional 32bit float to a number, using the data view wire argument", function () {
+            //given
+            global.WebSocket = function () {
+            };//mock WebSocket
+            wf.Registry = function () {
+            };//mock Registry
+            const connection = new wf.Connection("dummyURL");
+
+            const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
+            wireArg.offset = 0;
+            wireArg.setUint8(0, "?".codePointAt(0));
+            wireArg.setUint8(1, "f".codePointAt(0));
+            const argValue = 0;
+            wireArg.setFloat32(2, argValue);
+
+            //when
+            const arg = connection._unmarshallArg(wireArg);
+
+            //then
+            expect(wireArg.offset).toBe(6);
+            expect(arg.toFixed(3)).toBe(argValue.toFixed(3));
+        });
+
+        //--Object Unmarshalling--//
+
+        it("unmarshalls a non optional 32bit integer to an object, using the data view wire argument", function () {
+            //given
+            global.WebSocket = function () {
+            };//mock WebSocket
+            wf.Registry = function () {
+            };//mock Registry
+
+            const connection = new wf.Connection("dummyURL");
+            connection._objects = new Map();
+            const objectId = 1234567;
+            connection._objects.set(objectId, {_id: objectId});
+
+            const wireArg = new DataView(new ArrayBuffer(5));//1+4
+            wireArg.offset = 0;
+            wireArg.setUint8(0, "o".codePointAt(0));
+            wireArg.setUint32(1, objectId);
+
+            //when
+            const arg = connection._unmarshallArg(wireArg);
+
+            //then
+            expect(wireArg.offset).toBe(5);
+            expect(arg._id).toBe(objectId);
+        });
+
+        it("unmarshalls a non zero optional 32bit integer to an object, using the data view wire argument", function () {
+            //given
+            global.WebSocket = function () {
+            };//mock WebSocket
+            wf.Registry = function () {
+            };//mock Registry
+
+            const connection = new wf.Connection("dummyURL");
+            connection._objects = new Map();
+            const objectId = 1234567;
+            connection._objects.set(objectId, {_id: objectId});
+
+            const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
+            wireArg.offset = 0;
+            wireArg.setUint8(0, "?".codePointAt(0));
+            wireArg.setUint8(1, "o".codePointAt(0));
+            wireArg.setUint32(2, objectId);
+
+            //when
+            const arg = connection._unmarshallArg(wireArg);
+
+            //then
+            expect(wireArg.offset).toBe(6);
+            expect(arg._id).toBe(objectId);
+        });
+
+        it("unmarshalls a zero optional 32bit integer to an object, using the data view wire argument", function () {
+            //given
+            global.WebSocket = function () {
+            };//mock WebSocket
+            wf.Registry = function () {
+            };//mock Registry
+
+            const connection = new wf.Connection("dummyURL");
+            const objectId = 0;
+
+            const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
+            wireArg.offset = 0;
+            wireArg.setUint8(0, "?".codePointAt(0));
+            wireArg.setUint8(1, "o".codePointAt(0));
+            wireArg.setUint32(2, objectId);
+
+            //when
+            const arg = connection._unmarshallArg(wireArg);
+
+            //then
+            expect(wireArg.offset).toBe(6);
+            expect(arg).toBe(null);
+        });
+
+        //--New object Unmarshalling--//
+
+        it("unmarshalls a non optional 32bit integer to a new object, using the data view wire argument", function () {
+            //given
+            global.WebSocket = function () {
+            };//mock WebSocket
+            wf.Registry = function () {
+            };//mock Registry
+
+            const connection = new wf.Connection("dummyURL");
+            connection._objects = new Map();
+            const objectId = 1234567;
+            const objectType = "Dummy";
+            wf.Dummy = function () {
+            };
+
+            const wireArg = new DataView(new ArrayBuffer(11));//1+4+1+(1*5)
+            wireArg.offset = 0;
+            wireArg.setUint8(0, "n".codePointAt(0));
+            wireArg.setUint32(1, objectId);
+            wireArg.setUint8(5, objectType.length);
+            wireArg.setUint8(6, objectType.codePointAt(0));//D
+            wireArg.setUint8(7, objectType.codePointAt(1));//u
+            wireArg.setUint8(8, objectType.codePointAt(2));//m
+            wireArg.setUint8(9, objectType.codePointAt(3));//m
+            wireArg.setUint8(10, objectType.codePointAt(4));//y
+
+            //when
+            const arg = connection._unmarshallArg(wireArg);
+
+            //then
+            expect(wireArg.offset).toBe(11);
+            expect(arg).toBe(connection._objects.get(arg._id));
+        });
+
+        it("unmarshalls an optional non zero 32bit integer to a new object, using the data view wire argument", function () {
+            //given
+            global.WebSocket = function () {
+            };//mock WebSocket
+            wf.Registry = function () {
+            };//mock Registry
+
+            const connection = new wf.Connection("dummyURL");
+            connection._objects = new Map();
+            const objectId = 1234567;
+            const objectType = "Dummy";
+            wf.Dummy = function () {
+            };
+
+            const wireArg = new DataView(new ArrayBuffer(12));//1+1+4+1+(1*5)
+            wireArg.offset = 0;
+            wireArg.setUint8(0, "?".codePointAt(0));
+            wireArg.setUint8(1, "n".codePointAt(0));
+            wireArg.setUint32(2, objectId);
+            wireArg.setUint8(6, objectType.length);
+            wireArg.setUint8(7, objectType.codePointAt(0));//D
+            wireArg.setUint8(8, objectType.codePointAt(1));//u
+            wireArg.setUint8(9, objectType.codePointAt(2));//m
+            wireArg.setUint8(10, objectType.codePointAt(3));//m
+            wireArg.setUint8(11, objectType.codePointAt(4));//y
+
+            //when
+            const arg = connection._unmarshallArg(wireArg);
+
+            //then
+            expect(wireArg.offset).toBe(12);
+            expect(arg).toBe(connection._objects.get(arg._id));
+        });
+
+        it("unmarshalls an optional zero 32bit integer to a new object, using the data view wire argument", function () {
+            //given
+            global.WebSocket = function () {
+            };//mock WebSocket
+            wf.Registry = function () {
+            };//mock Registry
+
+            const connection = new wf.Connection("dummyURL");
+            connection._objects = new Map();
+            const objectId = 0;
+
+            const wireArg = new DataView(new ArrayBuffer(12));//1+1+4
+            wireArg.offset = 0;
+            wireArg.setUint8(0, "?".codePointAt(0));
+            wireArg.setUint8(1, "n".codePointAt(0));
+            wireArg.setUint32(2, objectId);
+
+            //when
+            const arg = connection._unmarshallArg(wireArg);
+
+            //then
+            expect(wireArg.offset).toBe(6);
+            expect(arg).toBe(null);
+        });
+
+        //--String Unmarshalling--//
+
     });
 });
