@@ -654,5 +654,193 @@ describe("westfield-client-core", function () {
 
         //--String Unmarshalling--//
 
+        it("unmarshalls a non optional string to a string, using the data view wire argument", function () {
+            //given
+            global.WebSocket = function () {
+            };//mock WebSocket
+            wf.Registry = function () {
+            };//mock Registry
+
+            const connection = new wf.Connection("dummyURL");
+
+            const argValue = "lorem ipsum";
+            const wireArg = new DataView(new ArrayBuffer(16));//1+4+11
+            wireArg.offset = 0;
+            wireArg.setUint8(0, "s".codePointAt(0));
+            wireArg.setUint32(1, argValue.length);
+            wireArg.setUint8(5, argValue.codePointAt(0));//l
+            wireArg.setUint8(6, argValue.codePointAt(1));//o
+            wireArg.setUint8(7, argValue.codePointAt(2));//r
+            wireArg.setUint8(8, argValue.codePointAt(3));//u
+            wireArg.setUint8(9, argValue.codePointAt(4));//m
+            wireArg.setUint8(10, argValue.codePointAt(5));//
+            wireArg.setUint8(11, argValue.codePointAt(6));//i
+            wireArg.setUint8(12, argValue.codePointAt(7));//p
+            wireArg.setUint8(13, argValue.codePointAt(8));//s
+            wireArg.setUint8(14, argValue.codePointAt(9));//u
+            wireArg.setUint8(15, argValue.codePointAt(10));//m
+
+            //when
+            const arg = connection._unmarshallArg(wireArg);
+
+            //then
+            expect(wireArg.offset).toBe(16);
+            expect(arg).toBe(argValue);
+        });
+
+        it("unmarshalls a non empty optional string to a string, using the data view wire argument", function () {
+            //given
+            global.WebSocket = function () {
+            };//mock WebSocket
+            wf.Registry = function () {
+            };//mock Registry
+
+            const connection = new wf.Connection("dummyURL");
+
+            const argValue = "lorem ipsum";
+            const wireArg = new DataView(new ArrayBuffer(17));//1+1+4+11
+            wireArg.offset = 0;
+            wireArg.setUint8(0, "?".codePointAt(0));
+            wireArg.setUint8(1, "s".codePointAt(0));
+            wireArg.setUint32(2, argValue.length);
+            wireArg.setUint8(6, argValue.codePointAt(0));//l
+            wireArg.setUint8(7, argValue.codePointAt(1));//o
+            wireArg.setUint8(8, argValue.codePointAt(2));//r
+            wireArg.setUint8(9, argValue.codePointAt(3));//u
+            wireArg.setUint8(10, argValue.codePointAt(4));//m
+            wireArg.setUint8(11, argValue.codePointAt(5));//
+            wireArg.setUint8(12, argValue.codePointAt(6));//i
+            wireArg.setUint8(13, argValue.codePointAt(7));//p
+            wireArg.setUint8(14, argValue.codePointAt(8));//s
+            wireArg.setUint8(15, argValue.codePointAt(9));//u
+            wireArg.setUint8(16, argValue.codePointAt(10));//m
+
+            //when
+            const arg = connection._unmarshallArg(wireArg);
+
+            //then
+            expect(wireArg.offset).toBe(17);
+            expect(arg).toBe(argValue);
+        });
+
+        it("unmarshalls an empty optional string to a string, using the data view wire argument", function () {
+            //given
+            global.WebSocket = function () {
+            };//mock WebSocket
+            wf.Registry = function () {
+            };//mock Registry
+
+            const connection = new wf.Connection("dummyURL");
+
+            const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
+            wireArg.offset = 0;
+            wireArg.setUint8(0, "?".codePointAt(0));
+            wireArg.setUint8(1, "s".codePointAt(0));
+            wireArg.setUint32(2, 0);
+            //when
+            const arg = connection._unmarshallArg(wireArg);
+
+            //then
+            expect(wireArg.offset).toBe(6);
+            expect(arg).toBe(null);
+        });
+
+        //--Array Unmarshalling--//
+
+        it("unmarshalls a non optional array to an array, using the data view wire argument", function () {
+            //given
+            global.WebSocket = function () {
+            };//mock WebSocket
+            wf.Registry = function () {
+            };//mock Registry
+
+            const connection = new wf.Connection("dummyURL");
+            const buffer = new ArrayBuffer(8);
+            const argValue = new Uint32Array(buffer);
+            argValue[0] = 0xF1234567;
+            argValue[1] = 0x1234567F;
+
+            const wireArg = new DataView(new ArrayBuffer(13));//1+4+8
+            const byteArray = new Uint8Array(buffer);
+            wireArg.offset = 0;
+            wireArg.setUint8(0, "a".codePointAt(0));
+            wireArg.setUint32(1, buffer.byteLength);
+            wireArg.setUint8(5, byteArray[0]);
+            wireArg.setUint8(6, byteArray[1]);
+            wireArg.setUint8(7, byteArray[2]);
+            wireArg.setUint8(8, byteArray[3]);
+            wireArg.setUint8(9, byteArray[4]);
+            wireArg.setUint8(10, byteArray[5]);
+            wireArg.setUint8(11, byteArray[6]);
+            wireArg.setUint8(12, byteArray[7]);
+
+            //when
+            const arg = new Uint32Array(connection._unmarshallArg(wireArg));
+
+            //then
+            expect(wireArg.offset).toBe(13);
+            expect(arg[0]).toBe(argValue[0]);
+            expect(arg[1]).toBe(argValue[1]);
+        });
+
+        it("unmarshalls a non empty optional array to an array, using the data view wire argument", function () {
+            //given
+            global.WebSocket = function () {
+            };//mock WebSocket
+            wf.Registry = function () {
+            };//mock Registry
+
+            const connection = new wf.Connection("dummyURL");
+            const buffer = new ArrayBuffer(8);
+            const argValue = new Uint32Array(buffer);
+            argValue[0] = 0xF1234567;
+            argValue[1] = 0x1234567F;
+
+            const wireArg = new DataView(new ArrayBuffer(14));//1+1+4+8
+            const byteArray = new Uint8Array(buffer);
+            wireArg.offset = 0;
+            wireArg.setUint8(0, "?".codePointAt(0));
+            wireArg.setUint8(1, "a".codePointAt(0));
+            wireArg.setUint32(2, buffer.byteLength);
+            wireArg.setUint8(6, byteArray[0]);
+            wireArg.setUint8(7, byteArray[1]);
+            wireArg.setUint8(8, byteArray[2]);
+            wireArg.setUint8(9, byteArray[3]);
+            wireArg.setUint8(10, byteArray[4]);
+            wireArg.setUint8(11, byteArray[5]);
+            wireArg.setUint8(12, byteArray[6]);
+            wireArg.setUint8(13, byteArray[7]);
+
+            //when
+            const arg = new Uint32Array(connection._unmarshallArg(wireArg));
+
+            //then
+            expect(wireArg.offset).toBe(14);
+            expect(arg[0]).toBe(argValue[0]);
+            expect(arg[1]).toBe(argValue[1]);
+        });
+
+        it("unmarshalls an empty optional array to an array, using the data view wire argument", function () {
+            //given
+            global.WebSocket = function () {
+            };//mock WebSocket
+            wf.Registry = function () {
+            };//mock Registry
+
+            const connection = new wf.Connection("dummyURL");
+
+            const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
+            wireArg.offset = 0;
+            wireArg.setUint8(0, "?".codePointAt(0));
+            wireArg.setUint8(1, "a".codePointAt(0));
+            wireArg.setUint32(2, 0);
+
+            //when
+            const arg = connection._unmarshallArg(wireArg);
+
+            //then
+            expect(wireArg.offset).toBe(6);
+            expect(arg).toBe(null);
+        });
     });
 });
