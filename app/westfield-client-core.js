@@ -1,8 +1,12 @@
 //westfield client namespace
 const wfc = {};
 
-//-- js argument to wire format literals: integer (number), float (number), object (wf._Object), new object (wf._Object), string (string), array (ArrayBuffer) --
-
+/**
+ *
+ * @param {Number} arg
+ * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+ * @private
+ */
 wfc._int = function (arg) {
     return {
         value: arg,
@@ -16,6 +20,12 @@ wfc._int = function (arg) {
     };
 };
 
+/**
+ *
+ * @param {Number} arg
+ * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+ * @private
+ */
 wfc._intOptional = function (arg) {
     return {
         value: arg,
@@ -33,6 +43,12 @@ wfc._intOptional = function (arg) {
     }
 };
 
+/**
+ *
+ * @param {Number} arg
+ * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+ * @private
+ */
 wfc._float = function (arg) {
     return {
         value: arg,
@@ -46,6 +62,12 @@ wfc._float = function (arg) {
     };
 };
 
+/**
+ *
+ * @param {Number} arg
+ * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+ * @private
+ */
 wfc._floatOptional = function (arg) {
     return {
         value: arg,
@@ -64,6 +86,12 @@ wfc._floatOptional = function (arg) {
     };
 };
 
+/**
+ *
+ * @param {_Object} arg
+ * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+ * @private
+ */
 wfc._object = function (arg) {
     return {
         value: arg,
@@ -77,6 +105,12 @@ wfc._object = function (arg) {
     };
 };
 
+/**
+ *
+ * @param {_Object} arg
+ * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+ * @private
+ */
 wfc._objectOptional = function (arg) {
     return {
         value: arg,
@@ -94,6 +128,12 @@ wfc._objectOptional = function (arg) {
     };
 };
 
+/**
+ *
+ * @param {_Object} arg
+ * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
+ * @private
+ */
 wfc._newObject = function (arg) {
     return {
         value: arg,
@@ -114,6 +154,12 @@ wfc._newObject = function (arg) {
     };
 };
 
+/**
+ *
+ * @param {_Object} arg
+ * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
+ * @private
+ */
 wfc._newObjectOptional = function (arg) {
     return {
         value: arg,
@@ -145,6 +191,12 @@ wfc._newObjectOptional = function (arg) {
     };
 };
 
+/**
+ *
+ * @param {String} arg
+ * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
+ * @private
+ */
 wfc._string = function (arg) {
     return {
         value: arg,
@@ -162,6 +214,12 @@ wfc._string = function (arg) {
     };
 };
 
+/**
+ *
+ * @param {String} arg
+ * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
+ * @private
+ */
 wfc._stringOptional = function (arg) {
     return {
         value: arg,
@@ -190,6 +248,12 @@ wfc._stringOptional = function (arg) {
     };
 };
 
+/**
+ *
+ * @param {Array} arg
+ * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
+ * @private
+ */
 wfc._array = function (arg) {
     return {
         value: arg,
@@ -208,6 +272,12 @@ wfc._array = function (arg) {
     };
 };
 
+/**
+ *
+ * @param {Array} arg
+ * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
+ * @private
+ */
 wfc._arrayOptional = function (arg) {
     return {
         value: arg,
@@ -237,6 +307,12 @@ wfc._arrayOptional = function (arg) {
     };
 };
 
+/**
+ *
+ * @param {Connection} connection
+ * @param {{name: String, impl: *}} iface
+ * @private
+ */
 wfc._Object = function (connection, iface) {
 
     //--functions--
@@ -270,6 +346,11 @@ wfc._Object = function (connection, iface) {
     });
 };
 
+/**
+ *
+ * @param {String} socketUrl
+ * @constructor
+ */
 wfc.Connection = function (socketUrl) {
 
     //--properties--
@@ -277,34 +358,53 @@ wfc.Connection = function (socketUrl) {
 
     /**
      * Pool of objects that live on this connection.
-     * Key: Number, Value: a subtype of wf._Object with wf._Object._id === Key
+     * Key: Number, Value: a subtype of wfc._Object with wfc._Object._id === Key
      *
      * @type {Map}
      * @private
      */
     this._objects = new Map();
 
-    //argument unmarshalling functions
-
+    /**
+     *
+     * @param {DataView} wireMsg
+     * @returns {*}
+     */
     this["?".codePointAt(0)] = function (wireMsg) {
         const nextTypeAscii = wireMsg.getUint8(wireMsg.offset);
         wireMsg.offset += 1;
         return this[nextTypeAscii](wireMsg, true);
     };
 
+    /**
+     *
+     * @param {DataView} wireMsg
+     * @returns {Number}
+     */
     this["i".codePointAt(0)] = function (wireMsg) {//integer {Number}
         const arg = wireMsg.getInt32(wireMsg.offset);
         wireMsg.offset += 4;
         return arg;
     };
 
+    /**
+     *
+     * @param {DataView} wireMsg
+     * @returns {Number}
+     */
     this["f".codePointAt(0)] = function (wireMsg) {//float {Number}
         const arg = wireMsg.getFloat32(wireMsg.offset);
         wireMsg.offset += 4;
         return arg;
     };
 
-    this["o".codePointAt(0)] = function (wireMsg, optional) {//existing object, subtype of {wf._Object}
+    /**
+     *
+     * @param {DataView} wireMsg
+     * @param {Boolean} optional
+     * @returns {_Object}
+     */
+    this["o".codePointAt(0)] = function (wireMsg, optional) {
         const objectId = wireMsg.getUint32(wireMsg.offset);
         wireMsg.offset += 4;
         if (optional && objectId === 0) {
@@ -314,7 +414,13 @@ wfc.Connection = function (socketUrl) {
         }
     };
 
-    this["n".codePointAt(0)] = function (wireMsg, optional) {///new object, subtype of {wf._Object}
+    /**
+     *
+     * @param {DataView} wireMsg
+     * @param {Boolean} optional
+     * @returns {_Object}
+     */
+    this["n".codePointAt(0)] = function (wireMsg, optional) {
         const newObjectId = wireMsg.getUint32(wireMsg.offset);
         wireMsg.offset += 4;
         if (optional && newObjectId === 0) {
@@ -333,6 +439,12 @@ wfc.Connection = function (socketUrl) {
         }
     };
 
+    /**
+     *
+     * @param {DataView} wireMsg
+     * @param {Boolean} optional
+     * @returns {String}
+     */
     this["s".codePointAt(0)] = function (wireMsg, optional) {//{String}
         const stringSize = wireMsg.getInt32(wireMsg.offset);
         wireMsg.offset += 4;
@@ -346,7 +458,13 @@ wfc.Connection = function (socketUrl) {
         }
     };
 
-    this["a".codePointAt(0)] = function (wireMsg, optional) {//{Uint8Array}
+    /**
+     *
+     * @param {DataView} wireMsg
+     * @param {Boolean} optional
+     * @returns {ArrayBuffer}
+     */
+    this["a".codePointAt(0)] = function (wireMsg, optional) {
         const arraySize = wireMsg.getInt32(wireMsg.offset);
         wireMsg.offset += 4;
         if (optional && arraySize === 0) {
@@ -359,15 +477,23 @@ wfc.Connection = function (socketUrl) {
     };
 
     //--functions--
+    /**
+     *
+     * @param {DataView} wireMsg
+     * @returns {*}
+     * @private
+     */
     this._unmarshallArg = function (wireMsg) {
         const typeAscii = wireMsg.getUint8(wireMsg.offset);
         wireMsg.offset += 1;
         return this[typeAscii](wireMsg);
     };
 
+
     /**
      *
      * @param {ArrayBuffer} message
+     * @returns {{obj: *, opcode: number, args: Array}}
      * @private
      */
     this._unmarshall = function (message) {
@@ -401,6 +527,11 @@ wfc.Connection = function (socketUrl) {
         };
     };
 
+    /**
+     *
+     * @param {ArrayBuffer} event
+     * @private
+     */
     this._onSocketOpen = function (event) {
         //TODO send back-end minimal required browser info (we start with screen size)
         //TODO the first request shall be a json informing the host of our properties.
@@ -426,6 +557,13 @@ wfc.Connection = function (socketUrl) {
         obj[message.opcode].apply(obj, message.args);
     };
 
+    /**
+     *
+     * @param {Number} id
+     * @param {Number} opcode
+     * @param {Array} argsArray
+     * @private
+     */
     this._marshall = function (id, opcode, argsArray) {
         //determine required wire message length
         let size = 4 + 1;  //id+opcode
@@ -470,6 +608,11 @@ wfc.Connection = function (socketUrl) {
         this._socket.close();
     };
 
+    /**
+     *
+     * @param {_Object} object
+     * @private
+     */
     this._registerObject = function (object) {
         /*
          * IDs allocated by the client are in the range [1, 0xfeffffff] while IDs allocated by the server are
