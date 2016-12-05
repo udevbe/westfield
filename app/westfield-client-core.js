@@ -98,12 +98,12 @@ wfc._newObject = function (arg) {
     return {
         value: arg,
         type: "n",
-        size: 4 + 1 + arg.iface.length,//id+length+name
+        size: 4 + 1 + arg.iface.name.length,//id+length+name
         optional: false,
         _marshallArg: function (dataView) {
             dataView.setUint32(dataView.offset, this.value._id);
             dataView.offset += 4;
-            const objType = this.value.iface;
+            const objType = this.value.iface.name;
             dataView.setUint8(dataView.offset, objType.length);
             dataView.offset += 1;
             for (var i = 0, len = objType.length; i < len; i++) {
@@ -122,7 +122,7 @@ wfc._newObjectOptional = function (arg) {
             if (arg == null) {
                 return 0;
             } else {
-                return 1 + arg.iface.length;
+                return 1 + arg.iface.name.length;
             }
         })(),//id+length+name
         optional: true,
@@ -133,7 +133,7 @@ wfc._newObjectOptional = function (arg) {
             } else {
                 dataView.setUint32(dataView.offset, this.value._id);
                 dataView.offset += 4;
-                const objType = this.value.iface;
+                const objType = this.value.iface.name;
                 dataView.setUint8(dataView.offset, objType.length);
                 dataView.offset += 1;
                 for (var i = 0, len = objType.length; i < len; i++) {
@@ -395,7 +395,7 @@ wfc.Connection = function (socketUrl) {
         //TODO send back-end minimal required browser info (we start with screen size)
         //TODO the first request shall be a json informing the host of our properties.
         //all subsequent message will be in the binary wire format.
-        socket.send(JSON.stringify({
+        this._socket.send(JSON.stringify({
             id: "client1"
         }));
     };
@@ -415,15 +415,6 @@ wfc.Connection = function (socketUrl) {
         message.obj[message.opcode](message.args);
     };
 
-    this._setupSocket = function (socket) {
-        socket.onopen = this._onSocketOpen;
-        socket.onclose = this._onSocketClose;
-        socket.onerror = this._onSocketError;
-        socket.onmessage = this._onSocketMessage;
-
-        return socket;
-    };
-
     this._marshall = function (id, opcode, argsArray) {
         //determine required wire message length
         let size = 4 + 1;  //id+opcode
@@ -440,9 +431,9 @@ wfc.Connection = function (socketUrl) {
         wireMsgView.offset = 0;
 
         //write actual wire message
-        wireMsgView.setUint32(offset, id);//id
+        wireMsgView.setUint32(wireMsgView.offset, id);//id
         wireMsgView.offset += 4;
-        wireMsgView.setUint8(offset, opcode);//opcode
+        wireMsgView.setUint8(wireMsgView.offset, opcode);//opcode
         wireMsgView.offset += 1;
 
         argsArray.forEach(function (arg) {
@@ -455,7 +446,7 @@ wfc.Connection = function (socketUrl) {
             arg._marshallArg(wireMsgView); //write actual argument value to buffer
         });
 
-        socket.send(wireMsgBuffer);
+        this._socket.send(wireMsgBuffer);
     };
 
     /**
@@ -465,7 +456,7 @@ wfc.Connection = function (socketUrl) {
         this._objects.values().slice().forEach(function (object) {
             object.delete();
         });
-        socket.close();
+        this._socket.close();
     };
 
     this._registerObject = function (object) {
@@ -479,7 +470,11 @@ wfc.Connection = function (socketUrl) {
     };
 
     //--constructor--
-    const socket = this._setupSocket(new WebSocket(socketUrl, "westfield"));
+    this._socket = new WebSocket(socketUrl, "westfield");
+    this._socket.onopen = this._onSocketOpen;
+    this._socket.onclose = this._onSocketClose;
+    this._socket.onerror = this._onSocketError;
+    this._socket.onmessage = this._onSocketMessage;
     //registry will be defined by the protocol generator
     this.registry = new wfc.Registry();
     this._registerObject(this.registry);
