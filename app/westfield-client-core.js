@@ -278,81 +278,85 @@ wfc.Connection = function (socketUrl) {
      */
     this._objects = new Map();
 
+    //argument unmarshalling functions
+
+    this["?".codePointAt(0)] = function (wireMsg) {
+        const nextTypeAscii = wireMsg.getUint8(wireMsg.offset);
+        wireMsg.offset += 1;
+        return this[nextTypeAscii](wireMsg, true);
+    };
+
+    this["i".codePointAt(0)] = function (wireMsg) {//integer {Number}
+        const arg = wireMsg.getInt32(wireMsg.offset);
+        wireMsg.offset += 4;
+        return arg;
+    };
+
+    this["f".codePointAt(0)] = function (wireMsg) {//float {Number}
+        const arg = wireMsg.getFloat32(wireMsg.offset);
+        wireMsg.offset += 4;
+        return arg;
+    };
+
+    this["o".codePointAt(0)] = function (wireMsg, optional) {//existing object, subtype of {wf._Object}
+        const objectId = wireMsg.getUint32(wireMsg.offset);
+        wireMsg.offset += 4;
+        if (optional && objectId === 0) {
+            return null;
+        } else {
+            return this._objects.get(objectId);
+        }
+    };
+
+    this["n".codePointAt(0)] = function (wireMsg, optional) {///new object, subtype of {wf._Object}
+        const newObjectId = wireMsg.getUint32(wireMsg.offset);
+        wireMsg.offset += 4;
+        if (optional && newObjectId === 0) {
+            return null;
+        } else {
+            const typeNameSize = wireMsg.getUint8(wireMsg.offset);
+            wireMsg.offset += 1;
+            const byteArray = new Uint8Array(wireMsg.buffer, wireMsg.offset, typeNameSize);
+            wireMsg.offset += typeNameSize;
+
+            const type = String.fromCharCode.apply(null, byteArray);
+            const newObject = new wfc[type](this);
+            newObject._id = newObjectId;
+            this._objects.set(newObject._id, newObject);
+            return newObject;
+        }
+    };
+
+    this["s".codePointAt(0)] = function (wireMsg, optional) {//{String}
+        const stringSize = wireMsg.getInt32(wireMsg.offset);
+        wireMsg.offset += 4;
+        if (optional && stringSize === 0) {
+            return null;
+        }
+        else {
+            const byteArray = new Uint8Array(wireMsg.buffer, wireMsg.offset, stringSize);
+            wireMsg.offset += stringSize;
+            return String.fromCharCode.apply(null, byteArray);
+        }
+    };
+
+    this["a".codePointAt(0)] = function (wireMsg, optional) {//{Uint8Array}
+        const arraySize = wireMsg.getInt32(wireMsg.offset);
+        wireMsg.offset += 4;
+        if (optional && arraySize === 0) {
+            return null;
+        } else {
+            const arg = wireMsg.buffer.slice(wireMsg.offset, wireMsg.offset + arraySize);
+            wireMsg.offset += arraySize;
+            return arg;
+        }
+    };
+
     //--functions--
     this._unmarshallArg = function (wireMsg) {
-        let typeAscii = wireMsg.getUint8(wireMsg.offset);
+        const typeAscii = wireMsg.getUint8(wireMsg.offset);
         wireMsg.offset += 1;
-
-        const optional = String.fromCharCode(typeAscii) === "?";
-        if (optional) {
-            typeAscii = wireMsg.getUint8(wireMsg.offset);
-            wireMsg.offset += 1;
-        }
-
-        let arg = null;
-        switch (String.fromCharCode(typeAscii)) {
-            //TODO int64 (long)
-            //TODO float64 (double)
-            case "i"://integer {Number}
-                arg = wireMsg.getInt32(wireMsg.offset);
-                wireMsg.offset += 4;
-                break;
-            case "f"://float {Number}
-                arg = wireMsg.getFloat32(wireMsg.offset);
-                wireMsg.offset += 4;
-                break;
-            case "o"://existing object, subtype of {wf._Object}
-                const objectId = wireMsg.getUint32(wireMsg.offset);
-                wireMsg.offset += 4;
-                if (optional && objectId === 0) {
-                    arg = null;
-                } else {
-                    arg = this._objects.get(objectId);
-                }
-                break;
-            case "n":///new object, subtype of {wf._Object}
-                const newObjectId = wireMsg.getUint32(wireMsg.offset);
-                wireMsg.offset += 4;
-                if (optional && newObjectId === 0) {
-                    arg = null;
-                } else {
-                    const typeNameSize = wireMsg.getUint8(wireMsg.offset);
-                    wireMsg.offset += 1;
-                    const byteArray = new Uint8Array(wireMsg.buffer, wireMsg.offset, typeNameSize);
-                    wireMsg.offset += typeNameSize;
-
-                    const type = String.fromCharCode.apply(null, byteArray);
-                    const newObject = new wfc[type](this);
-                    newObject._id = newObjectId;
-                    this._objects.set(newObject._id, newObject);
-                    arg = newObject;
-                }
-                break;
-            case "s"://{String}
-                const stringSize = wireMsg.getInt32(wireMsg.offset);
-                wireMsg.offset += 4;
-                if (optional && stringSize === 0) {
-                    arg = null;
-                }
-                else {
-                    const byteArray = new Uint8Array(wireMsg.buffer, wireMsg.offset, stringSize);
-                    arg = String.fromCharCode.apply(null, byteArray);
-                    wireMsg.offset += stringSize;
-                }
-                break;
-            case "a"://{Uint8Array}
-                const arraySize = wireMsg.getInt32(wireMsg.offset);
-                wireMsg.offset += 4;
-                if (optional && arraySize === 0) {
-                    arg = null;
-                } else {
-                    arg = wireMsg.buffer.slice(wireMsg.offset, wireMsg.offset + arraySize);
-                    wireMsg.offset += arraySize;
-                }
-                break;
-        }
-
-        return arg;
+        return this[typeAscii](wireMsg);
     };
 
     /**

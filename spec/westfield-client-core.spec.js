@@ -961,7 +961,7 @@ describe("westfield-client-core", function () {
             jasmine.addMatchers(customMatchers);
 
             expect(connection._socket.send).toHaveBeenCalled();
-            expect(connection._socket.send.calls.mostRecent().args[0]).toBeBlobEqual(wireMsgBuffer)
+            expect(connection._socket.send.calls.mostRecent().args[0]).toBeBlobEqual(wireMsgBuffer);
         });
     });
 });
