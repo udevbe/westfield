@@ -260,8 +260,14 @@ wfc._Object = function (connection, iface) {
     };
 
     //--constructor--
-    this._connection = connection;
-    this.iface = iface;
+    Object.defineProperty(this, "_connection", {
+        value: connection,
+        writable: false
+    });
+    Object.defineProperty(this, "iface", {
+        value: iface,
+        writable: false
+    });
 };
 
 wfc.Connection = function (socketUrl) {
@@ -416,7 +422,8 @@ wfc.Connection = function (socketUrl) {
         //TODO the first response shall be a json informing us of the host's properties.
         //all subsequent message will be in the binary wire format.
         const message = this._unmarshall(event);
-        message.obj[message.opcode](message.args);
+        const obj = message.obj;
+        obj[message.opcode].apply(obj, message.args);
     };
 
     this._marshall = function (id, opcode, argsArray) {

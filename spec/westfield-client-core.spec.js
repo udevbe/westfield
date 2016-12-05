@@ -1,6 +1,38 @@
 const wf = require('../app/westfield-client-core.js');
 
 describe("westfield-client-core", function () {
+
+    const customMatchers = {
+        toBeBlobEqual: function (util, customEqualityTesters) {
+            return {
+                compare: function (buf1, buf2) {
+                    return {
+                        pass: (function () {
+                            if (buf1.byteLength != buf2.byteLength) {
+                                return false;
+                            }
+
+                            const dv1 = new Uint8Array(buf1);
+                            const dv2 = new Uint8Array(buf2);
+
+                            for (let i = 0; i < buf1.byteLength; i++) {
+                                if (dv1[i] != dv2[i]) {
+                                    return false;
+                                }
+                            }
+
+                            return true;
+                        })()
+                    }
+                }
+            };
+        }
+    };
+
+    beforeEach(function () {
+        jasmine.addMatchers(customMatchers);
+    });
+
     describe("argument marshalling", function () {
 
         //--Integer marshalling --//
@@ -858,14 +890,14 @@ describe("westfield-client-core", function () {
             connection._socket.send = jasmine.createSpy('mock send');
 
             const objectid = 123;
-            const opcode = 456;
+            const opcode = 255;
             const intArg = 789;
             const floatArg = 0.123;
             const objectArg = new wf._Object(connection, {name: "objectItf"});
             objectArg._id = 321;
             const newObjectItfName = "newObjectItf";
             const newObjectArg = new wf._Object(connection, {name: newObjectItfName});
-            objectArg._id = 654;
+            newObjectArg._id = 654;
             const stringArg = "lorum ipsum";
             const bufferLength = 8;
             const buffer = new ArrayBuffer(bufferLength);
@@ -962,6 +994,111 @@ describe("westfield-client-core", function () {
 
             expect(connection._socket.send).toHaveBeenCalled();
             expect(connection._socket.send.calls.mostRecent().args[0]).toBeBlobEqual(wireMsgBuffer);
+        });
+    });
+
+    describe("method call unmarshalling", function () {
+        it("unmarshalls method call with all possible argument types", function () {
+            //given
+            global.WebSocket = function (url, protocol) {
+            };//mock WebSocket
+
+            wf.Registry = function () {
+            };//mock Registry
+
+            const connection = new wf.Connection("dummyURL");
+
+            const objectid = 123;
+            const opcode = 255;
+            const intArg = 789;
+            const floatArg = 0.123;
+            const objectArgId = 321;
+            const newObjectItfName = "newObjectItf";
+            const newObjectArgId = 654;
+            const stringArg = "lorum ipsum";
+            const bufferLength = 8;
+            const buffer = new ArrayBuffer(bufferLength);
+            const arrayArg = new Uint32Array(buffer);
+            arrayArg[0] = 0xF1234567;
+            arrayArg[1] = 0x1234567F;
+
+            const targetObject = new wf._Object(connection, {
+                name: "dummyObject"
+            });
+            targetObject[opcode] = jasmine.createSpy('mock object function');
+            targetObject._id = objectid;
+            connection._objects.set(objectid, targetObject);
+
+            const objectArg = new wf._Object(connection, {name: "objectItf"});
+            objectArg._id = objectArgId;
+            connection._objects.set(objectArgId, objectArg);
+
+            wf.newObjectItf = function (connection) {
+                wf._Object.call(this, connection, {
+                    name: "newObjectItf"
+                });
+            };
+            wf.newObjectItf.prototype = wf._Object;
+
+            const wireMsgBuffer = new ArrayBuffer(4 + 1 + 1 + 4 + 1 + 4 + 1 + 4 + 1 + 4 + 1 + newObjectItfName.length + 1 + 4 + stringArg.length + 1 + 4 + buffer.byteLength);
+            const wireDataView = new DataView(wireMsgBuffer);
+            let offset = 0;
+            wireDataView.setUint32(offset, objectid);
+            offset += 4;
+            wireDataView.setUint8(offset, opcode);
+            offset += 1;
+            wireDataView.setUint8(offset, "i".codePointAt(0));
+            offset += 1;
+            wireDataView.setInt32(offset, intArg);
+            offset += 4;
+            wireDataView.setUint8(offset, "f".codePointAt(0));
+            offset += 1;
+            wireDataView.setFloat32(offset, floatArg);
+            offset += 4;
+            wireDataView.setUint8(offset, "o".codePointAt(0));
+            offset += 1;
+            wireDataView.setUint32(offset, objectArgId);
+            offset += 4;
+            wireDataView.setUint8(offset, "n".codePointAt(0));
+            offset += 1;
+            wireDataView.setUint32(offset, newObjectArgId);
+            offset += 4;
+            wireDataView.setUint8(offset, newObjectItfName.length);
+            offset += 1;
+            for (let i = 0, len = newObjectItfName.length; i < len; i++) {
+                wireDataView.setUint8(offset, newObjectItfName[i].codePointAt(0));
+                offset += 1;
+            }
+            wireDataView.setUint8(offset, "s".codePointAt(0));
+            offset += 1;
+            wireDataView.setUint32(offset, stringArg.length);
+            offset += 4;
+            for (let i = 0, len = stringArg.length; i < len; i++) {
+                wireDataView.setUint8(offset, stringArg[i].codePointAt(0));
+                offset += 1;
+            }
+            wireDataView.setUint8(offset, "a".codePointAt(0));
+            offset += 1;
+            wireDataView.setUint32(offset, bufferLength);
+            offset += 4;
+            let bufferBlob = new Uint8Array(buffer);
+            for (let i = 0; i < bufferLength; i++) {
+                wireDataView.setUint8(offset, bufferBlob[i]);
+                offset += 1;
+            }
+
+            //when
+            connection._onSocketMessage(wireMsgBuffer);
+
+            //then
+            expect(targetObject[opcode]).toHaveBeenCalled();
+            expect(targetObject[opcode].calls.mostRecent().args[0]).toEqual(intArg);
+            expect(targetObject[opcode].calls.mostRecent().args[1]).toBeCloseTo(floatArg);
+            expect(targetObject[opcode].calls.mostRecent().args[2]).toEqual(objectArg);
+            expect(targetObject[opcode].calls.mostRecent().args[3]._id).toEqual(newObjectArgId);
+            expect(targetObject[opcode].calls.mostRecent().args[3].iface.name).toEqual(newObjectItfName);
+            expect(targetObject[opcode].calls.mostRecent().args[4]).toEqual(stringArg);
+            expect(targetObject[opcode].calls.mostRecent().args[5]).toBeBlobEqual(buffer);
         });
     });
 });
