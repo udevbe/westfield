@@ -186,7 +186,7 @@ describe("westfield-client-core", function () {
             dataView.offset = 2;
             const objectId = 0xfffe1234;
             const iface = {name: "Dummy"};
-            const argValue = new wf._Object(null, iface);
+            const argValue = new wf.WObject(null, iface);
             argValue._id = objectId;
             const arg = wf._newObject(argValue);
 
@@ -210,7 +210,7 @@ describe("westfield-client-core", function () {
             dataView.offset = 2;
             const objectId = 0xfffe1234;
             const iface = {name: "Dummy"};
-            const argValue = new wf._Object(null, iface);
+            const argValue = new wf.WObject(null, iface);
             argValue._id = objectId;
             const arg = wf._newObjectOptional(argValue);
 
@@ -381,7 +381,7 @@ describe("westfield-client-core", function () {
             };//mock WebSocket
             wf.Registry = function () {
             };//mock Registry
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
 
             const wireArg = new DataView(new ArrayBuffer(5));//1+4
             wireArg.offset = 0;
@@ -403,7 +403,7 @@ describe("westfield-client-core", function () {
             };//mock WebSocket
             wf.Registry = function () {
             };//mock Registry
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
 
             const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
             wireArg.offset = 0;
@@ -426,7 +426,7 @@ describe("westfield-client-core", function () {
             };//mock WebSocket
             wf.Registry = function () {
             };//mock Registry
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
 
             const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
             wireArg.offset = 0;
@@ -451,7 +451,7 @@ describe("westfield-client-core", function () {
             };//mock WebSocket
             wf.Registry = function () {
             };//mock Registry
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
 
             const wireArg = new DataView(new ArrayBuffer(5));//1+4
             wireArg.offset = 0;
@@ -473,7 +473,7 @@ describe("westfield-client-core", function () {
             };//mock WebSocket
             wf.Registry = function () {
             };//mock Registry
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
 
             const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
             wireArg.offset = 0;
@@ -496,7 +496,7 @@ describe("westfield-client-core", function () {
             };//mock WebSocket
             wf.Registry = function () {
             };//mock Registry
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
 
             const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
             wireArg.offset = 0;
@@ -522,7 +522,7 @@ describe("westfield-client-core", function () {
             wf.Registry = function () {
             };//mock Registry
 
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
             connection._objects = new Map();
             const objectId = 1234567;
             connection._objects.set(objectId, {_id: objectId});
@@ -547,7 +547,7 @@ describe("westfield-client-core", function () {
             wf.Registry = function () {
             };//mock Registry
 
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
             connection._objects = new Map();
             const objectId = 1234567;
             connection._objects.set(objectId, {_id: objectId});
@@ -573,7 +573,7 @@ describe("westfield-client-core", function () {
             wf.Registry = function () {
             };//mock Registry
 
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
             const objectId = 0;
 
             const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
@@ -599,7 +599,7 @@ describe("westfield-client-core", function () {
             wf.Registry = function () {
             };//mock Registry
 
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
             connection._objects = new Map();
             const objectId = 1234567;
             const objectType = "Dummy";
@@ -632,7 +632,7 @@ describe("westfield-client-core", function () {
             wf.Registry = function () {
             };//mock Registry
 
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
             connection._objects = new Map();
             const objectId = 1234567;
             const objectType = "Dummy";
@@ -666,7 +666,7 @@ describe("westfield-client-core", function () {
             wf.Registry = function () {
             };//mock Registry
 
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
             connection._objects = new Map();
             const objectId = 0;
 
@@ -693,7 +693,7 @@ describe("westfield-client-core", function () {
             wf.Registry = function () {
             };//mock Registry
 
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
 
             const argValue = "lorem ipsum";
             const wireArg = new DataView(new ArrayBuffer(16));//1+4+11
@@ -727,7 +727,7 @@ describe("westfield-client-core", function () {
             wf.Registry = function () {
             };//mock Registry
 
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
 
             const argValue = "lorem ipsum";
             const wireArg = new DataView(new ArrayBuffer(17));//1+1+4+11
@@ -762,7 +762,7 @@ describe("westfield-client-core", function () {
             wf.Registry = function () {
             };//mock Registry
 
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
 
             const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
             wireArg.offset = 0;
@@ -786,7 +786,7 @@ describe("westfield-client-core", function () {
             wf.Registry = function () {
             };//mock Registry
 
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
             const buffer = new ArrayBuffer(8);
             const argValue = new Uint32Array(buffer);
             argValue[0] = 0xF1234567;
@@ -822,7 +822,7 @@ describe("westfield-client-core", function () {
             wf.Registry = function () {
             };//mock Registry
 
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
             const buffer = new ArrayBuffer(8);
             const argValue = new Uint32Array(buffer);
             argValue[0] = 0xF1234567;
@@ -859,7 +859,7 @@ describe("westfield-client-core", function () {
             wf.Registry = function () {
             };//mock Registry
 
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
 
             const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
             wireArg.offset = 0;
@@ -886,17 +886,17 @@ describe("westfield-client-core", function () {
             wf.Registry = function () {
             };//mock Registry
 
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
             connection._socket.send = jasmine.createSpy('mock send');
 
             const objectid = 123;
             const opcode = 255;
             const intArg = 789;
             const floatArg = 0.123;
-            const objectArg = new wf._Object(connection, {name: "objectItf"});
+            const objectArg = new wf.WObject(connection, {name: "objectItf"});
             objectArg._id = 321;
             const newObjectItfName = "newObjectItf";
-            const newObjectArg = new wf._Object(connection, {name: newObjectItfName});
+            const newObjectArg = new wf.WObject(connection, {name: newObjectItfName});
             newObjectArg._id = 654;
             const stringArg = "lorum ipsum";
             const bufferLength = 8;
@@ -1006,7 +1006,7 @@ describe("westfield-client-core", function () {
             wf.Registry = function () {
             };//mock Registry
 
-            const connection = new wf.Connection("dummyURL");
+            const connection = new wf.WConnection("dummyURL");
 
             const objectid = 123;
             const opcode = 255;
@@ -1022,23 +1022,24 @@ describe("westfield-client-core", function () {
             arrayArg[0] = 0xF1234567;
             arrayArg[1] = 0x1234567F;
 
-            const targetObject = new wf._Object(connection, {
+            const targetObject = new wf.WObject(connection, {
                 name: "dummyObject"
             });
             targetObject[opcode] = jasmine.createSpy('mock object function');
             targetObject._id = objectid;
             connection._objects.set(objectid, targetObject);
 
-            const objectArg = new wf._Object(connection, {name: "objectItf"});
+            const objectArg = new wf.WObject(connection, {name: "objectItf"});
             objectArg._id = objectArgId;
             connection._objects.set(objectArgId, objectArg);
 
-            wf.newObjectItf = function (connection) {
-                wf._Object.call(this, connection, {
-                    name: "newObjectItf"
-                });
+            wf.newObjectItf = class newObjectItf extends wf.WObject {
+                constructor(connection) {
+                    super(connection, {
+                        name: "newObjectItf"
+                    });
+                }
             };
-            wf.newObjectItf.prototype = wf._Object;
 
             const wireMsgBuffer = new ArrayBuffer(4 + 1 + 1 + 4 + 1 + 4 + 1 + 4 + 1 + 4 + 1 + newObjectItfName.length + 1 + 4 + stringArg.length + 1 + 4 + buffer.byteLength);
             const wireDataView = new DataView(wireMsgBuffer);

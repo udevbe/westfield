@@ -88,7 +88,7 @@ wfc._floatOptional = function (arg) {
 
 /**
  *
- * @param {_Object} arg
+ * @param {WObject} arg
  * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
  * @private
  */
@@ -107,7 +107,7 @@ wfc._object = function (arg) {
 
 /**
  *
- * @param {_Object} arg
+ * @param {WObject} arg
  * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
  * @private
  */
@@ -130,7 +130,7 @@ wfc._objectOptional = function (arg) {
 
 /**
  *
- * @param {_Object} arg
+ * @param {WObject} arg
  * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
  * @private
  */
@@ -156,7 +156,7 @@ wfc._newObject = function (arg) {
 
 /**
  *
- * @param {_Object} arg
+ * @param {WObject} arg
  * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
  * @private
  */
@@ -309,21 +309,20 @@ wfc._arrayOptional = function (arg) {
 
 /**
  *
- * @param {Connection} connection
+ * @param {WConnection} connection
  * @param {{name: String, impl: *}} iface
  * @private
  */
-wfc._Object = function (connection, iface) {
+wfc.WObject = class {
 
-    //--functions--
     /**
      * Deletes this object from the local pool of objects and notify the remote about this object's deletion.
      */
-    this.delete = function () {
+    delete() {
         this._connection._objects.remove(this._id);
         this._connection._marshall(this._id, 0, []);//opcode 0 is reserved for deletion
         delete this._id;
-    };
+    }
 
     /**
      * Post an error to the remote.
@@ -331,19 +330,20 @@ wfc._Object = function (connection, iface) {
      * @param {Number} errorCode an integer error code
      * @param {String} errorMsg the error message
      */
-    this.postError = function (errorCode, errorMsg) {
+    postError(errorCode, errorMsg) {
         this._connection._marshall(this._id, 255, [wfc._int(errorCode), wfc._string(errorMsg)]);//opcode 255 is reserved for error
-    };
+    }
 
-    //--constructor--
-    Object.defineProperty(this, "_connection", {
-        value: connection,
-        writable: false
-    });
-    Object.defineProperty(this, "iface", {
-        value: iface,
-        writable: false
-    });
+    constructor(connection, iface) {
+        Object.defineProperty(this, "_connection", {
+            value: connection,
+            writable: false
+        });
+        Object.defineProperty(this, "iface", {
+            value: iface,
+            writable: false
+        });
+    }
 };
 
 /**
@@ -351,60 +351,48 @@ wfc._Object = function (connection, iface) {
  * @param {String} socketUrl
  * @constructor
  */
-wfc.Connection = function (socketUrl) {
-
-    //--properties--
-    let nextId = 1;
-
-    /**
-     * Pool of objects that live on this connection.
-     * Key: Number, Value: a subtype of wfc._Object with wfc._Object._id === Key
-     *
-     * @type {Map}
-     * @private
-     */
-    this._objects = new Map();
+wfc.WConnection = class {
 
     /**
      *
      * @param {DataView} wireMsg
      * @returns {*}
      */
-    this["?".codePointAt(0)] = function (wireMsg) {
+    ["?".codePointAt(0)](wireMsg) {
         const nextTypeAscii = wireMsg.getUint8(wireMsg.offset);
         wireMsg.offset += 1;
         return this[nextTypeAscii](wireMsg, true);
-    };
+    }
 
     /**
      *
      * @param {DataView} wireMsg
      * @returns {Number}
      */
-    this["i".codePointAt(0)] = function (wireMsg) {//integer {Number}
+    ["i".codePointAt(0)](wireMsg) {//integer {Number}
         const arg = wireMsg.getInt32(wireMsg.offset);
         wireMsg.offset += 4;
         return arg;
-    };
+    }
 
     /**
      *
      * @param {DataView} wireMsg
      * @returns {Number}
      */
-    this["f".codePointAt(0)] = function (wireMsg) {//float {Number}
+    ["f".codePointAt(0)](wireMsg) {//float {Number}
         const arg = wireMsg.getFloat32(wireMsg.offset);
         wireMsg.offset += 4;
         return arg;
-    };
+    }
 
     /**
      *
      * @param {DataView} wireMsg
      * @param {Boolean} optional
-     * @returns {_Object}
+     * @returns {WObject}
      */
-    this["o".codePointAt(0)] = function (wireMsg, optional) {
+    ["o".codePointAt(0)](wireMsg, optional) {
         const objectId = wireMsg.getUint32(wireMsg.offset);
         wireMsg.offset += 4;
         if (optional && objectId === 0) {
@@ -412,15 +400,15 @@ wfc.Connection = function (socketUrl) {
         } else {
             return this._objects.get(objectId);
         }
-    };
+    }
 
     /**
      *
      * @param {DataView} wireMsg
      * @param {Boolean} optional
-     * @returns {_Object}
+     * @returns {WObject}
      */
-    this["n".codePointAt(0)] = function (wireMsg, optional) {
+    ["n".codePointAt(0)](wireMsg, optional) {
         const newObjectId = wireMsg.getUint32(wireMsg.offset);
         wireMsg.offset += 4;
         if (optional && newObjectId === 0) {
@@ -437,7 +425,7 @@ wfc.Connection = function (socketUrl) {
             this._objects.set(newObject._id, newObject);
             return newObject;
         }
-    };
+    }
 
     /**
      *
@@ -445,7 +433,7 @@ wfc.Connection = function (socketUrl) {
      * @param {Boolean} optional
      * @returns {String}
      */
-    this["s".codePointAt(0)] = function (wireMsg, optional) {//{String}
+    ["s".codePointAt(0)](wireMsg, optional) {//{String}
         const stringSize = wireMsg.getInt32(wireMsg.offset);
         wireMsg.offset += 4;
         if (optional && stringSize === 0) {
@@ -456,7 +444,7 @@ wfc.Connection = function (socketUrl) {
             wireMsg.offset += stringSize;
             return String.fromCharCode.apply(null, byteArray);
         }
-    };
+    }
 
     /**
      *
@@ -464,7 +452,7 @@ wfc.Connection = function (socketUrl) {
      * @param {Boolean} optional
      * @returns {ArrayBuffer}
      */
-    this["a".codePointAt(0)] = function (wireMsg, optional) {
+    ["a".codePointAt(0)](wireMsg, optional) {
         const arraySize = wireMsg.getInt32(wireMsg.offset);
         wireMsg.offset += 4;
         if (optional && arraySize === 0) {
@@ -474,20 +462,19 @@ wfc.Connection = function (socketUrl) {
             wireMsg.offset += arraySize;
             return arg;
         }
-    };
+    }
 
-    //--functions--
     /**
      *
      * @param {DataView} wireMsg
      * @returns {*}
      * @private
      */
-    this._unmarshallArg = function (wireMsg) {
+    _unmarshallArg(wireMsg) {
         const typeAscii = wireMsg.getUint8(wireMsg.offset);
         wireMsg.offset += 1;
         return this[typeAscii](wireMsg);
-    };
+    }
 
 
     /**
@@ -496,7 +483,7 @@ wfc.Connection = function (socketUrl) {
      * @returns {{obj: *, opcode: number, args: Array}}
      * @private
      */
-    this._unmarshall = function (message) {
+    _unmarshall(message) {
         //example wire message
         //[00 00 00 03] [01] [6e 00 07 03 66 6f 6f] [69 00 00 04 00] [61 00 00 00 03 ef fa 7e]
         //translates to:
@@ -525,37 +512,37 @@ wfc.Connection = function (socketUrl) {
             opcode: opcode,
             args: args
         };
-    };
+    }
 
     /**
      *
      * @param {ArrayBuffer} event
      * @private
      */
-    this._onSocketOpen = function (event) {
+    _onSocketOpen(event) {
         //TODO send back-end minimal required browser info (we start with screen size)
         //TODO the first request shall be a json informing the host of our properties.
         //all subsequent message will be in the binary wire format.
         this._socket.send(JSON.stringify({
             id: "client1"
         }));
-    };
+    }
 
-    this._onSocketClose = function (event) {
+    _onSocketClose(event) {
 
-    };
+    }
 
-    this._onSocketError = function (event) {
+    _onSocketError(event) {
 
-    };
+    }
 
-    this._onSocketMessage = function (event) {
+    _onSocketMessage(event) {
         //TODO the first response shall be a json informing us of the host's properties.
         //all subsequent message will be in the binary wire format.
         const message = this._unmarshall(event);
         const obj = message.obj;
         obj[message.opcode].apply(obj, message.args);
-    };
+    }
 
     /**
      *
@@ -564,7 +551,7 @@ wfc.Connection = function (socketUrl) {
      * @param {Array} argsArray
      * @private
      */
-    this._marshall = function (id, opcode, argsArray) {
+    _marshall(id, opcode, argsArray) {
         //determine required wire message length
         let size = 4 + 1;  //id+opcode
         argsArray.forEach(function (arg) {
@@ -601,7 +588,7 @@ wfc.Connection = function (socketUrl) {
     /**
      * Close the connection to the remote host. All objects will be deleted before the connection is closed.
      */
-    this.close = function () {
+    close() {
         this._objects.values().slice().forEach(function (object) {
             object.delete();
         });
@@ -610,28 +597,40 @@ wfc.Connection = function (socketUrl) {
 
     /**
      *
-     * @param {_Object} object
+     * @param {WObject} object
      * @private
      */
-    this._registerObject = function (object) {
+    _registerObject(object) {
         /*
          * IDs allocated by the client are in the range [1, 0xfeffffff] while IDs allocated by the server are
          * in the range [0xff000000, 0xffffffff]. The 0 ID is reserved to represent a null or non-existant object
          */
-        object._id = nextId;
+        object._id = this.nextId;
         this._objects.set(object._id, object);
-        nextId++;
+        this.nextId++;
     };
 
-    //--constructor--
-    this._socket = new WebSocket(socketUrl, "westfield");
-    this._socket.onopen = this._onSocketOpen;
-    this._socket.onclose = this._onSocketClose;
-    this._socket.onerror = this._onSocketError;
-    this._socket.onmessage = this._onSocketMessage;
-    //registry will be defined by the protocol generator
-    this.registry = new wfc.Registry();
-    this._registerObject(this.registry);
+    constructor(socketUrl) {
+        this.nextId = 1;
+
+        /**
+         * Pool of objects that live on this connection.
+         * Key: Number, Value: a subtype of wfc._Object with wfc._Object._id === Key
+         *
+         * @type {Map}
+         * @private
+         */
+        this._objects = new Map();
+
+        this._socket = new WebSocket(socketUrl, "westfield");
+        this._socket.onopen = this._onSocketOpen;
+        this._socket.onclose = this._onSocketClose;
+        this._socket.onerror = this._onSocketError;
+        this._socket.onmessage = this._onSocketMessage;
+        //registry will be defined by the protocol generator
+        this.registry = new wfc.Registry();
+        this._registerObject(this.registry);
+    }
 };
 
 //make this module available in both nodejs & browser
