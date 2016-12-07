@@ -88,6 +88,49 @@ wfc._floatOptional = function (arg) {
 
 /**
  *
+ * @param {Number} arg
+ * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+ * @private
+ */
+wfc._double = function (arg) {
+    return {
+        value: arg,
+        type: "d",
+        size: 8,
+        optional: false,
+        _marshallArg: function (dataView) {
+            dataView.setFloat64(dataView.offset, this.value);
+            dataView.offset += this.size;
+        }
+    };
+};
+
+/**
+ *
+ * @param {Number} arg
+ * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+ * @private
+ */
+wfc._doubleOptional = function (arg) {
+    return {
+        value: arg,
+        type: "d",
+        size: 8,
+        optional: true,
+        _marshallArg: function (dataView) {
+            if (arg == null) {
+                dataView.setFloat64(dataView.offset, 0);
+            }
+            else {
+                dataView.setFloat64(dataView.offset, this.value);
+            }
+            dataView.offset += this.size;
+        }
+    };
+};
+
+/**
+ *
  * @param {WObject} arg
  * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
  * @private
@@ -383,6 +426,17 @@ wfc.WConnection = class {
     ["f".codePointAt(0)](wireMsg) {//float {Number}
         const arg = wireMsg.getFloat32(wireMsg.offset);
         wireMsg.offset += 4;
+        return arg;
+    }
+
+    /**
+     *
+     * @param {DataView} wireMsg
+     * @returns {Number}
+     */
+    ["d".codePointAt(0)](wireMsg) {//float {Number}
+        const arg = wireMsg.getFloat64(wireMsg.offset);
+        wireMsg.offset += 8;
         return arg;
     }
 

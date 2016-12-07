@@ -129,6 +129,53 @@ describe("westfield-client-core", function () {
             expect(dataView.getFloat32(2)).toBe(0);
         });
 
+        //--Double marshalling--//
+
+        it("marshalls a number to a non optional 64bit floating point, using the data view offset", function () {
+            //given
+            const dataView = new DataView(new ArrayBuffer(10));
+            dataView.offset = 2;
+            const argValue = 1234567.12345;
+            const arg = wf._double(argValue);
+
+            //when
+            arg._marshallArg(dataView);
+
+            //then
+            expect(dataView.offset).toBe(10);
+            expect(dataView.getFloat64(2).toFixed(5)).toBe(argValue.toFixed(5));
+        });
+
+        it("marshalls a number to an optional 64bit floating point, using the data view offset", function () {
+            //given
+            const dataView = new DataView(new ArrayBuffer(10));
+            dataView.offset = 2;
+            const argValue = 1234567.12345;
+            const arg = wf._doubleOptional(argValue);
+
+            //when
+            arg._marshallArg(dataView);
+
+            //then
+            expect(dataView.offset).toBe(10);
+            expect(dataView.getFloat64(2).toFixed(5)).toBe(argValue.toFixed(5));
+        });
+
+        it("marshalls a null number to an optional 64bit floating, using the data view offset", function () {
+            //given
+            const dataView = new DataView(new ArrayBuffer(10));
+            dataView.offset = 2;
+            const argValue = null;
+            const arg = wf._doubleOptional(argValue);
+
+            //when
+            arg._marshallArg(dataView);
+
+            //then
+            expect(dataView.offset).toBe(10);
+            expect(dataView.getFloat64(2)).toBe(0);
+        });
+
         //--Object marshalling--//
 
         it("marshalls a westfield object to a non optional 32bit integer, using the data view offset", function () {
@@ -1012,6 +1059,7 @@ describe("westfield-client-core", function () {
             const opcode = 255;
             const intArg = 789;
             const floatArg = 0.123;
+            const doubleArg = 0.1234567;
             const objectArgId = 321;
             const newObjectItfName = "newObjectItf";
             const newObjectArgId = 654;
@@ -1041,7 +1089,17 @@ describe("westfield-client-core", function () {
                 }
             };
 
-            const wireMsgBuffer = new ArrayBuffer(4 + 1 + 1 + 4 + 1 + 4 + 1 + 4 + 1 + 4 + 1 + newObjectItfName.length + 1 + 4 + stringArg.length + 1 + 4 + buffer.byteLength);
+            const wireMsgBuffer = new ArrayBuffer(
+                4 + //object id
+                1 + //opcode
+                1 + 4 + //integer
+                1 + 4 + //float
+                1 + 8 + //double
+                1 + 4 + //object
+                1 + 4 + 1 + newObjectItfName.length + //new object
+                1 + 4 + stringArg.length + //string
+                1 + 4 + buffer.byteLength //array
+            );
             const wireDataView = new DataView(wireMsgBuffer);
             let offset = 0;
             wireDataView.setUint32(offset, objectid);
@@ -1056,6 +1114,10 @@ describe("westfield-client-core", function () {
             offset += 1;
             wireDataView.setFloat32(offset, floatArg);
             offset += 4;
+            wireDataView.setUint8(offset, "d".codePointAt(0));
+            offset += 1;
+            wireDataView.setFloat64(offset, doubleArg);
+            offset += 8;
             wireDataView.setUint8(offset, "o".codePointAt(0));
             offset += 1;
             wireDataView.setUint32(offset, objectArgId);
@@ -1095,11 +1157,12 @@ describe("westfield-client-core", function () {
             expect(targetObject[opcode]).toHaveBeenCalled();
             expect(targetObject[opcode].calls.mostRecent().args[0]).toEqual(intArg);
             expect(targetObject[opcode].calls.mostRecent().args[1]).toBeCloseTo(floatArg);
-            expect(targetObject[opcode].calls.mostRecent().args[2]).toEqual(objectArg);
-            expect(targetObject[opcode].calls.mostRecent().args[3]._id).toEqual(newObjectArgId);
-            expect(targetObject[opcode].calls.mostRecent().args[3].iface.name).toEqual(newObjectItfName);
-            expect(targetObject[opcode].calls.mostRecent().args[4]).toEqual(stringArg);
-            expect(targetObject[opcode].calls.mostRecent().args[5]).toBeBlobEqual(buffer);
+            expect(targetObject[opcode].calls.mostRecent().args[2]).toBeCloseTo(doubleArg);
+            expect(targetObject[opcode].calls.mostRecent().args[3]).toEqual(objectArg);
+            expect(targetObject[opcode].calls.mostRecent().args[4]._id).toEqual(newObjectArgId);
+            expect(targetObject[opcode].calls.mostRecent().args[4].iface.name).toEqual(newObjectItfName);
+            expect(targetObject[opcode].calls.mostRecent().args[5]).toEqual(stringArg);
+            expect(targetObject[opcode].calls.mostRecent().args[6]).toBeBlobEqual(buffer);
         });
     });
 });
