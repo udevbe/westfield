@@ -1,1 +1,2 @@
-require('./app/index')
+require('./generator/index')
+

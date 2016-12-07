@@ -5,12 +5,11 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "pretest": "npm install",
     "test": "node ./node_modules/jasmine/bin/jasmine.js"
   },
   "dependencies": {
     "escodegen": "1.8.1",
-    "ws": "1.1.1"
+    "xml2js": "0.4.17"
   },
   "repository": {
     "type": "git",
@@ -20,7 +19,9 @@
     "wayland",
     "html5",
     "compositor",
-    "browser"
+    "browser",
+    "javascript",
+    "ipc"
   ],
   "author": "Erik De Rijcke",
   "license": "AGPL-3.0",
@@ -29,7 +30,7 @@
   },
   "homepage": "https://github.com/Zubnix/westfield#readme",
   "devDependencies": {
-    "jasmine": "^2.5.2",
-    "jasmine-core": "^2.5.2"
+    "jasmine": "2.5.2",
+    "jasmine-core": "2.5.2"
   }
 }

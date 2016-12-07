@@ -1,4 +1,4 @@
-const wf = require('../app/westfield-client-core.js');
+const wf = require('./westfield-client-core.js');
 
 describe("westfield-client-core", function () {
 
