@@ -3,6 +3,7 @@ const util = require('util');
 
 const xml2js = require('xml2js');
 const escodegen = require('escodegen');
+const esprima = require('esprima');
 
 //TODO parse wayland xml & output js that makes use of core library
 const wfg = {};
@@ -19,8 +20,25 @@ wfg.ProtocolParser = class {
 
     }
 
-    _parseInterfaces(jsonProtocol) {
-        //TODO create source file
+    _parseProtocol(jsonProtocol) {
+        const protocolName = jsonProtocol.protocol.$.name;
+        this._sourceFile = util.format("westfield-client-%s.js", protocolName);
+
+        const esprimaOpts = {
+            loc: true,
+        };
+        esprimaOpts.source = this._sourceFile;
+
+        this._escodegenOpts = {
+            sourceMap: true,
+            sourceMapRoot: "/client",
+            sourceMapWithCode: false,
+            sourceContent: undefined, // If set, embedded in source map as code
+        };
+
+        this._esprimaOpts.comments = jsonProtocol.protocol.copyright;
+        const protocolNamespace = esprima.parse("const wfc = {}", this._esprimaOpts);
+
         //TODO process protocol name & header
         jsonProtocol.protocol.interface.forEach(this._parseInterface)
     }
@@ -34,7 +52,7 @@ wfg.ProtocolParser = class {
                 //uncomment to see the protocol as json output
                 //console.log(util.inspect(result, false, null));
 
-                this._parseInterfaces(result);
+                this._parseProtocol(result);
                 console.log('Done');
             });
         });
