@@ -8,8 +8,6 @@
     "test": "node ./node_modules/jasmine/bin/jasmine.js"
   },
   "dependencies": {
-    "esprima": "3.1.2",
-    "escodegen": "1.8.1",
     "xml2js": "0.4.17"
   },
   "repository": {

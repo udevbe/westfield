@@ -2,8 +2,6 @@ const fs = require('fs');
 const util = require('util');
 
 const xml2js = require('xml2js');
-const escodegen = require('escodegen');
-const esprima = require('esprima');
 
 //TODO parse wayland xml & output js that makes use of core library
 const wfg = {};
@@ -17,30 +15,22 @@ wfg.ProtocolParser = class {
         const itfSummary = protocolItf.description[0].$.summary;
 
         console.log(util.format("Processing interface %s v%d", itfName, itfVersion));
-
     }
 
     _parseProtocol(jsonProtocol) {
         const protocolName = jsonProtocol.protocol.$.name;
-        this._sourceFile = util.format("westfield-client-%s.js", protocolName);
+        this._out = fs.createWriteStream(util.format("westfield-client-%s.js", protocolName));
+        this._out.on('open', (fd) => {
+            jsonProtocol.protocol.copyright.forEach((val) => {
+                val.split("\n").forEach((line) => {
+                    this._out.write("//" + line + "\n");
+                });
+            });
 
-        const esprimaOpts = {
-            loc: true,
-        };
-        esprimaOpts.source = this._sourceFile;
+            //TODO namespace object
 
-        this._escodegenOpts = {
-            sourceMap: true,
-            sourceMapRoot: "/client",
-            sourceMapWithCode: false,
-            sourceContent: undefined, // If set, embedded in source map as code
-        };
-
-        this._esprimaOpts.comments = jsonProtocol.protocol.copyright;
-        const protocolNamespace = esprima.parse("const wfc = {}", this._esprimaOpts);
-
-        //TODO process protocol name & header
-        jsonProtocol.protocol.interface.forEach(this._parseInterface)
+            jsonProtocol.protocol.interface.forEach(this._parseInterface);
+        });
     }
 
     parse() {
