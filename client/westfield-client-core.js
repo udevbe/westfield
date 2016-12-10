@@ -354,7 +354,6 @@ wfc._arrayOptional = function (arg) {
  *
  * @param {WConnection} connection
  * @param {{name: String, impl: *}} iface
- * @private
  */
 wfc.WObject = class {
 
@@ -386,6 +385,67 @@ wfc.WObject = class {
             value: iface,
             writable: false
         });
+    }
+};
+
+wfc.WRegistry = class WRegistry extends wfc.WObject {
+    /**
+     * Bind an object to the connection.
+     *
+     * Binds a new, client-created object to the server using the specified name as the identifier.
+     *
+     * @param {Number} name unique numeric name of the object
+     * @param {WObject} id bounded object
+     */
+    bind(name, id) {
+        this._connection._marshall(this._id, 1, [wfc._int(name), wfc._newObject(id)]);
+    }
+
+    constructor(connection) {
+        super(connection, {
+            name: "WRegistry",
+
+            /**
+             * Announce global object.
+             *
+             * Notify the client of global objects.
+             * The event notifies the client that a global object with
+             * the given name is now available, and it implements the
+             * given version of the given interface.
+             *
+             * @param {Number} name numeric name of the global object
+             * @param {string} interface_ interface implemented by the object
+             * @param {Number} version interface version
+             */
+            global(name, interface_, version){
+            },
+
+            /**
+             * Announce removal of global object.
+             *
+             * Notify the client of removed global objects.
+             * This event notifies the client that the global identified
+             * by name is no longer available.  If the client bound to
+             * the global using the bind request, the client should now
+             * destroy that object.
+             *
+             * The object remains valid and requests to the object will be
+             * ignored until the client destroys it, to avoid races between
+             * the global going away and a client sending a request to it.
+             *
+             * @param {Number} name
+             */
+            globalRemove(name){
+            }
+        });
+    }
+
+    [1](name, interface_, version) {
+        this._iface.global(name, interface_, version);
+    }
+
+    [2](name) {
+        this._iface.globalRemove(name);
     }
 };
 
@@ -665,8 +725,6 @@ wfc.WConnection = class {
     };
 
     constructor(socketUrl) {
-        this.nextId = 1;
-
         /**
          * Pool of objects that live on this connection.
          * Key: Number, Value: a subtype of wfc._Object with wfc._Object._id === Key
@@ -681,8 +739,8 @@ wfc.WConnection = class {
         this._socket.onclose = this._onSocketClose;
         this._socket.onerror = this._onSocketError;
         this._socket.onmessage = this._onSocketMessage;
-        //registry will be defined by the protocol generator
-        this.registry = new wfc.Registry();
+        this.registry = new wfc.WRegistry(this);
+        this.nextId = 1;
         this._registerObject(this.registry);
     }
 };
