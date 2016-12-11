@@ -7,13 +7,87 @@ const wfg = {};
 
 wfg.ProtocolParser = class {
 
-    _parseItfRequest(out, itfRequest, opcode) {
+    //TODO remove
+    ["uint"](argName, optional) {
+        return {
+            jsType: optional ? "?Number" : "Number",
+            marshall: optional ? util.format("wfc._intOptional(%s)", argName) : util.format("wfc._int(%s)", argName)
+        };
+    }
+
+    //TODO remove
+    ["fixed"](argName, optional) {
+        return {
+            jsType: optional ? "?Number" : "Number",
+            marshall: optional ? util.format("wfc._floatOptional(%s)", argName) : util.format("wfc._float(%s)", argName)
+        };
+    }
+
+    //TODO remove
+    ["fd"](argName, optional) {
+        return {
+            jsType: optional ? "?Number" : "Number",
+            marshall: optional ? util.format("wfc._intOptional(%s)", argName) : util.format("wfc._int(%s)", argName)
+        };
+    }
+
+
+    ["int"](argName, optional) {
+        return {
+            jsType: optional ? "?Number" : "Number",
+            marshall: optional ? util.format("wfc._intOptional(%s)", argName) : util.format("wfc._int(%s)", argName)
+        };
+    }
+
+    ["float"](argName, optional) {
+        return {
+            jsType: optional ? "?Number" : "Number",
+            marshall: optional ? util.format("wfc._floatOptional(%s)", argName) : util.format("wfc._float(%s)", argName)
+        };
+    }
+
+    ["double"](argName, optional) {
+        return {
+            jsType: optional ? "?Number" : "Number",
+            marshall: optional ? util.format("wfc._doubleOptional(%s)", argName) : util.format("wfc._double(%s)", argName)
+        };
+    }
+
+    ["object"](argName, optional) {
+        return {
+            jsType: optional ? "?*" : "*",
+            marshall: optional ? util.format("wfc._doubleOptional(%s)", argName) : util.format("wfc._double(%s)", argName)
+        };
+    }
+
+    ["new_id"](argName, optional) {
+        return {
+            jsType: optional ? "?*" : "*",
+            marshall: optional ? util.format("wfc._doubleOptional(%s)", argName) : util.format("wfc._double(%s)", argName)
+        };
+    }
+
+    ["string"](argName, optional) {
+        return {
+            jsType: optional ? "?string" : "string",
+            marshall: optional ? util.format("wfc._doubleOptional(%s)", argName) : util.format("wfc._double(%s)", argName)
+        };
+    }
+
+    ["array"](argName, optional) {
+        return {
+            jsType: optional ? "?ArrayBuffer" : "ArrayBuffer",
+            marshall: optional ? util.format("wfc._doubleOptional(%s)", argName) : util.format("wfc._double(%s)", argName)
+        };
+    }
+
+    _parseItfRequest(out, itfRequest, opcode, itfVersion) {
         const reqName = itfRequest.$.name;
 
         //function docs
         const description = itfRequest.description;
         description.forEach((val) => {
-            out.write("\t/**\n");
+            out.write("\n\t/**\n");
             if (val.hasOwnProperty("_")) {
                 val._.split("\n").forEach((line) => {
                     out.write("\t *" + line + "\n");
@@ -26,7 +100,10 @@ wfg.ProtocolParser = class {
                 reqArgs.forEach((arg) => {
                     const argDescription = arg.$.summary;
                     const argName = arg.$.name;
-                    out.write(util.format("\t * @param %s %s \n", argName, argDescription));
+                    const argType = arg.$.type;
+
+                    //TODO process if arg is optional
+                    out.write(util.format("\t * @param {%s} %s %s \n", this[argType](argName, false).jsType, argName, argDescription));
                 });
                 out.write("\t *\n");
             }
@@ -47,11 +124,26 @@ wfg.ProtocolParser = class {
                 out.write(argName);
             }
         }
-        out.write("){\n");
+        out.write(") {\n");
         out.write(util.format("\t\tthis._connection._marshall(this._id, %d, [", opcode));
 
         //function args
+        if (itfRequest.hasOwnProperty("arg")) {
+            const reqArgs = itfRequest.arg;
+            for (let i = 0; i < reqArgs.length; i++) {
+                const arg = reqArgs[i];
 
+                const argName = arg.$.name;
+                const argType = arg.$.type;
+
+                if (i !== 0) {
+                    out.write(", ");
+                }
+
+                //TODO process if arg is optional
+                out.write(this[argType](argName, false).marshall);
+            }
+        }
 
         out.write(util.format("]);\n"));
         out.write("\t}\n");
@@ -69,7 +161,7 @@ wfg.ProtocolParser = class {
             //class docs
             const description = protocolItf.description;
             description.forEach((val) => {
-                out.write("/**\n");
+                out.write("\n/**\n");
                 if (val.hasOwnProperty("_")) {
                     val._.split("\n").forEach((line) => {
                         out.write(" *" + line + "\n");
@@ -79,18 +171,22 @@ wfg.ProtocolParser = class {
             });
 
             //class
-            const className = util.format("%sV%d", itfName, i);
             if (i === 1) {
-                out.write(util.format("wfc.%s = class %s extends wfc.WObject {\n", className, className));
+                out.write(util.format("wfc.%s = class %s extends wfc.WObject {\n", itfName, itfName));
             } else {
-                out.write(util.format("wfc.%s = class %s extends wfc.%sV%d {\n", className, className, itfName, i - 1));
+                const className = util.format("%sV%d", itfName, i);
+                if (i === 2) {
+                    out.write(util.format("wfc.%s = class %s extends wfc.%s {\n", className, className, itfName));
+                } else {
+                    out.write(util.format("wfc.%s = class %s extends wfc.%sV%d {\n", className, className, itfName, i - 1));
+                }
             }
 
             //interface can have no requests, so we need to check for it's absence.
             if (protocolItf.hasOwnProperty("request")) {
                 const itfRequests = protocolItf.request;
-                for (let i = 0; i < itfRequests.length; i++) {
-                    this._parseItfRequest(out, itfRequests[i], i + 1);
+                for (let j = 0; j < itfRequests.length; j++) {
+                    this._parseItfRequest(out, itfRequests[j], j + 1, i);
                 }
             }
 
