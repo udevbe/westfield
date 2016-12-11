@@ -5,7 +5,7 @@ const wfc = {};
  *
  * @param {Number} arg
  * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
- * @private
+ *
  */
 wfc._int = function (arg) {
     return {
@@ -24,7 +24,7 @@ wfc._int = function (arg) {
  *
  * @param {Number} arg
  * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
- * @private
+ *
  */
 wfc._intOptional = function (arg) {
     return {
@@ -47,7 +47,7 @@ wfc._intOptional = function (arg) {
  *
  * @param {Number} arg
  * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
- * @private
+ *
  */
 wfc._float = function (arg) {
     return {
@@ -66,7 +66,7 @@ wfc._float = function (arg) {
  *
  * @param {Number} arg
  * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
- * @private
+ *
  */
 wfc._floatOptional = function (arg) {
     return {
@@ -90,7 +90,7 @@ wfc._floatOptional = function (arg) {
  *
  * @param {Number} arg
  * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
- * @private
+ *
  */
 wfc._double = function (arg) {
     return {
@@ -109,7 +109,7 @@ wfc._double = function (arg) {
  *
  * @param {Number} arg
  * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
- * @private
+ *
  */
 wfc._doubleOptional = function (arg) {
     return {
@@ -133,7 +133,7 @@ wfc._doubleOptional = function (arg) {
  *
  * @param {WObject} arg
  * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
- * @private
+ *
  */
 wfc._object = function (arg) {
     return {
@@ -152,7 +152,7 @@ wfc._object = function (arg) {
  *
  * @param {WObject} arg
  * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
- * @private
+ *
  */
 wfc._objectOptional = function (arg) {
     return {
@@ -175,7 +175,7 @@ wfc._objectOptional = function (arg) {
  *
  * @param {WObject} arg
  * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
- * @private
+ *
  */
 wfc._newObject = function (arg) {
     return {
@@ -201,7 +201,7 @@ wfc._newObject = function (arg) {
  *
  * @param {WObject} arg
  * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
- * @private
+ *
  */
 wfc._newObjectOptional = function (arg) {
     return {
@@ -238,7 +238,7 @@ wfc._newObjectOptional = function (arg) {
  *
  * @param {String} arg
  * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
- * @private
+ *
  */
 wfc._string = function (arg) {
     return {
@@ -261,7 +261,7 @@ wfc._string = function (arg) {
  *
  * @param {String} arg
  * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
- * @private
+ *
  */
 wfc._stringOptional = function (arg) {
     return {
@@ -295,7 +295,7 @@ wfc._stringOptional = function (arg) {
  *
  * @param {Array} arg
  * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
- * @private
+ *
  */
 wfc._array = function (arg) {
     return {
@@ -319,7 +319,7 @@ wfc._array = function (arg) {
  *
  * @param {Array} arg
  * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
- * @private
+ *
  */
 wfc._arrayOptional = function (arg) {
     return {
