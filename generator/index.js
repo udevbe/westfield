@@ -56,28 +56,28 @@ wfg.ProtocolParser = class {
     ["object"](argName, optional) {
         return {
             jsType: optional ? "?*" : "*",
-            marshall: optional ? util.format("wfc._doubleOptional(%s)", argName) : util.format("wfc._double(%s)", argName)
+            marshall: optional ? util.format("wfc._objectOptional(%s)", argName) : util.format("wfc._object(%s)", argName)
         };
     }
 
     ["new_id"](argName, optional) {
         return {
             jsType: optional ? "?*" : "*",
-            marshall: optional ? util.format("wfc._doubleOptional(%s)", argName) : util.format("wfc._double(%s)", argName)
+            marshall: optional ? util.format("wfc._newObjectOptional(%s)", argName) : util.format("wfc._newObject(%s)", argName)
         };
     }
 
     ["string"](argName, optional) {
         return {
             jsType: optional ? "?string" : "string",
-            marshall: optional ? util.format("wfc._doubleOptional(%s)", argName) : util.format("wfc._double(%s)", argName)
+            marshall: optional ? util.format("wfc._stringOptional(%s)", argName) : util.format("wfc._string(%s)", argName)
         };
     }
 
     ["array"](argName, optional) {
         return {
             jsType: optional ? "?ArrayBuffer" : "ArrayBuffer",
-            marshall: optional ? util.format("wfc._doubleOptional(%s)", argName) : util.format("wfc._double(%s)", argName)
+            marshall: optional ? util.format("wfc._arrayOptional(%s)", argName) : util.format("wfc._array(%s)", argName)
         };
     }
 
