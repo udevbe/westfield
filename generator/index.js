@@ -1,3 +1,5 @@
+"use strict";
+
 const fs = require('fs');
 const util = require('util');
 
@@ -319,7 +321,12 @@ wfg.ProtocolParser = class {
 }
 
 
-new wfg.ProtocolParser('/usr/share/wayland/wayland.xml').parse();
+const configurationFile = 'generator/config.json';
+const configuration = JSON.parse(fs.readFileSync(configurationFile));
+
+configuration.protocols.forEach((protocol) => {
+    new wfg.ProtocolParser(protocol).parse();
+});
 
 
 
