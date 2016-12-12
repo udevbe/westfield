@@ -10,7 +10,9 @@ const wfg = {};
 wfg.ProtocolParser = class {
 
     //TODO remove
-    ["uint"](argName, optional) {
+    ["uint"](arg) {
+        const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
+        const argName = arg.$.name;
         return {
             jsType: optional ? "?Number" : "Number",
             marshallGen: optional ? util.format("wfc._intOptional(%s)", argName) : util.format("wfc._int(%s)", argName)
@@ -18,7 +20,9 @@ wfg.ProtocolParser = class {
     }
 
     //TODO remove
-    ["fixed"](argName, optional) {
+    ["fixed"](arg) {
+        const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
+        const argName = arg.$.name;
         return {
             jsType: optional ? "?Number" : "Number",
             marshallGen: optional ? util.format("wfc._floatOptional(%s)", argName) : util.format("wfc._float(%s)", argName)
@@ -26,7 +30,9 @@ wfg.ProtocolParser = class {
     }
 
     //TODO remove
-    ["fd"](argName, optional) {
+    ["fd"](arg) {
+        const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
+        const argName = arg.$.name;
         return {
             jsType: optional ? "?Number" : "Number",
             marshallGen: optional ? util.format("wfc._intOptional(%s)", argName) : util.format("wfc._int(%s)", argName)
@@ -34,58 +40,91 @@ wfg.ProtocolParser = class {
     }
 
 
-    ["int"](argName, optional) {
+    ["int"](arg) {
+        const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
+        const argName = arg.$.name;
         return {
             jsType: optional ? "?Number" : "Number",
             marshallGen: optional ? util.format("wfc._intOptional(%s)", argName) : util.format("wfc._int(%s)", argName)
         };
     }
 
-    ["float"](argName, optional) {
+    ["float"](arg) {
+        const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
+        const argName = arg.$.name;
         return {
             jsType: optional ? "?Number" : "Number",
             marshallGen: optional ? util.format("wfc._floatOptional(%s)", argName) : util.format("wfc._float(%s)", argName)
         };
     }
 
-    ["double"](argName, optional) {
+    ["double"](arg) {
+        const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
+        const argName = arg.$.name;
         return {
             jsType: optional ? "?Number" : "Number",
             marshallGen: optional ? util.format("wfc._doubleOptional(%s)", argName) : util.format("wfc._double(%s)", argName)
         };
     }
 
-    ["object"](argName, optional) {
+    ["object"](arg) {
+        const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
+        const argName = arg.$.name;
         return {
             jsType: optional ? "?*" : "*",
             marshallGen: optional ? util.format("wfc._objectOptional(%s)", argName) : util.format("wfc._object(%s)", argName)
         };
     }
 
-    ["new_id"](argName, optional) {
+    ["new_id"](arg) {
+        const typeItf = arg.$["interface"];
         return {
-            jsType: optional ? "?*" : "*",
-            marshallGen: optional ? util.format("wfc._newObjectOptional(%s)", argName) : util.format("wfc._newObject(%s)", argName)
+            jsType: "*",
+            marshallGen: util.format("wfc._newObject(\"%s\", this._connection)", typeItf)
         };
     }
 
-    ["string"](argName, optional) {
+    ["string"](arg) {
+        const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
+        const argName = arg.$.name;
         return {
             jsType: optional ? "?string" : "string",
             marshallGen: optional ? util.format("wfc._stringOptional(%s)", argName) : util.format("wfc._string(%s)", argName)
         };
     }
 
-    ["array"](argName, optional) {
+    ["array"](arg) {
+        const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
+        const argName = arg.$.name;
         return {
             jsType: optional ? "?ArrayBuffer" : "ArrayBuffer",
             marshallGen: optional ? util.format("wfc._arrayOptional(%s)", argName) : util.format("wfc._array(%s)", argName)
         };
     }
 
-    _generateArgs(out, evReq) {
-        if (evReq.hasOwnProperty("arg")) {
-            const evArgs = evReq.arg;
+    _generateRequestArgs(out, req) {
+        if (req.hasOwnProperty("arg")) {
+            const evArgs = req.arg;
+            let processedFirstArg = false;
+            for (let i = 0; i < evArgs.length; i++) {
+                const arg = evArgs[i];
+                if (arg.$.type === "new_id") {
+                    continue;
+                }
+
+                const argName = arg.$.name;
+                if (processedFirstArg) {
+                    out.write(", ");
+                }
+                out.write(argName);
+                processedFirstArg = true;
+            }
+        }
+    }
+
+    _generateEventArgs(out, ev) {
+        if (ev.hasOwnProperty("arg")) {
+            const evArgs = ev.arg;
             for (let i = 0; i < evArgs.length; i++) {
                 const arg = evArgs[i];
                 const argName = arg.$.name;
@@ -102,10 +141,10 @@ wfg.ProtocolParser = class {
         const evName = itfEvent.$.name;
 
         out.write(util.format("\t[%d](", opcode));
-        this._generateArgs(out, itfEvent);
+        this._generateEventArgs(out, itfEvent);
         out.write("){\n");
         out.write(util.format("\t\tthis._iface.%s(", evName));
-        this._generateArgs(out, itfEvent);
+        this._generateEventArgs(out, itfEvent);
         out.write(");\n");
         out.write("\t}\n\n");
     }
@@ -132,8 +171,7 @@ wfg.ProtocolParser = class {
                     const argName = arg.$.name;
                     const argType = arg.$.type;
 
-                    const allowNull = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
-                    out.write(util.format("\t\t\t * @param {%s} %s %s \n", this[argType](argName, allowNull).jsType, argName, argDescription));
+                    out.write(util.format("\t\t\t * @param {%s} %s %s \n", this[argType](arg).jsType, argName, argDescription));
                 });
                 out.write("\t\t\t *\n");
 
@@ -145,7 +183,7 @@ wfg.ProtocolParser = class {
 
         //function
         out.write(util.format("\t\t\t%s(", evName));
-        this._generateArgs(out, itfEvent);
+        this._generateEventArgs(out, itfEvent);
         out.write(") {},\n");
     }
 
@@ -175,9 +213,18 @@ wfg.ProtocolParser = class {
                     const argDescription = arg.$.summary;
                     const argName = arg.$.name;
                     const argType = arg.$.type;
+                    if (argType !== "new_id") {
+                        out.write(util.format("\t * @param {%s} %s %s \n", this[argType](arg).jsType, argName, argDescription));
+                    }
+                });
 
-                    const allowNull = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
-                    out.write(util.format("\t * @param {%s} %s %s \n", this[argType](argName, allowNull).jsType, argName, argDescription));
+                reqArgs.forEach((arg) => {
+                    const argDescription = arg.$.summary;
+                    const argItf = arg.$["interface"];
+                    const argType = arg.$.type;
+                    if (argType === "new_id") {
+                        out.write(util.format("\t * @return {%s} %s \n", argItf, argDescription));
+                    }
                 });
                 out.write("\t *\n");
 
@@ -189,29 +236,55 @@ wfg.ProtocolParser = class {
 
         //function
         out.write(util.format("\t%s(", reqName));
-        this._generateArgs(out, itfRequest);
+        this._generateRequestArgs(out, itfRequest);
         out.write(") {\n");
-        out.write(util.format("\t\tthis._connection._marshall(this._id, %d, [", opcode));
 
         //function args
         if (itfRequest.hasOwnProperty("arg")) {
             const reqArgs = itfRequest.arg;
+
+            //first check if we have a constructor args
             for (let i = 0; i < reqArgs.length; i++) {
                 const arg = reqArgs[i];
-
-                const argName = arg.$.name;
                 const argType = arg.$.type;
+                const argName = arg.$.name;
+
+                if (argType === "new_id") {
+                    out.write(util.format("\t\tconst new_%s = %s;\n", argName, this[argType](arg).marshallGen));
+                }
+            }
+
+            out.write(util.format("\t\tthis._connection._marshall(this._id, %d, [", opcode));
+            for (let i = 0; i < reqArgs.length; i++) {
+                const arg = reqArgs[i];
+                const argType = arg.$.type;
+                const argName = arg.$.name;
 
                 if (i !== 0) {
                     out.write(", ");
                 }
 
-                const allowNull = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
-                out.write(this[argType](argName, allowNull).marshallGen);
+                if (argType === "new_id") {
+                    out.write(util.format("new_%s", argName));
+                } else {
+                    out.write(this[argType](arg).marshallGen);
+                }
             }
+            out.write(util.format("]);\n"));
+
+            for (let i = 0; i < reqArgs.length; i++) {
+                const arg = reqArgs[i];
+                const argType = arg.$.type;
+                const argName = arg.$.name;
+
+                if (argType === "new_id") {
+                    out.write(util.format("\t\treturn new_%s.value;\n", argName));
+                }
+            }
+        } else {
+            out.write(util.format("\t\tthis._connection._marshall(this._id, %d, []);\n", opcode));
         }
 
-        out.write(util.format("]);\n"));
         out.write("\t}\n");
     }
 
@@ -275,7 +348,6 @@ wfg.ProtocolParser = class {
                     this._generateIfEventGlue(out, itfEvents[j], j + 1);
                 }
             }
-
 
             out.write("};\n");
         }

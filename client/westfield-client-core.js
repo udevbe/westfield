@@ -173,13 +173,19 @@ wfc._objectOptional = function (arg) {
 
 /**
  *
- * @param {WObject} arg
+ * @param {string} arg
+ * @param {WConnection} connection
  * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
  *
  */
-wfc._newObject = function (arg) {
+wfc._newObject = function (arg, connection) {
     return {
-        value: arg,
+        value: (function () {
+            const wObject = new wfc[arg](connection);
+            connection._registerObject(wObject);
+            Object.freeze(wObject);
+            return wObject;
+        })(),
         type: "n",
         size: 4 + 1 + arg.iface.name.length,//id+length+name
         optional: false,
@@ -192,43 +198,6 @@ wfc._newObject = function (arg) {
             for (var i = 0, len = objType.length; i < len; i++) {
                 dataView.setUint8(dataView.offset, objType[i].codePointAt(0));
                 dataView.offset += 1;
-            }
-        }
-    };
-};
-
-/**
- *
- * @param {WObject} arg
- * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
- *
- */
-wfc._newObjectOptional = function (arg) {
-    return {
-        value: arg,
-        type: "n",
-        size: 4 + (function () {
-            if (arg == null) {
-                return 0;
-            } else {
-                return 1 + arg.iface.name.length;
-            }
-        })(),//id+length+name
-        optional: true,
-        _marshallArg: function (dataView) {
-            if (this.value == null) {
-                dataView.setUint32(dataView.offset, 0);
-                dataView.offset += 4;
-            } else {
-                dataView.setUint32(dataView.offset, this.value._id);
-                dataView.offset += 4;
-                const objType = this.value.iface.name;
-                dataView.setUint8(dataView.offset, objType.length);
-                dataView.offset += 1;
-                for (var i = 0, len = objType.length; i < len; i++) {
-                    dataView.setUint8(dataView.offset, objType[i].codePointAt(0));
-                    dataView.offset += 1;
-                }
             }
         }
     };
@@ -363,7 +332,6 @@ wfc.WObject = class {
     delete() {
         this._connection._objects.remove(this._id);
         this._connection._marshall(this._id, 0, []);//opcode 0 is reserved for deletion
-        delete this._id;
     }
 
     /**
@@ -398,7 +366,10 @@ wfc.WRegistry = class WRegistry extends wfc.WObject {
      * @param {WObject} id bounded object
      */
     bind(name, id) {
-        this._connection._marshall(this._id, 1, [wfc._int(name), wfc._newObject(id)]);
+        //FIXME
+        const new_id = wfc._newObject("undefined", this._connection);
+        this._connection._marshall(this._id, 1, [wfc._int(name), new_id]);
+        return new_id.value;
     }
 
     constructor(connection) {
@@ -742,6 +713,7 @@ wfc.WConnection = class {
         this.registry = new wfc.WRegistry(this);
         this.nextId = 1;
         this._registerObject(this.registry);
+        Object.freeze(this.registry);
     }
 };
 
