@@ -318,7 +318,7 @@ wfg.ProtocolParser = class {
     constructor(protocolFile) {
         this.protocolFile = protocolFile;
     }
-}
+};
 
 
 const configurationFile = 'generator/config.json';
