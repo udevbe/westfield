@@ -1,5 +1,5 @@
 {
   "protocols": [
-    "/usr/share/wayland/wayland.xml"
+    "my_protocol.xml"
   ]
 }

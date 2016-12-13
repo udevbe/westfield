@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<protocol name="index-spec" version="3">
+    <copyright>
+        lorum ipsum
+    </copyright>
+    <interface name="foo">
+        <description>
+            Global singleton Bar factory.
+        </description>
+        <request name="create_bar">
+            <description>Creates a bar.</description>
+            <arg name="id" type="new_id" interface="bar" summary="a new bar"/>
+            <arg name="barConstructionArg" type="double" summary="the double construction arg"/>
+        </request>
+    </interface>
+
+    <interface name="bar" version="1">
+        <description>Bar object</description>
+        <request name="bar_do">
+            <description>Ask bar to do.</description>
+            <arg name="aFloat" type="float" summary="a float arg"/>
+        </request>
+        <request name="bar_something">
+            <description>Ask bar to something.</description>
+            <arg name="aString" type="string" summary="a string arg"/>
+        </request>
+        <event name="bar_notify">
+            <description>Notify bar.</description>
+            <arg name="anInt" type="int" summary="an int arg"/>
+        </event>
+    </interface>
+</protocol>

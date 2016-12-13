@@ -2,37 +2,11 @@
 
 const fs = require('fs');
 const util = require('util');
-
 const xml2js = require('xml2js');
 
 const wfg = {};
 
 wfg.ProtocolParser = class {
-
-    //TODO remove
-    ["uint"](argName, optional) {
-        return {
-            jsType: optional ? "?Number" : "Number",
-            marshallGen: optional ? util.format("wfc._intOptional(%s)", argName) : util.format("wfc._int(%s)", argName)
-        };
-    }
-
-    //TODO remove
-    ["fixed"](argName, optional) {
-        return {
-            jsType: optional ? "?Number" : "Number",
-            marshallGen: optional ? util.format("wfc._floatOptional(%s)", argName) : util.format("wfc._float(%s)", argName)
-        };
-    }
-
-    //TODO remove
-    ["fd"](argName, optional) {
-        return {
-            jsType: optional ? "?Number" : "Number",
-            marshallGen: optional ? util.format("wfc._intOptional(%s)", argName) : util.format("wfc._int(%s)", argName)
-        };
-    }
-
 
     ["int"](argName, optional) {
         return {
@@ -260,7 +234,11 @@ wfg.ProtocolParser = class {
 
     _parseInterface(out, protocolItf) {
         const itfName = protocolItf.$.name;
-        const itfVersion = protocolItf.$.version;
+        let itfVersion = "1"
+
+        if (protocolItf.$.hasOwnProperty("version")) {
+            itfVersion = protocolItf.$.version;
+        }
 
         console.log(util.format("Processing interface %s v%d", itfName, itfVersion));
 
@@ -362,7 +340,7 @@ wfg.ProtocolParser = class {
     }
 };
 
-const configurationFile = 'generator/config.json';
+const configurationFile = 'generator/config.spec.json';
 const configuration = JSON.parse(fs.readFileSync(configurationFile));
 
 configuration.protocols.forEach((protocol) => {
