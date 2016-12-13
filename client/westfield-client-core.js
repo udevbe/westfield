@@ -173,21 +173,14 @@ wfc._objectOptional = function (arg) {
 
 /**
  *
- * @param {string} arg
- * @param {WConnection} connection
  * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
  *
  */
-wfc._newObject = function (arg, connection) {
+wfc._newObject = function () {
     return {
-        value: (function () {
-            const wObject = new wfc[arg](connection);
-            connection._registerObject(wObject);
-            Object.freeze(wObject);
-            return wObject;
-        })(),
+        value: null, //filled in by _marshallConstructor
         type: "n",
-        size: 4 + 1 + arg.iface.name.length,//id+length+name
+        size: null, //filled in by _marshallConstructor
         optional: false,
         _marshallArg: function (dataView) {
             dataView.setUint32(dataView.offset, this.value._id);
@@ -195,7 +188,7 @@ wfc._newObject = function (arg, connection) {
             const objType = this.value.iface.name;
             dataView.setUint8(dataView.offset, objType.length);
             dataView.offset += 1;
-            for (var i = 0, len = objType.length; i < len; i++) {
+            for (let i = 0, len = objType.length; i < len; i++) {
                 dataView.setUint8(dataView.offset, objType[i].codePointAt(0));
                 dataView.offset += 1;
             }
@@ -344,15 +337,14 @@ wfc.WObject = class {
         this._connection._marshall(this._id, 255, [wfc._int(errorCode), wfc._string(errorMsg)]);//opcode 255 is reserved for error
     }
 
+    /**
+     *
+     * @param {WConnection} connection
+     * @param {*} iface
+     */
     constructor(connection, iface) {
-        Object.defineProperty(this, "_connection", {
-            value: connection,
-            writable: false
-        });
-        Object.defineProperty(this, "iface", {
-            value: iface,
-            writable: false
-        });
+        this._connection = connection;
+        this.iface = iface;
     }
 };
 
@@ -363,13 +355,11 @@ wfc.WRegistry = class WRegistry extends wfc.WObject {
      * Binds a new, client-created object to the server using the specified name as the identifier.
      *
      * @param {Number} name unique numeric name of the object
-     * @param {WObject} id bounded object
+     * @param {string} itfName class name of the new object
+     * @return {*} a new bounded object
      */
-    bind(name, id) {
-        //FIXME
-        const new_id = wfc._newObject("undefined", this._connection);
-        this._connection._marshall(this._id, 1, [wfc._int(name), new_id]);
-        return new_id.value;
+    bind(name, itfName) {
+        return this._connection._marshallConstructor(this._id, 1, itfName, [wfc._int(name), wfc._newObject()]);
     }
 
     constructor(connection) {
@@ -629,24 +619,7 @@ wfc.WConnection = class {
         obj[message.opcode].apply(obj, message.args);
     }
 
-    /**
-     *
-     * @param {Number} id
-     * @param {Number} opcode
-     * @param {Array} argsArray
-     * @private
-     */
-    _marshall(id, opcode, argsArray) {
-        //determine required wire message length
-        let size = 4 + 1;  //id+opcode
-        argsArray.forEach(function (arg) {
-            if (arg.optional) {
-                size += 1; //add one for the optional (=?) ascii char
-            }
-            size += 1; //add one for the ascii char
-            size += arg.size; //add size of the actual argument values
-        });
-
+    __marshallMsg(id, opcode, size, argsArray) {
         const wireMsgBuffer = new ArrayBuffer(size);
         const wireMsgView = new DataView(wireMsgBuffer);
         wireMsgView.offset = 0;
@@ -668,6 +641,62 @@ wfc.WConnection = class {
         });
 
         this._socket.send(wireMsgBuffer);
+    }
+
+    /**
+     *
+     * @param {Number} id
+     * @param {Number} opcode
+     * @param {string} itfName
+     * @param {Array} argsArray
+     * @private
+     */
+    _marshallConstructor(id, opcode, itfName, argsArray) {
+
+        //cosntruct new object
+        const wObject = new wfc[itfName](this);
+        this._registerObject(wObject);
+        Object.freeze(wObject);
+
+        //determine required wire message length
+        let size = 4 + 1;  //id+opcode
+        argsArray.forEach(function (arg) {
+            if (arg.type === "n") {
+                arg.value = wObject;
+                arg.size = 4 + 1 + arg.iface.name.length;
+            }
+
+            if (arg.optional) {
+                size += 1; //add one for the optional (=?) ascii char
+            }
+            size += 1; //add one for the ascii char
+            size += arg.size; //add size of the actual argument values
+        });
+
+        this.__marshallMsg(id, opcode, size, argsArray);
+
+        return wObject;
+    };
+
+    /**
+     *
+     * @param {Number} id
+     * @param {Number} opcode
+     * @param {Array} argsArray
+     * @private
+     */
+    _marshall(id, opcode, argsArray) {
+        //determine required wire message length
+        let size = 4 + 1;  //id+opcode
+        argsArray.forEach(function (arg) {
+            if (arg.optional) {
+                size += 1; //add one for the optional (=?) ascii char
+            }
+            size += 1; //add one for the ascii char
+            size += arg.size; //add size of the actual argument values
+        });
+
+        this.__marshallMsg(id, opcode, size, argsArray);
     };
 
     /**

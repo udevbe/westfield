@@ -10,9 +10,7 @@ const wfg = {};
 wfg.ProtocolParser = class {
 
     //TODO remove
-    ["uint"](arg) {
-        const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
-        const argName = arg.$.name;
+    ["uint"](argName, optional) {
         return {
             jsType: optional ? "?Number" : "Number",
             marshallGen: optional ? util.format("wfc._intOptional(%s)", argName) : util.format("wfc._int(%s)", argName)
@@ -20,9 +18,7 @@ wfg.ProtocolParser = class {
     }
 
     //TODO remove
-    ["fixed"](arg) {
-        const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
-        const argName = arg.$.name;
+    ["fixed"](argName, optional) {
         return {
             jsType: optional ? "?Number" : "Number",
             marshallGen: optional ? util.format("wfc._floatOptional(%s)", argName) : util.format("wfc._float(%s)", argName)
@@ -30,9 +26,7 @@ wfg.ProtocolParser = class {
     }
 
     //TODO remove
-    ["fd"](arg) {
-        const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
-        const argName = arg.$.name;
+    ["fd"](argName, optional) {
         return {
             jsType: optional ? "?Number" : "Number",
             marshallGen: optional ? util.format("wfc._intOptional(%s)", argName) : util.format("wfc._int(%s)", argName)
@@ -40,62 +34,49 @@ wfg.ProtocolParser = class {
     }
 
 
-    ["int"](arg) {
-        const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
-        const argName = arg.$.name;
+    ["int"](argName, optional) {
         return {
             jsType: optional ? "?Number" : "Number",
             marshallGen: optional ? util.format("wfc._intOptional(%s)", argName) : util.format("wfc._int(%s)", argName)
         };
     }
 
-    ["float"](arg) {
-        const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
-        const argName = arg.$.name;
+    ["float"](argName, optional) {
         return {
             jsType: optional ? "?Number" : "Number",
             marshallGen: optional ? util.format("wfc._floatOptional(%s)", argName) : util.format("wfc._float(%s)", argName)
         };
     }
 
-    ["double"](arg) {
-        const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
-        const argName = arg.$.name;
+    ["double"](argName, optional) {
         return {
             jsType: optional ? "?Number" : "Number",
             marshallGen: optional ? util.format("wfc._doubleOptional(%s)", argName) : util.format("wfc._double(%s)", argName)
         };
     }
 
-    ["object"](arg) {
-        const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
-        const argName = arg.$.name;
+    ["object"](argName, optional) {
         return {
             jsType: optional ? "?*" : "*",
             marshallGen: optional ? util.format("wfc._objectOptional(%s)", argName) : util.format("wfc._object(%s)", argName)
         };
     }
 
-    ["new_id"](arg) {
-        const typeItf = arg.$["interface"];
+    ["new_id"](argName, optional) {
         return {
             jsType: "*",
-            marshallGen: util.format("wfc._newObject(\"%s\", this._connection)", typeItf)
+            marshallGen: "wfc._newObject()"
         };
     }
 
-    ["string"](arg) {
-        const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
-        const argName = arg.$.name;
+    ["string"](argName, optional) {
         return {
             jsType: optional ? "?string" : "string",
             marshallGen: optional ? util.format("wfc._stringOptional(%s)", argName) : util.format("wfc._string(%s)", argName)
         };
     }
 
-    ["array"](arg) {
-        const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
-        const argName = arg.$.name;
+    ["array"](argName, optional) {
         return {
             jsType: optional ? "?ArrayBuffer" : "ArrayBuffer",
             marshallGen: optional ? util.format("wfc._arrayOptional(%s)", argName) : util.format("wfc._array(%s)", argName)
@@ -169,9 +150,10 @@ wfg.ProtocolParser = class {
                 evArgs.forEach((arg) => {
                     const argDescription = arg.$.summary;
                     const argName = arg.$.name;
+                    const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
                     const argType = arg.$.type;
 
-                    out.write(util.format("\t\t\t * @param {%s} %s %s \n", this[argType](arg).jsType, argName, argDescription));
+                    out.write(util.format("\t\t\t * @param {%s} %s %s \n", this[argType](argName, optional).jsType, argName, argDescription));
                 });
                 out.write("\t\t\t *\n");
 
@@ -212,9 +194,10 @@ wfg.ProtocolParser = class {
                 reqArgs.forEach((arg) => {
                     const argDescription = arg.$.summary;
                     const argName = arg.$.name;
+                    const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
                     const argType = arg.$.type;
                     if (argType !== "new_id") {
-                        out.write(util.format("\t * @param {%s} %s %s \n", this[argType](arg).jsType, argName, argDescription));
+                        out.write(util.format("\t * @param {%s} %s %s \n", this[argType](argName, optional).jsType, argName, argDescription));
                     }
                 });
 
@@ -239,50 +222,37 @@ wfg.ProtocolParser = class {
         this._generateRequestArgs(out, itfRequest);
         out.write(") {\n");
 
+
+        let itfName;
         //function args
+        let argArray = "[";
         if (itfRequest.hasOwnProperty("arg")) {
             const reqArgs = itfRequest.arg;
 
-            //first check if we have a constructor args
+
             for (let i = 0; i < reqArgs.length; i++) {
                 const arg = reqArgs[i];
                 const argType = arg.$.type;
                 const argName = arg.$.name;
+                const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
 
                 if (argType === "new_id") {
-                    out.write(util.format("\t\tconst new_%s = %s;\n", argName, this[argType](arg).marshallGen));
+                    itfName = arg.$["interface"];
                 }
-            }
-
-            out.write(util.format("\t\tthis._connection._marshall(this._id, %d, [", opcode));
-            for (let i = 0; i < reqArgs.length; i++) {
-                const arg = reqArgs[i];
-                const argType = arg.$.type;
-                const argName = arg.$.name;
 
                 if (i !== 0) {
-                    out.write(", ");
+                    argArray += ", ";
                 }
 
-                if (argType === "new_id") {
-                    out.write(util.format("new_%s", argName));
-                } else {
-                    out.write(this[argType](arg).marshallGen);
-                }
+                argArray += this[argType](argName, optional).marshallGen;
             }
-            out.write(util.format("]);\n"));
+        }
+        argArray += "]";
 
-            for (let i = 0; i < reqArgs.length; i++) {
-                const arg = reqArgs[i];
-                const argType = arg.$.type;
-                const argName = arg.$.name;
-
-                if (argType === "new_id") {
-                    out.write(util.format("\t\treturn new_%s.value;\n", argName));
-                }
-            }
+        if (itfName) {
+            out.write(util.format("\t\treturn this._connection._marshallConstructor(this._id, %d, \"%s\", %s);\n", opcode, itfName, argArray));
         } else {
-            out.write(util.format("\t\tthis._connection._marshall(this._id, %d, []);\n", opcode));
+            out.write(util.format("\t\tthis._connection._marshall(this._id, %d, %s);\n", opcode, argArray));
         }
 
         out.write("\t}\n");
@@ -392,13 +362,9 @@ wfg.ProtocolParser = class {
     }
 };
 
-
 const configurationFile = 'generator/config.json';
 const configuration = JSON.parse(fs.readFileSync(configurationFile));
 
 configuration.protocols.forEach((protocol) => {
     new wfg.ProtocolParser(protocol).parse();
 });
-
-
-
