@@ -663,7 +663,7 @@ wfc.WConnection = class {
         argsArray.forEach(function (arg) {
             if (arg.type === "n") {
                 arg.value = wObject;
-                arg.size = 4 + 1 + arg.iface.name.length;
+                arg.size = 4 + 1 + arg.value.iface.name.length;
             }
 
             if (arg.optional) {

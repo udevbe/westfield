@@ -235,7 +235,10 @@ describe("westfield-client-core", function () {
             const iface = {name: "Dummy"};
             const argValue = new wf.WObject(null, iface);
             argValue._id = objectId;
-            const arg = wf._newObject(argValue);
+            const arg = wf._newObject();
+
+            arg.value = argValue;
+            arg.size = 4 + 1 + argValue.iface.name.length;
 
             //when
             arg._marshallArg(dataView);
@@ -249,44 +252,6 @@ describe("westfield-client-core", function () {
             expect(dataView.getUint8(9)).toBe(iface.name[2].codePointAt(0));//m
             expect(dataView.getUint8(10)).toBe(iface.name[3].codePointAt(0));//m
             expect(dataView.getUint8(11)).toBe(iface.name[4].codePointAt(0));//y
-        });
-
-        it("marshalls a westfield object to a an optional 32bit integer, using the data view offset", function () {
-            //given
-            const dataView = new DataView(new ArrayBuffer(12));
-            dataView.offset = 2;
-            const objectId = 0xfffe1234;
-            const iface = {name: "Dummy"};
-            const argValue = new wf.WObject(null, iface);
-            argValue._id = objectId;
-            const arg = wf._newObjectOptional(argValue);
-
-            //when
-            arg._marshallArg(dataView);
-
-            //then
-            expect(dataView.offset).toBe(12);//2+4+1+5
-            expect(dataView.getUint32(2)).toBe(objectId);
-            expect(dataView.getUint8(6)).toBe(iface.name.length);
-            expect(dataView.getUint8(7)).toBe(iface.name[0].codePointAt(0));//D
-            expect(dataView.getUint8(8)).toBe(iface.name[1].codePointAt(0));//u
-            expect(dataView.getUint8(9)).toBe(iface.name[2].codePointAt(0));//m
-            expect(dataView.getUint8(10)).toBe(iface.name[3].codePointAt(0));//m
-            expect(dataView.getUint8(11)).toBe(iface.name[4].codePointAt(0));//y
-        });
-
-        it("marshalls a null westfield object to an optional 32bit integer, using the data view offset", function () {
-            //given
-            const dataView = new DataView(new ArrayBuffer(6));
-            dataView.offset = 2;
-            const arg = wf._newObjectOptional(null);
-
-            //when
-            arg._marshallArg(dataView);
-
-            //then
-            expect(dataView.offset).toBe(6);//2+4
-            expect(dataView.getUint32(2)).toBe(0);
         });
 
         //--String marshalling--//
@@ -942,9 +907,14 @@ describe("westfield-client-core", function () {
             const floatArg = 0.123;
             const objectArg = new wf.WObject(connection, {name: "objectItf"});
             objectArg._id = 321;
+
             const newObjectItfName = "newObjectItf";
-            const newObjectArg = new wf.WObject(connection, {name: newObjectItfName});
-            newObjectArg._id = 654;
+            wf[newObjectItfName] = class newObjectItf extends wf.WObject {
+                constructor(connection) {
+                    super(connection, {name: newObjectItfName});
+                }
+            };
+
             const stringArg = "lorum ipsum";
             const bufferLength = 8;
             const buffer = new ArrayBuffer(bufferLength);
@@ -953,12 +923,13 @@ describe("westfield-client-core", function () {
             arrayArg[1] = 0x1234567F;
 
             //when
-            connection._marshall(objectid, opcode,
+            const newObject = wf._newObject();
+            connection._marshallConstructor(objectid, opcode, newObjectItfName,
                 [
                     wf._int(intArg),
                     wf._float(floatArg),
                     wf._object(objectArg),
-                    wf._newObject(newObjectArg),
+                    newObject,
                     wf._string(stringArg),
                     wf._array(arrayArg)
                 ]);
@@ -985,7 +956,7 @@ describe("westfield-client-core", function () {
             offset += 4;
             wireDataView.setUint8(offset, "n".codePointAt(0));
             offset += 1;
-            wireDataView.setUint32(offset, newObjectArg._id);
+            wireDataView.setUint32(offset, newObject.value._id);
             offset += 4;
             wireDataView.setUint8(offset, newObjectItfName.length);
             offset += 1;
