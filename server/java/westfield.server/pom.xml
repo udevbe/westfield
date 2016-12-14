@@ -12,8 +12,26 @@
     <name>Westfield Server</name>
     <description>Aggregator pom for Westfield server bundles</description>
 
+    <properties>
+        <maven.compiler.plugin.version>3.6.0</maven.compiler.plugin.version>
+    </properties>
+
     <modules>
         <module>westfield.server.generator</module>
         <module>westfield.server.runtime</module>
+        <module>westfield.server.protocol</module>
     </modules>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.compiler.plugin.version}</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
