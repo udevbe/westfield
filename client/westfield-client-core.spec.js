@@ -33,6 +33,52 @@ describe("westfield-client-core", function () {
         jasmine.addMatchers(customMatchers);
     });
 
+    describe("Fixed type", function () {
+
+        it("converts back and forth using the positive range of a non fractional 24-bit number", function () {
+            for (let i = 0; i <= 0x007FFFFF; i++) {
+                const fixed = new wf.parseFixed(i);
+                if (i !== fixed.asInt()) {
+                    expect(fixed.asInt()).toBe(i);
+                    //break else node will go OO
+                    break;
+                }
+            }
+        });
+
+        it("converts back and forth using the negative range of a non fractional 24-bit number", function () {
+            for (let i = 0; i <= 0x007FFFFF; i++) {
+                const fixed = new wf.parseFixed(-i);
+                if (-i !== fixed.asInt()) {
+                    expect(fixed.asInt()).toBe(-i);
+                    break;
+                }
+            }
+        });
+
+        //tests are disabled as they take some time (+- 2min) to complete
+
+        // it("converts back and forth using the positive range of a 24-bit number and an 8-bit fraction", function () {
+        //     for (let i = 0.0; i < 0x00800000; i += 0.00390625) {
+        //         const fixed = new wf.parseFixed(i);
+        //         if (i !== fixed.asDoube()) {
+        //             expect(fixed.asDoube()).toBe(i);
+        //             break;
+        //         }
+        //     }
+        // });
+        //
+        // it("converts back and forth using the negative range of a 24-bit number and an 8-bit fraction", function () {
+        //     for (let i = 0; i < 0x00800000; i += 0.00390625) {
+        //         const fixed = new wf.parseFixed(-i);
+        //         if (-i !== fixed.asDoube()) {
+        //             expect(fixed.asDoube()).toBe(-i);
+        //             break;
+        //         }
+        //     }
+        // });
+    });
+
     describe("argument marshalling", function () {
 
         //--Unsigned integer marshalling --//

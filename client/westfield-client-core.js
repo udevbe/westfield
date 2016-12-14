@@ -1,6 +1,39 @@
 //westfield client namespace
 const wfc = {};
 
+wfc.WFixed = class WFixed {
+
+    /**
+     * Represent fixed as a signed 24-bit integer.
+     *
+     * @returns {number}
+     */
+    asInt() {
+        return ((this._raw / 256.0) >> 0);
+    }
+
+    /**
+     * Represent fixed as a signed 24-bit number with an 8-bit fractional part.
+     *
+     * @returns {number}
+     */
+    asDoube() {
+        return this._raw / 256.0;
+    }
+
+    /**
+     * use parseFixed instead
+     * @private
+     * @param raw
+     */
+    constructor(raw) {
+        this._raw = raw;
+    }
+};
+
+wfc.parseFixed = function (number) {
+    return new wfc.WFixed(((number * 256.0) >> 0));
+}
 
 /**
  *
