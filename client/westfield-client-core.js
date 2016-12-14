@@ -1,6 +1,49 @@
 //westfield client namespace
 const wfc = {};
 
+
+/**
+ *
+ * @param {Number} arg
+ * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+ *
+ */
+wfc._uint = function (arg) {
+    return {
+        value: arg,
+        type: "u",
+        size: 4,
+        optional: false,
+        _marshallArg: function (dataView) {
+            dataView.setUint32(dataView.offset, this.value);
+            dataView.offset += this.size;
+        }
+    };
+};
+
+/**
+ *
+ * @param {Number} arg
+ * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+ *
+ */
+wfc._uintOptional = function (arg) {
+    return {
+        value: arg,
+        type: "u",
+        size: 4,
+        optional: true,
+        _marshallArg: function (dataView) {
+            if (arg == null) {
+                dataView.setUint32(dataView.offset, 0);
+            } else {
+                dataView.setUint32(dataView.offset, this.value);
+            }
+            dataView.offset += this.size;
+        }
+    }
+};
+
 /**
  *
  * @param {Number} arg
@@ -334,7 +377,7 @@ wfc.WObject = class {
      * @param {String} errorMsg the error message
      */
     postError(errorCode, errorMsg) {
-        this._connection._marshall(this._id, 255, [wfc._int(errorCode), wfc._string(errorMsg)]);//opcode 255 is reserved for error
+        this._connection._marshall(this._id, 255, [wfc._uint(errorCode), wfc._string(errorMsg)]);//opcode 255 is reserved for error
     }
 
     /**
@@ -359,12 +402,13 @@ wfc.WRegistry = class WRegistry extends wfc.WObject {
      * @return {*} a new bounded object
      */
     bind(name, itfName) {
-        return this._connection._marshallConstructor(this._id, 1, itfName, [wfc._int(name), wfc._newObject()]);
+        return this._connection._marshallConstructor(this._id, 1, itfName, [wfc._uint(name), wfc._newObject()]);
     }
 
     constructor(connection) {
         super(connection, {
             name: "WRegistry",
+            version: 1,
 
             /**
              * Announce global object.
@@ -426,6 +470,17 @@ wfc.WConnection = class {
         const nextTypeAscii = wireMsg.getUint8(wireMsg.offset);
         wireMsg.offset += 1;
         return this[nextTypeAscii](wireMsg, true);
+    }
+
+    /**
+     *
+     * @param {DataView} wireMsg
+     * @returns {Number}
+     */
+    ["u".codePointAt(0)](wireMsg) {//unsigned integer {Number}
+        const arg = wireMsg.getUint32(wireMsg.offset);
+        wireMsg.offset += 4;
+        return arg;
     }
 
     /**

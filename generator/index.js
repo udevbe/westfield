@@ -8,6 +8,13 @@ const wfg = {};
 
 wfg.ProtocolParser = class {
 
+    ["uint"](argName, optional) {
+        return {
+            jsType: optional ? "?Number" : "Number",
+            marshallGen: optional ? util.format("wfc._uintOptional(%s)", argName) : util.format("wfc._uint(%s)", argName)
+        };
+    }
+
     ["int"](argName, optional) {
         return {
             jsType: optional ? "?Number" : "Number",
@@ -234,10 +241,10 @@ wfg.ProtocolParser = class {
 
     _parseInterface(out, protocolItf) {
         const itfName = protocolItf.$.name;
-        let itfVersion = "1"
+        let itfVersion = 1;
 
         if (protocolItf.$.hasOwnProperty("version")) {
-            itfVersion = protocolItf.$.version;
+            itfVersion = parseInt(protocolItf.$.version);
         }
 
         console.log(util.format("Processing interface %s v%d", itfName, itfVersion));
@@ -280,11 +287,22 @@ wfg.ProtocolParser = class {
             out.write("\n\tconstructor(connection) {\n");
             out.write("\t\tsuper(connection, {\n");
             out.write(util.format("\t\t\tname: \"%s\",\n", itfName));
+            out.write(util.format("\t\t\tversion: %d,\n", i));
             //events
             if (protocolItf.hasOwnProperty("event")) {
-                protocolItf.event.forEach((event) => {
-                    this._parseItfEvent(out, event);
-                });
+
+                const itfEvents = protocolItf.event;
+                for (let j = 0; j < itfEvents.length; j++) {
+                    const itfEvent = itfEvents[j];
+                    let since = "1";
+                    if (itfEvent.$.hasOwnProperty("since")) {
+                        since = itfEvent.$.since;
+                    }
+
+                    if (parseInt(since) <= i) {
+                        this._parseItfEvent(out, itfEvent);
+                    }
+                }
             }
             out.write("\t\t});\n");
             out.write("\t}\n\n");
@@ -293,7 +311,15 @@ wfg.ProtocolParser = class {
             if (protocolItf.hasOwnProperty("event")) {
                 const itfEvents = protocolItf.event;
                 for (let j = 0; j < itfEvents.length; j++) {
-                    this._generateIfEventGlue(out, itfEvents[j], j + 1);
+                    const itfEvent = itfEvents[j];
+                    let since = "1";
+                    if (itfEvent.$.hasOwnProperty("since")) {
+                        since = itfEvent.$.since;
+                    }
+
+                    if (parseInt(since) === i) {
+                        this._generateIfEventGlue(out, itfEvent, j + 1);
+                    }
                 }
             }
 

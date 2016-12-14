@@ -3,30 +3,80 @@
     <copyright>
         lorum ipsum
     </copyright>
-    <interface name="foo">
+    <interface name="foo" version="3">
         <description>
             Global singleton Bar factory.
         </description>
         <request name="create_bar">
             <description>Creates a bar.</description>
             <arg name="id" type="new_id" interface="bar" summary="a new bar"/>
-            <arg name="barConstructionArg" type="double" summary="the double construction arg"/>
+            <arg name="argUint" type="uint" summary="uint arg"/>
+            <arg name="argInt" type="int" summary="int arg"/>
+            <arg name="argFloat" type="float" summary="float arg"/>
+            <arg name="argDouble" type="double" summary="double arg"/>
+            <arg name="argString" type="string" summary="string arg"/>
+            <arg name="argArray" type="array" summary="array arg"/>
         </request>
     </interface>
 
-    <interface name="bar" version="1">
+    <interface name="bar" version="3">
         <description>Bar object</description>
-        <request name="bar_do">
-            <description>Ask bar to do.</description>
-            <arg name="aFloat" type="float" summary="a float arg"/>
+        <request name="do_uint">
+            <description>Request with uint.</description>
+            <arg name="arg" type="uint" summary="uint arg"/>
         </request>
-        <request name="bar_something">
-            <description>Ask bar to something.</description>
-            <arg name="aString" type="string" summary="a string arg"/>
+        <request name="do_int">
+            <description>Request with int.</description>
+            <arg name="arg" type="int" summary="int arg"/>
         </request>
-        <event name="bar_notify">
-            <description>Notify bar.</description>
-            <arg name="anInt" type="int" summary="an int arg"/>
+        <request name="do_float">
+            <description>Request with float.</description>
+            <arg name="arg" type="float" summary="float arg"/>
+        </request>
+        <request name="do_double" since="2">
+            <description>Request with double.</description>
+            <arg name="arg" type="double" summary="double arg"/>
+        </request>
+        <request name="do_object" since="2">
+            <description>Request with object.</description>
+            <arg name="arg" type="object" summary="object arg"/>
+        </request>
+        <request name="do_string" since="3">
+            <description>Request with string.</description>
+            <arg name="arg" type="string" summary="string arg"/>
+        </request>
+        <request name="do_array" since="3">
+            <description>Request with array.</description>
+            <arg name="arg" type="array" summary="array arg"/>
+        </request>
+
+        <event name="on_uint">
+            <description>event with uint.</description>
+            <arg name="arg" type="uint" summary="uint arg"/>
+        </event>
+        <event name="on_int">
+            <description>event with int.</description>
+            <arg name="arg" type="int" summary="int arg"/>
+        </event>
+        <event name="on_float">
+            <description>event with float.</description>
+            <arg name="arg" type="float" summary="float arg"/>
+        </event>
+        <event name="on_double" since="2">
+            <description>event with double.</description>
+            <arg name="arg" type="double" summary="double arg"/>
+        </event>
+        <event name="on_object" since="2">
+            <description>event with object.</description>
+            <arg name="arg" type="object" summary="object arg"/>
+        </event>
+        <event name="on_string" since="3">
+            <description>event with string.</description>
+            <arg name="arg" type="string" summary="string arg"/>
+        </event>
+        <event name="on_array" since="3">
+            <description>event with array.</description>
+            <arg name="arg" type="array" summary="array arg"/>
         </event>
     </interface>
 </protocol>
