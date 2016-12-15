@@ -17,7 +17,7 @@ wfc.WFixed = class WFixed {
      *
      * @returns {number}
      */
-    asDoube() {
+    asDouble() {
         return this._raw / 256.0;
     }
 
@@ -32,8 +32,8 @@ wfc.WFixed = class WFixed {
 };
 
 wfc.parseFixed = function (number) {
-    return new wfc.WFixed(((number * 256.0) >> 0));
-}
+    return new wfc.WFixed((number * 256.0) >> 0);
+};
 
 /**
  *
@@ -121,18 +121,17 @@ wfc._intOptional = function (arg) {
 
 /**
  *
- * @param {Number} arg
- * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
- *
+ * @param {WFixed} arg
+ * @returns {{value: WFixed, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
  */
-wfc._float = function (arg) {
+wfc._fixed = function (arg) {
     return {
         value: arg,
         type: "f",
         size: 4,
         optional: false,
         _marshallArg: function (dataView) {
-            dataView.setFloat32(dataView.offset, this.value);
+            dataView.setInt32(dataView.offset, this.value._raw);
             dataView.offset += this.size;
         }
     };
@@ -140,11 +139,10 @@ wfc._float = function (arg) {
 
 /**
  *
- * @param {Number} arg
- * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
- *
+ * @param {WFixed} arg
+ * @returns {{value: WFixed, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
  */
-wfc._floatOptional = function (arg) {
+wfc._fixedOptional = function (arg) {
     return {
         value: arg,
         type: "f",
@@ -152,57 +150,13 @@ wfc._floatOptional = function (arg) {
         optional: true,
         _marshallArg: function (dataView) {
             if (arg == null) {
-                dataView.setFloat32(dataView.offset, 0);
-            }
-            else {
-                dataView.setFloat32(dataView.offset, this.value);
-            }
-            dataView.offset += this.size;
-        }
-    };
-};
-
-/**
- *
- * @param {Number} arg
- * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
- *
- */
-wfc._double = function (arg) {
-    return {
-        value: arg,
-        type: "d",
-        size: 8,
-        optional: false,
-        _marshallArg: function (dataView) {
-            dataView.setFloat64(dataView.offset, this.value);
-            dataView.offset += this.size;
-        }
-    };
-};
-
-/**
- *
- * @param {Number} arg
- * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
- *
- */
-wfc._doubleOptional = function (arg) {
-    return {
-        value: arg,
-        type: "d",
-        size: 8,
-        optional: true,
-        _marshallArg: function (dataView) {
-            if (arg == null) {
-                dataView.setFloat64(dataView.offset, 0);
-            }
-            else {
-                dataView.setFloat64(dataView.offset, this.value);
+                dataView.setInt32(dataView.offset, 0);
+            } else {
+                dataView.setInt32(dataView.offset, this.value._raw);
             }
             dataView.offset += this.size;
         }
-    };
+    }
 };
 
 /**
@@ -533,19 +487,8 @@ wfc.WConnection = class {
      * @returns {Number}
      */
     ["f".codePointAt(0)](wireMsg) {//float {Number}
-        const arg = wireMsg.getFloat32(wireMsg.offset);
+        const arg = new wfc.WFixed(wireMsg.getInt32(wireMsg.offset) >> 0);
         wireMsg.offset += 4;
-        return arg;
-    }
-
-    /**
-     *
-     * @param {DataView} wireMsg
-     * @returns {Number}
-     */
-    ["d".codePointAt(0)](wireMsg) {//float {Number}
-        const arg = wireMsg.getFloat64(wireMsg.offset);
-        wireMsg.offset += 8;
         return arg;
     }
 

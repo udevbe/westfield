@@ -34,7 +34,6 @@ describe("westfield-client-core", function () {
     });
 
     describe("Fixed type", function () {
-
         it("converts back and forth using the positive range of a non fractional 24-bit number", function () {
             for (let i = 0; i <= 0x007FFFFF; i++) {
                 const fixed = new wf.parseFixed(i);
@@ -56,7 +55,7 @@ describe("westfield-client-core", function () {
             }
         });
 
-        //tests are disabled as they take some time (+- 2min) to complete
+        //tests are disabled as they take some time (+- 3min) to complete
 
         // it("converts back and forth using the positive range of a 24-bit number and an 8-bit fraction", function () {
         //     for (let i = 0.0; i < 0x00800000; i += 0.00390625) {
@@ -174,98 +173,51 @@ describe("westfield-client-core", function () {
             expect(dataView.getInt32(2)).toBe(0);
         });
 
-        //--Float marshalling--//
+        //--Fixed marshalling--//
 
-        it("marshalls a number to a non optional 32bit floating point, using the data view offset", function () {
+        it("marshalls a number to a non optional fixed, using the data view offset", function () {
             //given
             const dataView = new DataView(new ArrayBuffer(6));
             dataView.offset = 2;
             const argValue = 1234.567;
-            const arg = wf._float(argValue);
+            const arg = wf._fixed(wf.parseFixed(argValue));
 
             //when
             arg._marshallArg(dataView);
 
             //then
             expect(dataView.offset).toBe(6);
-            expect(dataView.getFloat32(2).toFixed(3)).toBe(argValue.toFixed(3));
+            expect(new wf.WFixed(dataView.getInt32(2)).asDouble().toFixed(2)).toBe(argValue.toFixed(2));
         });
 
-        it("marshalls a number to an optional 32bit floating point, using the data view offset", function () {
+        it("marshalls a number to an optional 32bit fixed, using the data view offset", function () {
             //given
             const dataView = new DataView(new ArrayBuffer(6));
             dataView.offset = 2;
             const argValue = 1234.567;
-            const arg = wf._floatOptional(argValue);
+            const arg = wf._fixedOptional(wf.parseFixed(argValue));
 
             //when
             arg._marshallArg(dataView);
 
             //then
             expect(dataView.offset).toBe(6);
-            expect(dataView.getFloat32(2).toFixed(3)).toBe(argValue.toFixed(3));
+            expect(new wf.WFixed(dataView.getInt32(2)).asDouble().toFixed(2)).toBe(argValue.toFixed(2));
         });
 
-        it("marshalls a null number to an optional 32bit floating, using the data view offset", function () {
+        it("marshalls a null number to an optional 32bit fixed, using the data view offset", function () {
             //given
             const dataView = new DataView(new ArrayBuffer(6));
             dataView.offset = 2;
             const argValue = null;
-            const arg = wf._floatOptional(argValue);
+            const arg = wf._fixedOptional(wf.parseFixed(argValue));
 
             //when
             arg._marshallArg(dataView);
 
             //then
             expect(dataView.offset).toBe(6);
-            expect(dataView.getFloat32(2)).toBe(0);
-        });
-
-        //--Double marshalling--//
-
-        it("marshalls a number to a non optional 64bit floating point, using the data view offset", function () {
-            //given
-            const dataView = new DataView(new ArrayBuffer(10));
-            dataView.offset = 2;
-            const argValue = 1234567.12345;
-            const arg = wf._double(argValue);
-
-            //when
-            arg._marshallArg(dataView);
-
-            //then
-            expect(dataView.offset).toBe(10);
-            expect(dataView.getFloat64(2).toFixed(5)).toBe(argValue.toFixed(5));
-        });
-
-        it("marshalls a number to an optional 64bit floating point, using the data view offset", function () {
-            //given
-            const dataView = new DataView(new ArrayBuffer(10));
-            dataView.offset = 2;
-            const argValue = 1234567.12345;
-            const arg = wf._doubleOptional(argValue);
-
-            //when
-            arg._marshallArg(dataView);
-
-            //then
-            expect(dataView.offset).toBe(10);
-            expect(dataView.getFloat64(2).toFixed(5)).toBe(argValue.toFixed(5));
-        });
-
-        it("marshalls a null number to an optional 64bit floating, using the data view offset", function () {
-            //given
-            const dataView = new DataView(new ArrayBuffer(10));
-            dataView.offset = 2;
-            const argValue = null;
-            const arg = wf._doubleOptional(argValue);
-
-            //when
-            arg._marshallArg(dataView);
-
-            //then
-            expect(dataView.offset).toBe(10);
-            expect(dataView.getFloat64(2)).toBe(0);
+            expect(new wf.WFixed(dataView.getInt32(2)).asDouble()).toBe(0);
         });
 
         //--Object marshalling--//
@@ -617,9 +569,9 @@ describe("westfield-client-core", function () {
             expect(arg).toBe(argValue);
         });
 
-        //--Float Unmarshalling--//
+        //--Fixed Unmarshalling--//
 
-        it("unmarshalls a non optional 32bit float to a number, using the data view wire argument", function () {
+        it("unmarshalls a non optional fixed to a number, using the data view wire argument", function () {
             //given
             global.WebSocket = function () {
             };//mock WebSocket
@@ -631,17 +583,17 @@ describe("westfield-client-core", function () {
             wireArg.offset = 0;
             wireArg.setUint8(0, "f".codePointAt(0));
             const argValue = 1234.567;
-            wireArg.setFloat32(1, argValue);
+            wireArg.setInt32(1, wf.parseFixed(argValue)._raw);
 
             //when
             const arg = connection._unmarshallArg(wireArg);
 
             //then
             expect(wireArg.offset).toBe(5);
-            expect(arg.toFixed(3)).toBe(argValue.toFixed(3));
+            expect(arg.asDouble().toFixed(2)).toBe(argValue.toFixed(2));
         });
 
-        it("unmarshalls a non zero optional 32bit float to a number, using the data view wire argument", function () {
+        it("unmarshalls a non zero optional fixed to a number, using the data view wire argument", function () {
             //given
             global.WebSocket = function () {
             };//mock WebSocket
@@ -654,17 +606,17 @@ describe("westfield-client-core", function () {
             wireArg.setUint8(0, "?".codePointAt(0));
             wireArg.setUint8(1, "f".codePointAt(0));
             const argValue = 1234.567;
-            wireArg.setFloat32(2, argValue);
+            wireArg.setInt32(2, wf.parseFixed(argValue)._raw);
 
             //when
             const arg = connection._unmarshallArg(wireArg);
 
             //then
             expect(wireArg.offset).toBe(6);
-            expect(arg.toFixed(3)).toBe(argValue.toFixed(3));
+            expect(arg.asDouble().toFixed(2)).toBe(argValue.toFixed(2));
         });
 
-        it("unmarshalls a zero optional 32bit float to a number, using the data view wire argument", function () {
+        it("unmarshalls a zero optional fixed to a number, using the data view wire argument", function () {
             //given
             global.WebSocket = function () {
             };//mock WebSocket
@@ -677,86 +629,15 @@ describe("westfield-client-core", function () {
             wireArg.setUint8(0, "?".codePointAt(0));
             wireArg.setUint8(1, "f".codePointAt(0));
             const argValue = 0;
-            wireArg.setFloat32(2, argValue);
+            wireArg.setInt32(2, wf.parseFixed(argValue)._raw);
 
             //when
             const arg = connection._unmarshallArg(wireArg);
 
             //then
             expect(wireArg.offset).toBe(6);
-            expect(arg.toFixed(3)).toBe(argValue.toFixed(3));
+            expect(arg.asDouble().toFixed(2)).toBe(argValue.toFixed(2));
         });
-
-        //--Double unmarshalling--//
-
-        it("unmarshalls a non optional 64bit float to a number, using the data view wire argument", function () {
-            //given
-            global.WebSocket = function () {
-            };//mock WebSocket
-            wf.Registry = function () {
-            };//mock Registry
-            const connection = new wf.WConnection("dummyURL");
-
-            const wireArg = new DataView(new ArrayBuffer(9));//1+8
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "d".codePointAt(0));
-            const argValue = 1234567.891011;
-            wireArg.setFloat64(1, argValue);
-
-            //when
-            const arg = connection._unmarshallArg(wireArg);
-
-            //then
-            expect(wireArg.offset).toBe(9);
-            expect(arg.toFixed(6)).toBe(argValue.toFixed(6));
-        });
-
-        it("unmarshalls a non zero optional 64bit float to a number, using the data view wire argument", function () {
-            //given
-            global.WebSocket = function () {
-            };//mock WebSocket
-            wf.Registry = function () {
-            };//mock Registry
-            const connection = new wf.WConnection("dummyURL");
-
-            const wireArg = new DataView(new ArrayBuffer(10));//1+1+8
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "?".codePointAt(0));
-            wireArg.setUint8(1, "d".codePointAt(0));
-            const argValue = 1234567.891011;
-            wireArg.setFloat64(2, argValue);
-
-            //when
-            const arg = connection._unmarshallArg(wireArg);
-
-            //then
-            expect(wireArg.offset).toBe(10);
-            expect(arg.toFixed(6)).toBe(argValue.toFixed(6));
-        });
-
-        it("unmarshalls a zero optional 64bit float to a number, using the data view wire argument", function () {
-            //given
-            global.WebSocket = function () {
-            };//mock WebSocket
-            wf.Registry = function () {
-            };//mock Registry
-            const connection = new wf.WConnection("dummyURL");
-
-            const wireArg = new DataView(new ArrayBuffer(10));//1+1+8
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "?".codePointAt(0));
-            wireArg.setUint8(1, "d".codePointAt(0));
-            const argValue = 0;
-            wireArg.setFloat64(2, argValue);
-
-            //when
-            const arg = connection._unmarshallArg(wireArg);
-
-            //then
-            expect(wireArg.offset).toBe(10);
-            expect(arg.toFixed(6)).toBe(argValue.toFixed(6));
-        });
-
 
         //--Object Unmarshalling--//
 
@@ -1138,7 +1019,7 @@ describe("westfield-client-core", function () {
             const opcode = 255;
             const uintArg = 987;
             const intArg = -789;
-            const floatArg = 0.123;
+            const fixedArg = wf.parseFixed(0.123);
             const doubleArg = 0.123456;
             const objectArg = new wf.WObject(connection, {name: "objectItf"});
             objectArg._id = 321;
@@ -1163,8 +1044,7 @@ describe("westfield-client-core", function () {
                 [
                     wf._uint(uintArg),
                     wf._int(intArg),
-                    wf._float(floatArg),
-                    wf._double(doubleArg),
+                    wf._fixed(fixedArg),
                     wf._object(objectArg),
                     newObject,
                     wf._string(stringArg),
@@ -1172,7 +1052,7 @@ describe("westfield-client-core", function () {
                 ]);
 
             //then
-            const wireMsgBuffer = new ArrayBuffer(4 + 1 + 1 + 4 + 1 + 4 + 1 + 4 + 1 + 8 + 1 + 4 + 1 + 4 + 1 + newObjectItfName.length + 1 + 4 + stringArg.length + 1 + 4 + buffer.byteLength);
+            const wireMsgBuffer = new ArrayBuffer(4 + 1 + 1 + 4 + 1 + 4 + 1 + 4 + 1 + 4 + 1 + 4 + 1 + newObjectItfName.length + 1 + 4 + stringArg.length + 1 + 4 + buffer.byteLength);
             const wireDataView = new DataView(wireMsgBuffer);
             let offset = 0;
             wireDataView.setUint32(offset, objectid);
@@ -1189,12 +1069,8 @@ describe("westfield-client-core", function () {
             offset += 4;
             wireDataView.setUint8(offset, "f".codePointAt(0));
             offset += 1;
-            wireDataView.setFloat32(offset, floatArg);
+            wireDataView.setInt32(offset, fixedArg._raw);
             offset += 4;
-            wireDataView.setUint8(offset, "d".codePointAt(0));
-            offset += 1;
-            wireDataView.setFloat64(offset, doubleArg);
-            offset += 8;
             wireDataView.setUint8(offset, "o".codePointAt(0));
             offset += 1;
             wireDataView.setUint32(offset, objectArg._id);
@@ -1247,7 +1123,7 @@ describe("westfield-client-core", function () {
             const opcode = 255;
             const uintArg = 987;
             const intArg = -789;
-            const floatArg = 0.123;
+            const fixedArg = wf.parseFixed(0.123);
             const doubleArg = 0.1234567;
             const objectArgId = 321;
             const newObjectItfName = "newObjectItf";
@@ -1283,8 +1159,7 @@ describe("westfield-client-core", function () {
                 1 + //opcode
                 1 + 4 + //unsigned integer
                 1 + 4 + //integer
-                1 + 4 + //float
-                1 + 8 + //double
+                1 + 4 + //fixed
                 1 + 4 + //object
                 1 + 4 + 1 + newObjectItfName.length + //new object
                 1 + 4 + stringArg.length + //string
@@ -1306,12 +1181,8 @@ describe("westfield-client-core", function () {
             offset += 4;
             wireDataView.setUint8(offset, "f".codePointAt(0));
             offset += 1;
-            wireDataView.setFloat32(offset, floatArg);
+            wireDataView.setInt32(offset, fixedArg._raw);
             offset += 4;
-            wireDataView.setUint8(offset, "d".codePointAt(0));
-            offset += 1;
-            wireDataView.setFloat64(offset, doubleArg);
-            offset += 8;
             wireDataView.setUint8(offset, "o".codePointAt(0));
             offset += 1;
             wireDataView.setUint32(offset, objectArgId);
@@ -1351,13 +1222,12 @@ describe("westfield-client-core", function () {
             expect(targetObject[opcode]).toHaveBeenCalled();
             expect(targetObject[opcode].calls.mostRecent().args[0]).toEqual(uintArg);
             expect(targetObject[opcode].calls.mostRecent().args[1]).toEqual(intArg);
-            expect(targetObject[opcode].calls.mostRecent().args[2]).toBeCloseTo(floatArg);
-            expect(targetObject[opcode].calls.mostRecent().args[3]).toBeCloseTo(doubleArg);
-            expect(targetObject[opcode].calls.mostRecent().args[4]).toEqual(objectArg);
-            expect(targetObject[opcode].calls.mostRecent().args[5]._id).toEqual(newObjectArgId);
-            expect(targetObject[opcode].calls.mostRecent().args[5].iface.name).toEqual(newObjectItfName);
-            expect(targetObject[opcode].calls.mostRecent().args[6]).toEqual(stringArg);
-            expect(targetObject[opcode].calls.mostRecent().args[7]).toBeBlobEqual(buffer);
+            expect(targetObject[opcode].calls.mostRecent().args[2]).toEqual(fixedArg);
+            expect(targetObject[opcode].calls.mostRecent().args[3]).toEqual(objectArg);
+            expect(targetObject[opcode].calls.mostRecent().args[4]._id).toEqual(newObjectArgId);
+            expect(targetObject[opcode].calls.mostRecent().args[4].iface.name).toEqual(newObjectItfName);
+            expect(targetObject[opcode].calls.mostRecent().args[5]).toEqual(stringArg);
+            expect(targetObject[opcode].calls.mostRecent().args[6]).toBeBlobEqual(buffer);
         });
     });
 });

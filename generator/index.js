@@ -22,17 +22,10 @@ wfg.ProtocolParser = class {
         };
     }
 
-    ["float"](argName, optional) {
+    ["fixed"](argName, optional) {
         return {
-            jsType: optional ? "?Number" : "Number",
-            marshallGen: optional ? util.format("wfc._floatOptional(%s)", argName) : util.format("wfc._float(%s)", argName)
-        };
-    }
-
-    ["double"](argName, optional) {
-        return {
-            jsType: optional ? "?Number" : "Number",
-            marshallGen: optional ? util.format("wfc._doubleOptional(%s)", argName) : util.format("wfc._double(%s)", argName)
+            jsType: optional ? "?WFixed" : "WFixed",
+            marshallGen: optional ? util.format("wfc._fixedOptional(%s)", argName) : util.format("wfc._fixed(%s)", argName)
         };
     }
 

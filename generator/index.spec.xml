@@ -12,8 +12,7 @@
             <arg name="id" type="new_id" interface="bar" summary="a new bar"/>
             <arg name="argUint" type="uint" summary="uint arg"/>
             <arg name="argInt" type="int" summary="int arg"/>
-            <arg name="argFloat" type="float" summary="float arg"/>
-            <arg name="argDouble" type="double" summary="double arg"/>
+            <arg name="argFixed" type="fixed" summary="fixed arg"/>
             <arg name="argString" type="string" summary="string arg"/>
             <arg name="argArray" type="array" summary="array arg"/>
         </request>
@@ -29,13 +28,9 @@
             <description>Request with int.</description>
             <arg name="arg" type="int" summary="int arg"/>
         </request>
-        <request name="do_float">
+        <request name="do_fixed">
             <description>Request with float.</description>
-            <arg name="arg" type="float" summary="float arg"/>
-        </request>
-        <request name="do_double" since="2">
-            <description>Request with double.</description>
-            <arg name="arg" type="double" summary="double arg"/>
+            <arg name="arg" type="fixed" summary="float arg"/>
         </request>
         <request name="do_object" since="2">
             <description>Request with object.</description>
@@ -58,13 +53,9 @@
             <description>event with int.</description>
             <arg name="arg" type="int" summary="int arg"/>
         </event>
-        <event name="on_float">
+        <event name="on_fixed">
             <description>event with float.</description>
-            <arg name="arg" type="float" summary="float arg"/>
-        </event>
-        <event name="on_double" since="2">
-            <description>event with double.</description>
-            <arg name="arg" type="double" summary="double arg"/>
+            <arg name="arg" type="fixed" summary="fixed arg"/>
         </event>
         <event name="on_object" since="2">
             <description>event with object.</description>
