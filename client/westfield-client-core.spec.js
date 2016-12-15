@@ -60,8 +60,8 @@ describe("westfield-client-core", function () {
         // it("converts back and forth using the positive range of a 24-bit number and an 8-bit fraction", function () {
         //     for (let i = 0.0; i < 0x00800000; i += 0.00390625) {
         //         const fixed = new wf.parseFixed(i);
-        //         if (i !== fixed.asDoube()) {
-        //             expect(fixed.asDoube()).toBe(i);
+        //         if (i !== fixed.asDouble()) {
+        //             expect(fixed.asDouble()).toBe(i);
         //             break;
         //         }
         //     }
@@ -70,8 +70,8 @@ describe("westfield-client-core", function () {
         // it("converts back and forth using the negative range of a 24-bit number and an 8-bit fraction", function () {
         //     for (let i = 0; i < 0x00800000; i += 0.00390625) {
         //         const fixed = new wf.parseFixed(-i);
-        //         if (-i !== fixed.asDoube()) {
-        //             expect(fixed.asDoube()).toBe(-i);
+        //         if (-i !== fixed.asDouble()) {
+        //             expect(fixed.asDouble()).toBe(-i);
         //             break;
         //         }
         //     }
