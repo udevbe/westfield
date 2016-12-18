@@ -11,11 +11,8 @@ public class WRegistry implements WRegistryRequests {
     private final Set<WRegistryResource> wRegistryResources = new HashSet<>();
 
     private final Map<Integer, WGlobal> globals = new HashMap<>();
-    private final int id;
 
-    WRegistry(final int id) {
-        this.id = id;
-    }
+    WRegistry() {}
 
     @Override
     public void bind(final WRegistryResource wRegistryResource,
@@ -53,7 +50,7 @@ public class WRegistry implements WRegistryRequests {
 
     WRegistryResource createResource(final WClient client) {
         final WRegistryResource wRegistryResource = new WRegistryResource(client,
-                                                                          this.id,
+                                                                          1,
                                                                           this);
         this.wRegistryResources.add(wRegistryResource);
         return wRegistryResource;

@@ -16,18 +16,18 @@ import java.util.Map;
 public class WConnection {
 
     private static final String subprotocol = "westfield";
-    private final WRegistry registry;
 
-    private int nextId = 0;
-
+    private final WRegistry             registry = new WRegistry();
     private final Map<Session, WClient> wClients = new HashMap<>();
 
-    public WConnection() {
-        this.registry = new WRegistry(nextId());
-    }
+    /*
+     * IDs allocated by the client are in the range [1, 0xfeffffff] while IDs allocated by the server are
+     * in the range [0xff000000, 0xffffffff]. The 0 ID is reserved to represent a null or non-existant object
+     */
+    private int nextId = 0xff000000;
 
     int nextId() {
-        return this.nextId++;
+        return ++this.nextId;
     }
 
     @OnOpen
