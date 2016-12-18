@@ -91,15 +91,34 @@ wfg.ProtocolParser = class {
         }
     }
 
-    _generateIfEventGlue(out, itfEvent, opcode) {
+    _generateIfEventGlue(out, ev, opcode) {
 
-        const evName = itfEvent.$.name;
+        const evName = ev.$.name;
 
         out.write(util.format("\t[%d](", opcode));
-        this._generateEventArgs(out, itfEvent);
+        this._generateEventArgs(out, ev);
         out.write("){\n");
         out.write(util.format("\t\tthis._iface.%s(", evName));
-        this._generateEventArgs(out, itfEvent);
+
+        if (ev.hasOwnProperty("arg")) {
+            const evArgs = ev.arg;
+            for (let i = 0; i < evArgs.length; i++) {
+                if (i !== 0) {
+                    out.write(", ");
+                }
+
+                const arg = evArgs[i];
+                const argName = arg.$.name;
+                const argType = arg.$.type;
+                if (argType === "new_id") {
+                    const argItf = arg.$["interface"];
+                    out.write(util.format("%s(\"%s\")", argName, argItf));
+                } else {
+                    out.write(argName);
+                }
+            }
+        }
+
         out.write(");\n");
         out.write("\t}\n\n");
     }

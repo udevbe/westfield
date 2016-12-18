@@ -61,6 +61,10 @@
             <description>event with object.</description>
             <arg name="arg" type="object" summary="object arg"/>
         </event>
+        <event name="on_new_object" since="2">
+            <description>event with new object.</description>
+            <arg name="arg" type="new_id" interface="foo" summary="new object arg"/>
+        </event>
         <event name="on_string" since="3">
             <description>event with string.</description>
             <arg name="arg" type="string" summary="string arg"/>

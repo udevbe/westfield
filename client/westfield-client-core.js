@@ -212,18 +212,11 @@ wfc._newObject = function () {
     return {
         value: null, //filled in by _marshallConstructor
         type: "n",
-        size: null, //filled in by _marshallConstructor
+        size: 4,
         optional: false,
         _marshallArg: function (dataView) {
             dataView.setUint32(dataView.offset, this.value._id);
-            dataView.offset += 4;
-            const objType = this.value.iface.name;
-            dataView.setUint8(dataView.offset, objType.length);
-            dataView.offset += 1;
-            for (let i = 0, len = objType.length; i < len; i++) {
-                dataView.setUint8(dataView.offset, objType[i].codePointAt(0));
-                dataView.offset += 1;
-            }
+            dataView.offset += this.size;
         }
     };
 };
@@ -514,20 +507,12 @@ wfc.WConnection = class {
      *
      * @param {DataView} wireMsg
      * @param {Boolean} optional
-     * @returns {WObject}
+     * @returns {function}
      */
     ["n".codePointAt(0)](wireMsg, optional) {
         const newObjectId = wireMsg.getUint32(wireMsg.offset);
         wireMsg.offset += 4;
-        if (optional && newObjectId === 0) {
-            return null;
-        } else {
-            const typeNameSize = wireMsg.getUint8(wireMsg.offset);
-            wireMsg.offset += 1;
-            const byteArray = new Uint8Array(wireMsg.buffer, wireMsg.offset, typeNameSize);
-            wireMsg.offset += typeNameSize;
-
-            const type = String.fromCharCode.apply(null, byteArray);
+        return function (type) {
             const newObject = new wfc[type](this);
             newObject._id = newObjectId;
             this._objects.set(newObject._id, newObject);
@@ -696,7 +681,6 @@ wfc.WConnection = class {
         argsArray.forEach(function (arg) {
             if (arg.type === "n") {
                 arg.value = wObject;
-                arg.size = 4 + 1 + arg.value.iface.name.length;
             }
 
             if (arg.optional) {
