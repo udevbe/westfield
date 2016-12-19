@@ -49,7 +49,12 @@ wfc._uint = function (arg) {
         type: "u",
         size: 4,
         optional: false,
-        _marshallArg: function (dataView) {
+        /**
+         *
+         * @param {ArrayBuffer} wireMsg
+         * @private
+         */
+        _marshallArg: function (wireMsg) {
             const buf = new Uint32Array(wireMsg, wireMsg.offset, 1);
             buf[0] = this.value;
             wireMsg.offset += this.size;
@@ -265,7 +270,7 @@ wfc._string = function (arg) {
         value: arg,
         type: "s",
         size: 4 + (function () {
-            return arg.length + (4 - (arg.length % 4));
+            return (arg.length + 3) & ~3;
         })(),
         optional: false,
         /**
@@ -301,7 +306,7 @@ wfc._stringOptional = function (arg) {
             if (arg == null) {
                 return 0;
             } else {
-                return arg.length + (4 - (arg.length % 4));
+                return (arg.length + 3) & ~3;
             }
         })(),
         optional: true,
@@ -339,7 +344,7 @@ wfc._array = function (arg) {
         value: arg,
         type: "a",
         size: 4 + (function () {
-            return arg.byteLength + (4 - (arg.byteLength % 4));
+            return (arg.byteLength + 3) & ~3;
         })(),
         optional: false,
         /**
@@ -352,7 +357,7 @@ wfc._array = function (arg) {
             buf32[0] = this.value.byteLength;
 
             const byteLength = this.value.byteLength;
-            new Uint8Array(wireMsg, wireMsg.offset + 4, byteLength).set(new Uint8Array(this.arg.buffer, 0, byteLength));
+            new Uint8Array(wireMsg, wireMsg.offset + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength));
 
             wireMsg.offset += this.size;
         }
@@ -373,7 +378,7 @@ wfc._arrayOptional = function (arg) {
             if (arg == null) {
                 return 0;
             } else {
-                return arg.byteLength;
+                return (arg.byteLength + 3) & ~3;
             }
         })(),
         optional: true,
@@ -385,7 +390,7 @@ wfc._arrayOptional = function (arg) {
                 buf32[0] = this.value.byteLength;
 
                 const byteLength = this.value.byteLength;
-                new Uint8Array(wireMsg, wireMsg.offset + 4, byteLength).set(new Uint8Array(this.arg.buffer, 0, byteLength));
+                new Uint8Array(wireMsg, wireMsg.offset + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength));
             }
             wireMsg.offset += this.size;
         }
