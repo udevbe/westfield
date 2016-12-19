@@ -433,21 +433,21 @@ describe("westfield-client-core", function () {
             };//mock Registry
             const connection = new wf.WConnection("dummyURL");
 
-            const wireArg = new DataView(new ArrayBuffer(5));//1+4
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "u".codePointAt(0));
+            const wireMsg = new ArrayBuffer(4);
+            wireMsg.offset = 0;
             const argValue = 6553699;
-            wireArg.setUint32(1, argValue);
+            const buf32 = new Uint32Array(wireMsg);
+            buf32[0] = argValue;
 
             //when
-            const arg = connection._unmarshallArg(wireArg);
+            const args = connection._unmarshallArgs(wireMsg, "u");
 
             //then
-            expect(wireArg.offset).toBe(5);
-            expect(arg).toBe(argValue);
+            expect(wireMsg.offset).toBe(4);
+            expect(args[0]).toBe(argValue);
         });
 
-        it("unmarshalls a non null optional 32bit unsigned integer to a number, using the data view wire argument", function () {
+        it("unmarshalls a non null optional 32bit unsigned integer to a number", function () {
             //given
             global.WebSocket = function () {
             };//mock WebSocket
@@ -455,19 +455,18 @@ describe("westfield-client-core", function () {
             };//mock Registry
             const connection = new wf.WConnection("dummyURL");
 
-            const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "?".codePointAt(0));
-            wireArg.setUint8(1, "u".codePointAt(0));
+            const wireMsg = new ArrayBuffer(4);
+            wireMsg.offset = 0;
             const argValue = 6553699;
-            wireArg.setUint32(2, argValue);
+            const buf32 = new Uint32Array(wireMsg);
+            buf32[0] = argValue;
 
             //when
-            const arg = connection._unmarshallArg(wireArg);
+            const args = connection._unmarshallArgs(wireMsg, "?u");
 
             //then
-            expect(wireArg.offset).toBe(6);
-            expect(arg).toBe(argValue);
+            expect(wireMsg.offset).toBe(4);
+            expect(args[0]).toBe(argValue);
         });
 
         it("unmarshalls a zero optional 32bit unsigned integer to a number, using the data view wire argument", function () {
@@ -478,19 +477,18 @@ describe("westfield-client-core", function () {
             };//mock Registry
             const connection = new wf.WConnection("dummyURL");
 
-            const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "?".codePointAt(0));
-            wireArg.setUint8(1, "u".codePointAt(0));
+            const wireMsg = new ArrayBuffer(4);
+            wireMsg.offset = 0;
             const argValue = 0;
-            wireArg.setUint32(2, argValue);
+            const buf32 = new Uint32Array(wireMsg);
+            buf32[0] = argValue;
 
             //when
-            const arg = connection._unmarshallArg(wireArg);
+            const args = connection._unmarshallArgs(wireMsg, "?u");
 
             //then
-            expect(wireArg.offset).toBe(6);
-            expect(arg).toBe(argValue);
+            expect(wireMsg.offset).toBe(4);
+            expect(args[0]).toBe(argValue);
         });
 
         //--Integer Unmarshalling--//
@@ -503,18 +501,18 @@ describe("westfield-client-core", function () {
             };//mock Registry
             const connection = new wf.WConnection("dummyURL");
 
-            const wireArg = new DataView(new ArrayBuffer(5));//1+4
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "i".codePointAt(0));
+            const wireMsg = new ArrayBuffer(4);
+            wireMsg.offset = 0;
             const argValue = -6553699;
-            wireArg.setInt32(1, argValue);
+            const buf32 = new Uint32Array(wireMsg);
+            buf32[0] = argValue;
 
             //when
-            const arg = connection._unmarshallArg(wireArg);
+            const args = connection._unmarshallArgs(wireMsg, "i");
 
             //then
-            expect(wireArg.offset).toBe(5);
-            expect(arg).toBe(argValue);
+            expect(wireMsg.offset).toBe(4);
+            expect(args[0]).toBe(argValue);
         });
 
         it("unmarshalls a non null optional 32bit integer to a number, using the data view wire argument", function () {
@@ -525,19 +523,18 @@ describe("westfield-client-core", function () {
             };//mock Registry
             const connection = new wf.WConnection("dummyURL");
 
-            const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "?".codePointAt(0));
-            wireArg.setUint8(1, "i".codePointAt(0));
+            const wireMsg = new ArrayBuffer(4);
+            wireMsg.offset = 0;
             const argValue = -6553699;
-            wireArg.setInt32(2, argValue);
+            const buf32 = new Uint32Array(wireMsg);
+            buf32[0] = argValue;
 
             //when
-            const arg = connection._unmarshallArg(wireArg);
+            const args = connection._unmarshallArgs(wireMsg, "?i");
 
             //then
-            expect(wireArg.offset).toBe(6);
-            expect(arg).toBe(argValue);
+            expect(wireMsg.offset).toBe(4);
+            expect(args[0]).toBe(argValue);
         });
 
         it("unmarshalls a zero optional 32bit integer to a number, using the data view wire argument", function () {
@@ -548,19 +545,18 @@ describe("westfield-client-core", function () {
             };//mock Registry
             const connection = new wf.WConnection("dummyURL");
 
-            const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "?".codePointAt(0));
-            wireArg.setUint8(1, "i".codePointAt(0));
+            const wireMsg = new ArrayBuffer(4);
+            wireMsg.offset = 0;
             const argValue = 0;
-            wireArg.setInt32(2, argValue);
+            const buf32 = new Uint32Array(wireMsg);
+            buf32[0] = argValue;
 
             //when
-            const arg = connection._unmarshallArg(wireArg);
+            const args = connection._unmarshallArgs(wireMsg, "?i");
 
             //then
-            expect(wireArg.offset).toBe(6);
-            expect(arg).toBe(argValue);
+            expect(wireMsg.offset).toBe(4);
+            expect(args[0]).toBe(argValue);
         });
 
         //--Fixed Unmarshalling--//
@@ -573,18 +569,18 @@ describe("westfield-client-core", function () {
             };//mock Registry
             const connection = new wf.WConnection("dummyURL");
 
-            const wireArg = new DataView(new ArrayBuffer(5));//1+4
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "f".codePointAt(0));
+            const wireMsg = new ArrayBuffer(4);
+            wireMsg.offset = 0;
             const argValue = 1234.567;
-            wireArg.setInt32(1, wf.parseFixed(argValue)._raw);
+            const buf32 = new Int32Array(wireMsg);
+            buf32[0] = wf.parseFixed(argValue)._raw;
 
             //when
-            const arg = connection._unmarshallArg(wireArg);
+            const args = connection._unmarshallArgs(wireMsg, "f");
 
             //then
-            expect(wireArg.offset).toBe(5);
-            expect(arg.asDouble().toFixed(2)).toBe(argValue.toFixed(2));
+            expect(wireMsg.offset).toBe(4);
+            expect(args[0].asDouble().toFixed(2)).toBe(argValue.toFixed(2));
         });
 
         it("unmarshalls a non zero optional fixed to a number, using the data view wire argument", function () {
@@ -595,19 +591,18 @@ describe("westfield-client-core", function () {
             };//mock Registry
             const connection = new wf.WConnection("dummyURL");
 
-            const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "?".codePointAt(0));
-            wireArg.setUint8(1, "f".codePointAt(0));
+            const wireMsg = new ArrayBuffer(4);
+            wireMsg.offset = 0;
             const argValue = 1234.567;
-            wireArg.setInt32(2, wf.parseFixed(argValue)._raw);
+            const buf32 = new Int32Array(wireMsg);
+            buf32[0] = wf.parseFixed(argValue)._raw;
 
             //when
-            const arg = connection._unmarshallArg(wireArg);
+            const args = connection._unmarshallArgs(wireMsg, "?f");
 
             //then
-            expect(wireArg.offset).toBe(6);
-            expect(arg.asDouble().toFixed(2)).toBe(argValue.toFixed(2));
+            expect(wireMsg.offset).toBe(4);
+            expect(args[0].asDouble().toFixed(2)).toBe(argValue.toFixed(2));
         });
 
         it("unmarshalls a zero optional fixed to a number, using the data view wire argument", function () {
@@ -618,19 +613,18 @@ describe("westfield-client-core", function () {
             };//mock Registry
             const connection = new wf.WConnection("dummyURL");
 
-            const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "?".codePointAt(0));
-            wireArg.setUint8(1, "f".codePointAt(0));
+            const wireMsg = new ArrayBuffer(4);
+            wireMsg.offset = 0;
             const argValue = 0;
-            wireArg.setInt32(2, wf.parseFixed(argValue)._raw);
+            const buf32 = new Int32Array(wireMsg);
+            buf32[0] = wf.parseFixed(argValue)._raw;
 
             //when
-            const arg = connection._unmarshallArg(wireArg);
+            const args = connection._unmarshallArgs(wireMsg, "?f");
 
             //then
-            expect(wireArg.offset).toBe(6);
-            expect(arg.asDouble().toFixed(2)).toBe(argValue.toFixed(2));
+            expect(wireMsg.offset).toBe(4);
+            expect(args[0].asDouble().toFixed(2)).toBe(argValue.toFixed(2));
         });
 
         //--Object Unmarshalling--//
@@ -647,17 +641,17 @@ describe("westfield-client-core", function () {
             const objectId = 1234567;
             connection._objects.set(objectId, {_id: objectId});
 
-            const wireArg = new DataView(new ArrayBuffer(5));//1+4
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "o".codePointAt(0));
-            wireArg.setUint32(1, objectId);
+            const wireMsg = new ArrayBuffer(4);
+            wireMsg.offset = 0;
+            const buf32 = new Uint32Array(wireMsg);
+            buf32[0] = objectId;
 
             //when
-            const arg = connection._unmarshallArg(wireArg);
+            const args = connection._unmarshallArgs(wireMsg, "o");
 
             //then
-            expect(wireArg.offset).toBe(5);
-            expect(arg._id).toBe(objectId);
+            expect(wireMsg.offset).toBe(4);
+            expect(args[0]._id).toBe(objectId);
         });
 
         it("unmarshalls a non zero optional 32bit integer to an object, using the data view wire argument", function () {
@@ -672,21 +666,20 @@ describe("westfield-client-core", function () {
             const objectId = 1234567;
             connection._objects.set(objectId, {_id: objectId});
 
-            const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "?".codePointAt(0));
-            wireArg.setUint8(1, "o".codePointAt(0));
-            wireArg.setUint32(2, objectId);
+            const wireMsg = new ArrayBuffer(4);
+            wireMsg.offset = 0;
+            const buf32 = new Uint32Array(wireMsg);
+            buf32[0] = objectId;
 
             //when
-            const arg = connection._unmarshallArg(wireArg);
+            const args = connection._unmarshallArgs(wireMsg, "?o");
 
             //then
-            expect(wireArg.offset).toBe(6);
-            expect(arg._id).toBe(objectId);
+            expect(wireMsg.offset).toBe(4);
+            expect(args[0]._id).toBe(objectId);
         });
 
-        it("unmarshalls a zero optional 32bit integer to an object, using the data view wire argument", function () {
+        it("unmarshalls a zero optional 32bit integer to an object", function () {
             //given
             global.WebSocket = function () {
             };//mock WebSocket
@@ -694,25 +687,23 @@ describe("westfield-client-core", function () {
             };//mock Registry
 
             const connection = new wf.WConnection("dummyURL");
-            const objectId = 0;
 
-            const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "?".codePointAt(0));
-            wireArg.setUint8(1, "o".codePointAt(0));
-            wireArg.setUint32(2, objectId);
+            const wireMsg = new ArrayBuffer(4);
+            wireMsg.offset = 0;
+            const buf32 = new Uint32Array(wireMsg);
+            buf32[0] = 0;
 
             //when
-            const arg = connection._unmarshallArg(wireArg);
+            const args = connection._unmarshallArgs(wireMsg, "?o");
 
             //then
-            expect(wireArg.offset).toBe(6);
-            expect(arg).toBe(null);
+            expect(wireMsg.offset).toBe(4);
+            expect(args[0]).toBe(null);
         });
 
         //--New object Unmarshalling--//
 
-        it("unmarshalls a non optional 32bit integer to a new object, using the data view wire argument", function () {
+        it("unmarshalls a 32bit integer to a new object", function () {
             //given
             global.WebSocket = function () {
             };//mock WebSocket
@@ -726,82 +717,17 @@ describe("westfield-client-core", function () {
             wf.Dummy = function () {
             };
 
-            const wireArg = new DataView(new ArrayBuffer(11));//1+4+1+(1*5)
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "n".codePointAt(0));
-            wireArg.setUint32(1, objectId);
-            wireArg.setUint8(5, objectType.length);
-            wireArg.setUint8(6, objectType.codePointAt(0));//D
-            wireArg.setUint8(7, objectType.codePointAt(1));//u
-            wireArg.setUint8(8, objectType.codePointAt(2));//m
-            wireArg.setUint8(9, objectType.codePointAt(3));//m
-            wireArg.setUint8(10, objectType.codePointAt(4));//y
+            const wireMsg = new ArrayBuffer(4);
+            wireMsg.offset = 0;
+            const buf32 = new Uint32Array(wireMsg);
+            buf32[0] = objectId;
 
             //when
-            const arg = connection._unmarshallArg(wireArg);
+            const args = connection._unmarshallArgs(wireMsg, "n");
 
             //then
-            expect(wireArg.offset).toBe(11);
-            expect(arg).toBe(connection._objects.get(arg._id));
-        });
-
-        it("unmarshalls an optional non zero 32bit integer to a new object, using the data view wire argument", function () {
-            //given
-            global.WebSocket = function () {
-            };//mock WebSocket
-            wf.Registry = function () {
-            };//mock Registry
-
-            const connection = new wf.WConnection("dummyURL");
-            connection._objects = new Map();
-            const objectId = 1234567;
-            const objectType = "Dummy";
-            wf.Dummy = function () {
-            };
-
-            const wireArg = new DataView(new ArrayBuffer(12));//1+1+4+1+(1*5)
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "?".codePointAt(0));
-            wireArg.setUint8(1, "n".codePointAt(0));
-            wireArg.setUint32(2, objectId);
-            wireArg.setUint8(6, objectType.length);
-            wireArg.setUint8(7, objectType.codePointAt(0));//D
-            wireArg.setUint8(8, objectType.codePointAt(1));//u
-            wireArg.setUint8(9, objectType.codePointAt(2));//m
-            wireArg.setUint8(10, objectType.codePointAt(3));//m
-            wireArg.setUint8(11, objectType.codePointAt(4));//y
-
-            //when
-            const arg = connection._unmarshallArg(wireArg);
-
-            //then
-            expect(wireArg.offset).toBe(12);
-            expect(arg).toBe(connection._objects.get(arg._id));
-        });
-
-        it("unmarshalls an optional zero 32bit integer to a new object, using the data view wire argument", function () {
-            //given
-            global.WebSocket = function () {
-            };//mock WebSocket
-            wf.Registry = function () {
-            };//mock Registry
-
-            const connection = new wf.WConnection("dummyURL");
-            connection._objects = new Map();
-            const objectId = 0;
-
-            const wireArg = new DataView(new ArrayBuffer(12));//1+1+4
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "?".codePointAt(0));
-            wireArg.setUint8(1, "n".codePointAt(0));
-            wireArg.setUint32(2, objectId);
-
-            //when
-            const arg = connection._unmarshallArg(wireArg);
-
-            //then
-            expect(wireArg.offset).toBe(6);
-            expect(arg).toBe(null);
+            expect(wireMsg.offset).toBe(4);
+            expect(args[0](objectType)._id).toBe(objectId);
         });
 
         //--String Unmarshalling--//

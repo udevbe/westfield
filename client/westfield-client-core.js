@@ -560,10 +560,11 @@ wfc.WConnection = class {
     ["n"](wireMsg) {
         const arg = new Uint32Array(wireMsg, wireMsg.offset, 1)[0];
         wireMsg.offset += 4;
+        const connection = this;
         return function (type) {
             const newObject = new wfc[type](this);
             newObject._id = arg;
-            this._objects.set(newObject._id, newObject);
+            connection._objects.set(newObject._id, newObject);
             return newObject;
         }
     }
@@ -615,10 +616,17 @@ wfc.WConnection = class {
     _unmarshallArgs(message, argsSignature) {
         const argsSigLength = argsSignature.length;
         const args = [];
+        let optional = false;
         for (let i = 0; i < argsSigLength; i++) {
-            const signature = argsSignature[i];
-            const optional = signature === "?";
-            args.add(this[signature](message, optional));
+            let signature = argsSignature[i];
+            optional = signature === "?";
+
+            if (optional) {
+                signature = argsSignature[++i];
+            }
+
+            args.push(this[signature](message, optional));
+
         }
         return args;
     }
