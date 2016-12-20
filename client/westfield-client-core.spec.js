@@ -17,6 +17,7 @@ describe("westfield-client-core", function () {
 
                             for (let i = 0; i < buf1.byteLength; i++) {
                                 if (dv1[i] != dv2[i]) {
+                                    //console.error("buf1[" + i + "] === " + dv1[i] + " != buf2[" + i + "] === " + dv2[i] + "\n");
                                     return false;
                                 }
                             }
@@ -985,7 +986,8 @@ describe("westfield-client-core", function () {
             //then
             const wireMsg = new ArrayBuffer(
                 4 + //objectid 4
-                4 + //opcode 8
+                2 + //size 6
+                2 + //opcode 8
                 4 + //uint 12
                 4 + //int 16
                 4 + //fixed 20
@@ -998,11 +1000,13 @@ describe("westfield-client-core", function () {
             );
 
             const bufu32 = new Uint32Array(wireMsg);
+            const bufu16 = new Uint16Array(wireMsg);
             const buf32 = new Int32Array(wireMsg);
             const bufu8 = new Uint8Array(wireMsg);
 
             bufu32[0] = objectid;
-            bufu32[1] = opcode;
+            bufu16[2] = wireMsg.byteLength;
+            bufu16[3] = opcode;
             bufu32[2] = uintArg;
             buf32[3] = intArg;
             buf32[4] = fixedArg._raw;
@@ -1085,7 +1089,8 @@ describe("westfield-client-core", function () {
 
             const wireMsg = new ArrayBuffer(
                 4 + //objectid 4
-                4 + //opcode 8
+                2 + //size 6
+                2 + //opcode 8
                 4 + //uint 12
                 4 + //int 16
                 4 + //fixed 20
@@ -1098,11 +1103,13 @@ describe("westfield-client-core", function () {
             );
 
             const bufu32 = new Uint32Array(wireMsg);
+            const bufu16 = new Uint16Array(wireMsg);
             const buf32 = new Int32Array(wireMsg);
             const bufu8 = new Uint8Array(wireMsg);
 
             bufu32[0] = objectid;
-            bufu32[1] = opcode;
+            bufu16[2] = wireMsg.byteLength;
+            bufu16[3] = opcode;
             bufu32[2] = uintArg;
             buf32[3] = intArg;
             buf32[4] = fixedArg._raw;

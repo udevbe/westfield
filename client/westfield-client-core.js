@@ -626,7 +626,6 @@ wfc.WConnection = class {
             }
 
             args.push(this[signature](message, optional));
-
         }
         return args;
     }
@@ -638,10 +637,12 @@ wfc.WConnection = class {
      * @private
      */
     _unmarshall(message) {
-        const wireMsg = new Uint32Array(message);
+        const bufu32 = new Uint32Array(message);
+        const bufu16 = new Uint16Array(message);
 
-        const id = wireMsg[0];
-        const opcode = wireMsg[1];
+        const id = bufu32[0];
+        //const size = bufu16[2];//not used.
+        const opcode = bufu16[3];
         message.offset = 8;
 
         const obj = this._objects.get(id);
@@ -680,9 +681,11 @@ wfc.WConnection = class {
         const wireMsg = new ArrayBuffer(size);
 
         //write actual wire message
-        const idOpcode = new Uint32Array(wireMsg, 0);
-        idOpcode[0] = id;
-        idOpcode[1] = opcode;
+        const bufu32 = new Uint32Array(wireMsg);
+        const bufu16 = new Uint16Array(wireMsg);
+        bufu32[0] = id;
+        bufu16[2] = size;
+        bufu16[3] = opcode;
         wireMsg.offset = 8;
 
         argsArray.forEach(function (arg) {
@@ -708,7 +711,7 @@ wfc.WConnection = class {
         Object.freeze(wObject);
 
         //determine required wire message length
-        let size = 4 + 4;  //id+opcode
+        let size = 4 + 2 + 2;  //id+size+opcode
         argsArray.forEach(function (arg) {
             if (arg.type === "n") {
                 arg.value = wObject;
@@ -731,7 +734,7 @@ wfc.WConnection = class {
      */
     _marshall(id, opcode, argsArray) {
         //determine required wire message length
-        let size = 4 + 4;  //id+opcode
+        let size = 4 + 2 + 2;  //id+size+opcode
         argsArray.forEach(function (arg) {
             size += arg.size; //add size of the actual argument values
         });
