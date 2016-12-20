@@ -95,10 +95,9 @@ wfg.ProtocolParser = class {
 
         const evName = ev.$.name;
 
-        out.write(util.format("\t[%d](", opcode));
-        this._generateEventArgs(out, ev);
-        out.write("){\n");
-        out.write(util.format("\t\tthis._iface.%s(", evName));
+        out.write(util.format("\t[%d](message){\n", opcode));
+        out.write(util.format("\t\tconst args = this._connection._unmarshallArgs(message);\n"));
+        out.write(util.format("\t\tthis.iface.%s.call(", evName));
 
         if (ev.hasOwnProperty("arg")) {
             const evArgs = ev.arg;
@@ -108,13 +107,11 @@ wfg.ProtocolParser = class {
                 }
 
                 const arg = evArgs[i];
-                const argName = arg.$.name;
                 const argType = arg.$.type;
+                out.write(util.format("args[%d]", i));
                 if (argType === "new_id") {
                     const argItf = arg.$["interface"];
-                    out.write(util.format("%s(\"%s\")", argName, argItf));
-                } else {
-                    out.write(argName);
+                    out.write(util.format("(\"%s\")", argItf));
                 }
             }
         }
