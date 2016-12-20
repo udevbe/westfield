@@ -673,9 +673,7 @@ wfc.WConnection = class {
     _onSocketMessage(event) {
         //TODO the first response shall be a json informing us of the host's properties.
         //all subsequent message will be in the binary wire format.
-        const message = this._unmarshall(event);
-        const obj = message.obj;
-        obj[message.opcode].apply(obj, message.args);
+        this._unmarshall(event);
     }
 
     __marshallMsg(id, opcode, size, argsArray) {
@@ -710,7 +708,7 @@ wfc.WConnection = class {
         Object.freeze(wObject);
 
         //determine required wire message length
-        let size = 4 + 1;  //id+opcode
+        let size = 4 + 4;  //id+opcode
         argsArray.forEach(function (arg) {
             if (arg.type === "n") {
                 arg.value = wObject;

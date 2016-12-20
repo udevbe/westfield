@@ -742,28 +742,29 @@ describe("westfield-client-core", function () {
             const connection = new wf.WConnection("dummyURL");
 
             const argValue = "lorem ipsum";
-            const wireArg = new DataView(new ArrayBuffer(16));//1+4+11
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "s".codePointAt(0));
-            wireArg.setUint32(1, argValue.length);
-            wireArg.setUint8(5, argValue.codePointAt(0));//l
-            wireArg.setUint8(6, argValue.codePointAt(1));//o
-            wireArg.setUint8(7, argValue.codePointAt(2));//r
-            wireArg.setUint8(8, argValue.codePointAt(3));//u
-            wireArg.setUint8(9, argValue.codePointAt(4));//m
-            wireArg.setUint8(10, argValue.codePointAt(5));//
-            wireArg.setUint8(11, argValue.codePointAt(6));//i
-            wireArg.setUint8(12, argValue.codePointAt(7));//p
-            wireArg.setUint8(13, argValue.codePointAt(8));//s
-            wireArg.setUint8(14, argValue.codePointAt(9));//u
-            wireArg.setUint8(15, argValue.codePointAt(10));//m
+            const wireMsg = new ArrayBuffer(16);//4+12
+            wireMsg.offset = 0;
+            const buf32 = new Uint32Array(wireMsg);
+            buf32[0] = argValue.length;
+            const buf8 = new Uint8Array(wireMsg);
+            buf8[4] = argValue.codePointAt(0); //l
+            buf8[5] = argValue.codePointAt(1); //o
+            buf8[6] = argValue.codePointAt(2); //r
+            buf8[7] = argValue.codePointAt(3); //u
+            buf8[8] = argValue.codePointAt(4); //m
+            buf8[9] = argValue.codePointAt(5); //
+            buf8[10] = argValue.codePointAt(6); //i
+            buf8[11] = argValue.codePointAt(7); //p
+            buf8[12] = argValue.codePointAt(8); //s
+            buf8[13] = argValue.codePointAt(9); //u
+            buf8[14] = argValue.codePointAt(10); //m
 
             //when
-            const arg = connection._unmarshallArg(wireArg);
+            const args = connection._unmarshallArgs(wireMsg, "s");
 
             //then
-            expect(wireArg.offset).toBe(16);
-            expect(arg).toBe(argValue);
+            expect(wireMsg.offset).toBe(16);
+            expect(args[0]).toBe(argValue);
         });
 
         it("unmarshalls a non empty optional string to a string, using the data view wire argument", function () {
@@ -776,29 +777,29 @@ describe("westfield-client-core", function () {
             const connection = new wf.WConnection("dummyURL");
 
             const argValue = "lorem ipsum";
-            const wireArg = new DataView(new ArrayBuffer(17));//1+1+4+11
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "?".codePointAt(0));
-            wireArg.setUint8(1, "s".codePointAt(0));
-            wireArg.setUint32(2, argValue.length);
-            wireArg.setUint8(6, argValue.codePointAt(0));//l
-            wireArg.setUint8(7, argValue.codePointAt(1));//o
-            wireArg.setUint8(8, argValue.codePointAt(2));//r
-            wireArg.setUint8(9, argValue.codePointAt(3));//u
-            wireArg.setUint8(10, argValue.codePointAt(4));//m
-            wireArg.setUint8(11, argValue.codePointAt(5));//
-            wireArg.setUint8(12, argValue.codePointAt(6));//i
-            wireArg.setUint8(13, argValue.codePointAt(7));//p
-            wireArg.setUint8(14, argValue.codePointAt(8));//s
-            wireArg.setUint8(15, argValue.codePointAt(9));//u
-            wireArg.setUint8(16, argValue.codePointAt(10));//m
+            const wireMsg = new ArrayBuffer(16);//4+12
+            wireMsg.offset = 0;
+            const buf32 = new Uint32Array(wireMsg);
+            buf32[0] = argValue.length;
+            const buf8 = new Uint8Array(wireMsg);
+            buf8[4] = argValue.codePointAt(0); //l
+            buf8[5] = argValue.codePointAt(1); //o
+            buf8[6] = argValue.codePointAt(2); //r
+            buf8[7] = argValue.codePointAt(3); //u
+            buf8[8] = argValue.codePointAt(4); //m
+            buf8[9] = argValue.codePointAt(5); //
+            buf8[10] = argValue.codePointAt(6); //i
+            buf8[11] = argValue.codePointAt(7); //p
+            buf8[12] = argValue.codePointAt(8); //s
+            buf8[13] = argValue.codePointAt(9); //u
+            buf8[14] = argValue.codePointAt(10); //m
 
             //when
-            const arg = connection._unmarshallArg(wireArg);
+            const args = connection._unmarshallArgs(wireMsg, "?s");
 
             //then
-            expect(wireArg.offset).toBe(17);
-            expect(arg).toBe(argValue);
+            expect(wireMsg.offset).toBe(16);
+            expect(args[0]).toBe(argValue);
         });
 
         it("unmarshalls an empty optional string to a string, using the data view wire argument", function () {
@@ -810,17 +811,18 @@ describe("westfield-client-core", function () {
 
             const connection = new wf.WConnection("dummyURL");
 
-            const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "?".codePointAt(0));
-            wireArg.setUint8(1, "s".codePointAt(0));
-            wireArg.setUint32(2, 0);
+            const argValue = "lorem ipsum";
+            const wireMsg = new ArrayBuffer(16);//4
+            wireMsg.offset = 0;
+            const buf32 = new Uint32Array(wireMsg);
+            buf32[0] = 0;
+
             //when
-            const arg = connection._unmarshallArg(wireArg);
+            const args = connection._unmarshallArgs(wireMsg, "?s");
 
             //then
-            expect(wireArg.offset).toBe(6);
-            expect(arg).toBe(null);
+            expect(wireMsg.offset).toBe(4);
+            expect(args[0]).toBe(null);
         });
 
         //--Array Unmarshalling--//
@@ -833,32 +835,38 @@ describe("westfield-client-core", function () {
             };//mock Registry
 
             const connection = new wf.WConnection("dummyURL");
+
+            const wireMsg = new ArrayBuffer(16);//4+12
+            wireMsg.offset = 0;
+            const buf32 = new Uint32Array(wireMsg);
+
             const buffer = new ArrayBuffer(8);
             const argValue = new Uint32Array(buffer);
             argValue[0] = 0xF1234567;
             argValue[1] = 0x1234567F;
 
-            const wireArg = new DataView(new ArrayBuffer(13));//1+4+8
+            buf32[0] = buffer.byteLength;
+
+            const buf8 = new Uint8Array(wireMsg);
             const byteArray = new Uint8Array(buffer);
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "a".codePointAt(0));
-            wireArg.setUint32(1, buffer.byteLength);
-            wireArg.setUint8(5, byteArray[0]);
-            wireArg.setUint8(6, byteArray[1]);
-            wireArg.setUint8(7, byteArray[2]);
-            wireArg.setUint8(8, byteArray[3]);
-            wireArg.setUint8(9, byteArray[4]);
-            wireArg.setUint8(10, byteArray[5]);
-            wireArg.setUint8(11, byteArray[6]);
-            wireArg.setUint8(12, byteArray[7]);
+
+            buf8[4] = byteArray[0];
+            buf8[5] = byteArray[1];
+            buf8[6] = byteArray[2];
+            buf8[7] = byteArray[3];
+            buf8[8] = byteArray[4];
+            buf8[9] = byteArray[5];
+            buf8[10] = byteArray[6];
+            buf8[11] = byteArray[7];
 
             //when
-            const arg = new Uint32Array(connection._unmarshallArg(wireArg));
+            const args = connection._unmarshallArgs(wireMsg, "a");
 
             //then
-            expect(wireArg.offset).toBe(13);
-            expect(arg[0]).toBe(argValue[0]);
-            expect(arg[1]).toBe(argValue[1]);
+            expect(wireMsg.offset).toBe(16);
+            const arr = new Uint32Array(args[0]);
+            expect(arr[0]).toBe(argValue[0]);
+            expect(arr[1]).toBe(argValue[1]);
         });
 
         it("unmarshalls a non empty optional array to an array, using the data view wire argument", function () {
@@ -869,33 +877,38 @@ describe("westfield-client-core", function () {
             };//mock Registry
 
             const connection = new wf.WConnection("dummyURL");
+
+            const wireMsg = new ArrayBuffer(16);//4+12
+            wireMsg.offset = 0;
+            const buf32 = new Uint32Array(wireMsg);
+
             const buffer = new ArrayBuffer(8);
             const argValue = new Uint32Array(buffer);
             argValue[0] = 0xF1234567;
             argValue[1] = 0x1234567F;
 
-            const wireArg = new DataView(new ArrayBuffer(14));//1+1+4+8
+            buf32[0] = buffer.byteLength;
+
+            const buf8 = new Uint8Array(wireMsg);
             const byteArray = new Uint8Array(buffer);
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "?".codePointAt(0));
-            wireArg.setUint8(1, "a".codePointAt(0));
-            wireArg.setUint32(2, buffer.byteLength);
-            wireArg.setUint8(6, byteArray[0]);
-            wireArg.setUint8(7, byteArray[1]);
-            wireArg.setUint8(8, byteArray[2]);
-            wireArg.setUint8(9, byteArray[3]);
-            wireArg.setUint8(10, byteArray[4]);
-            wireArg.setUint8(11, byteArray[5]);
-            wireArg.setUint8(12, byteArray[6]);
-            wireArg.setUint8(13, byteArray[7]);
+
+            buf8[4] = byteArray[0];
+            buf8[5] = byteArray[1];
+            buf8[6] = byteArray[2];
+            buf8[7] = byteArray[3];
+            buf8[8] = byteArray[4];
+            buf8[9] = byteArray[5];
+            buf8[10] = byteArray[6];
+            buf8[11] = byteArray[7];
 
             //when
-            const arg = new Uint32Array(connection._unmarshallArg(wireArg));
+            const args = connection._unmarshallArgs(wireMsg, "?a");
 
             //then
-            expect(wireArg.offset).toBe(14);
-            expect(arg[0]).toBe(argValue[0]);
-            expect(arg[1]).toBe(argValue[1]);
+            expect(wireMsg.offset).toBe(16);
+            const arr = new Uint32Array(args[0]);
+            expect(arr[0]).toBe(argValue[0]);
+            expect(arr[1]).toBe(argValue[1]);
         });
 
         it("unmarshalls an empty optional array to an array, using the data view wire argument", function () {
@@ -907,18 +920,17 @@ describe("westfield-client-core", function () {
 
             const connection = new wf.WConnection("dummyURL");
 
-            const wireArg = new DataView(new ArrayBuffer(6));//1+1+4
-            wireArg.offset = 0;
-            wireArg.setUint8(0, "?".codePointAt(0));
-            wireArg.setUint8(1, "a".codePointAt(0));
-            wireArg.setUint32(2, 0);
+            const wireMsg = new ArrayBuffer(16);//4+12
+            wireMsg.offset = 0;
+            const buf32 = new Uint32Array(wireMsg);
+            buf32[0] = 0;
 
             //when
-            const arg = connection._unmarshallArg(wireArg);
+            const args = connection._unmarshallArgs(wireMsg, "?a");
 
             //then
-            expect(wireArg.offset).toBe(6);
-            expect(arg).toBe(null);
+            expect(wireMsg.offset).toBe(4);
+            expect(args[0]).toBe(null);
         });
     });
 
@@ -940,7 +952,6 @@ describe("westfield-client-core", function () {
             const uintArg = 987;
             const intArg = -789;
             const fixedArg = wf.parseFixed(0.123);
-            const doubleArg = 0.123456;
             const objectArg = new wf.WObject(connection, {name: "objectItf"});
             objectArg._id = 321;
 
@@ -972,59 +983,47 @@ describe("westfield-client-core", function () {
                 ]);
 
             //then
-            const wireMsgBuffer = new ArrayBuffer(4 + 1 + 1 + 4 + 1 + 4 + 1 + 4 + 1 + 4 + 1 + 4 + 1 + newObjectItfName.length + 1 + 4 + stringArg.length + 1 + 4 + buffer.byteLength);
-            const wireDataView = new DataView(wireMsgBuffer);
-            let offset = 0;
-            wireDataView.setUint32(offset, objectid);
-            offset += 4;
-            wireDataView.setUint8(offset, opcode);
-            offset += 1;
-            wireDataView.setUint8(offset, "u".codePointAt(0));
-            offset += 1;
-            wireDataView.setUint32(offset, uintArg);
-            offset += 4;
-            wireDataView.setUint8(offset, "i".codePointAt(0));
-            offset += 1;
-            wireDataView.setInt32(offset, intArg);
-            offset += 4;
-            wireDataView.setUint8(offset, "f".codePointAt(0));
-            offset += 1;
-            wireDataView.setInt32(offset, fixedArg._raw);
-            offset += 4;
-            wireDataView.setUint8(offset, "o".codePointAt(0));
-            offset += 1;
-            wireDataView.setUint32(offset, objectArg._id);
-            offset += 4;
-            wireDataView.setUint8(offset, "n".codePointAt(0));
-            offset += 1;
-            wireDataView.setUint32(offset, newObject.value._id);
-            offset += 4;
-            wireDataView.setUint8(offset, newObjectItfName.length);
-            offset += 1;
-            for (let i = 0, len = newObjectItfName.length; i < len; i++) {
-                wireDataView.setUint8(offset, newObjectItfName[i].codePointAt(0));
-                offset += 1;
-            }
-            wireDataView.setUint8(offset, "s".codePointAt(0));
-            offset += 1;
-            wireDataView.setUint32(offset, stringArg.length);
-            offset += 4;
+            const wireMsg = new ArrayBuffer(
+                4 + //objectid 4
+                4 + //opcode 8
+                4 + //uint 12
+                4 + //int 16
+                4 + //fixed 20
+                4 + //object id 24
+                4 + //new object id 28
+                4 + //str length 32
+                ((stringArg.length + 3) & ~3) + //str 44
+                4 + //array length 48
+                ((buffer.byteLength + 3) & ~3) //array 56
+            );
+
+            const bufu32 = new Uint32Array(wireMsg);
+            const buf32 = new Int32Array(wireMsg);
+            const bufu8 = new Uint8Array(wireMsg);
+
+            bufu32[0] = objectid;
+            bufu32[1] = opcode;
+            bufu32[2] = uintArg;
+            buf32[3] = intArg;
+            buf32[4] = fixedArg._raw;
+            bufu32[5] = objectArg._id;
+            bufu32[6] = newObject.value._id;
+            bufu32[7] = stringArg.length;
             for (let i = 0, len = stringArg.length; i < len; i++) {
-                wireDataView.setUint8(offset, stringArg[i].codePointAt(0));
-                offset += 1;
+                bufu8[(8 * 4) + i] = stringArg[i].codePointAt(0);
             }
-            wireDataView.setUint8(offset, "a".codePointAt(0));
-            offset += 1;
-            wireDataView.setUint32(offset, bufferLength);
-            offset += 4;
-            let bufferBlob = new Uint8Array(buffer);
+
+            let offset = 8 + ((stringArg.length + 3) & ~3) / 4;
+            bufu32[offset] = bufferLength;
+            offset++;
+
+            const bufferBlob = new Uint8Array(buffer);
             for (let i = 0; i < bufferLength; i++) {
-                wireDataView.setUint8(offset, bufferBlob[i]);
-                offset += 1;
+                bufu8[(offset * 4) + i] = bufferBlob[i];
             }
 
             expect(connection._socket.send).toHaveBeenCalled();
-            expect(connection._socket.send.calls.mostRecent().args[0]).toBeBlobEqual(wireMsgBuffer);
+            expect(connection._socket.send.calls.mostRecent().args[0]).toBeBlobEqual(wireMsg);
         });
     });
 
@@ -1038,16 +1037,25 @@ describe("westfield-client-core", function () {
             };//mock Registry
 
             const connection = new wf.WConnection("dummyURL");
+            connection._objects = new Map();
 
             const objectid = 123;
             const opcode = 255;
             const uintArg = 987;
             const intArg = -789;
             const fixedArg = wf.parseFixed(0.123);
-            const doubleArg = 0.1234567;
-            const objectArgId = 321;
+            const objectArg = new wf.WObject(connection, {name: "objectItf"});
+            objectArg._id = 321;
+            connection._objects.set(objectArg._id, objectArg);
+            const newObjectId = 643;
+
             const newObjectItfName = "newObjectItf";
-            const newObjectArgId = 654;
+            wf[newObjectItfName] = class newObjectItf extends wf.WObject {
+                constructor(connection) {
+                    super(connection, {name: newObjectItfName});
+                }
+            };
+
             const stringArg = "lorum ipsum";
             const bufferLength = 8;
             const buffer = new ArrayBuffer(bufferLength);
@@ -1056,98 +1064,77 @@ describe("westfield-client-core", function () {
             arrayArg[1] = 0x1234567F;
 
             const targetObject = new wf.WObject(connection, {
-                name: "dummyObject"
+                name: "dummyObject",
+                mock: jasmine.createSpy('mock object function')
             });
-            targetObject[opcode] = jasmine.createSpy('mock object function');
+            targetObject[opcode] = function (wireMsg) {
+                const args = this._connection._unmarshallArgs(wireMsg, "uifonsa");
+                this.iface.mock.call(
+                    this.iface,
+                    args[0], //u
+                    args[1], //i
+                    args[2], //f
+                    args[3], //o
+                    args[4](newObjectItfName),//n
+                    args[5], //s
+                    args[6] //a
+                );
+            };
             targetObject._id = objectid;
             connection._objects.set(objectid, targetObject);
 
-            const objectArg = new wf.WObject(connection, {name: "objectItf"});
-            objectArg._id = objectArgId;
-            connection._objects.set(objectArgId, objectArg);
-
-            wf.newObjectItf = class newObjectItf extends wf.WObject {
-                constructor(connection) {
-                    super(connection, {
-                        name: "newObjectItf"
-                    });
-                }
-            };
-
-            const wireMsgBuffer = new ArrayBuffer(
-                4 + //object id
-                1 + //opcode
-                1 + 4 + //unsigned integer
-                1 + 4 + //integer
-                1 + 4 + //fixed
-                1 + 4 + //object
-                1 + 4 + 1 + newObjectItfName.length + //new object
-                1 + 4 + stringArg.length + //string
-                1 + 4 + buffer.byteLength //array
+            const wireMsg = new ArrayBuffer(
+                4 + //objectid 4
+                4 + //opcode 8
+                4 + //uint 12
+                4 + //int 16
+                4 + //fixed 20
+                4 + //object id 24
+                4 + //new object id 28
+                4 + //str length 32
+                ((stringArg.length + 3) & ~3) + //str 44
+                4 + //array length 48
+                ((buffer.byteLength + 3) & ~3) //array 56
             );
-            const wireDataView = new DataView(wireMsgBuffer);
-            let offset = 0;
-            wireDataView.setUint32(offset, objectid);
-            offset += 4;
-            wireDataView.setUint8(offset, opcode);
-            offset += 1;
-            wireDataView.setUint8(offset, "u".codePointAt(0));
-            offset += 1;
-            wireDataView.setUint32(offset, uintArg);
-            offset += 4;
-            wireDataView.setUint8(offset, "i".codePointAt(0));
-            offset += 1;
-            wireDataView.setInt32(offset, intArg);
-            offset += 4;
-            wireDataView.setUint8(offset, "f".codePointAt(0));
-            offset += 1;
-            wireDataView.setInt32(offset, fixedArg._raw);
-            offset += 4;
-            wireDataView.setUint8(offset, "o".codePointAt(0));
-            offset += 1;
-            wireDataView.setUint32(offset, objectArgId);
-            offset += 4;
-            wireDataView.setUint8(offset, "n".codePointAt(0));
-            offset += 1;
-            wireDataView.setUint32(offset, newObjectArgId);
-            offset += 4;
-            wireDataView.setUint8(offset, newObjectItfName.length);
-            offset += 1;
-            for (let i = 0, len = newObjectItfName.length; i < len; i++) {
-                wireDataView.setUint8(offset, newObjectItfName[i].codePointAt(0));
-                offset += 1;
-            }
-            wireDataView.setUint8(offset, "s".codePointAt(0));
-            offset += 1;
-            wireDataView.setUint32(offset, stringArg.length);
-            offset += 4;
+
+            const bufu32 = new Uint32Array(wireMsg);
+            const buf32 = new Int32Array(wireMsg);
+            const bufu8 = new Uint8Array(wireMsg);
+
+            bufu32[0] = objectid;
+            bufu32[1] = opcode;
+            bufu32[2] = uintArg;
+            buf32[3] = intArg;
+            buf32[4] = fixedArg._raw;
+            bufu32[5] = objectArg._id;
+            bufu32[6] = newObjectId;
+            bufu32[7] = stringArg.length;
             for (let i = 0, len = stringArg.length; i < len; i++) {
-                wireDataView.setUint8(offset, stringArg[i].codePointAt(0));
-                offset += 1;
+                bufu8[(8 * 4) + i] = stringArg[i].codePointAt(0);
             }
-            wireDataView.setUint8(offset, "a".codePointAt(0));
-            offset += 1;
-            wireDataView.setUint32(offset, bufferLength);
-            offset += 4;
-            let bufferBlob = new Uint8Array(buffer);
+
+            let offset = 8 + ((stringArg.length + 3) & ~3) / 4;
+            bufu32[offset] = bufferLength;
+            offset++;
+
+            const bufferBlob = new Uint8Array(buffer);
             for (let i = 0; i < bufferLength; i++) {
-                wireDataView.setUint8(offset, bufferBlob[i]);
-                offset += 1;
+                bufu8[(offset * 4) + i] = bufferBlob[i];
             }
 
             //when
-            connection._onSocketMessage(wireMsgBuffer);
+            connection._onSocketMessage(wireMsg);
 
             //then
-            expect(targetObject[opcode]).toHaveBeenCalled();
-            expect(targetObject[opcode].calls.mostRecent().args[0]).toEqual(uintArg);
-            expect(targetObject[opcode].calls.mostRecent().args[1]).toEqual(intArg);
-            expect(targetObject[opcode].calls.mostRecent().args[2]).toEqual(fixedArg);
-            expect(targetObject[opcode].calls.mostRecent().args[3]).toEqual(objectArg);
-            expect(targetObject[opcode].calls.mostRecent().args[4]._id).toEqual(newObjectArgId);
-            expect(targetObject[opcode].calls.mostRecent().args[4].iface.name).toEqual(newObjectItfName);
-            expect(targetObject[opcode].calls.mostRecent().args[5]).toEqual(stringArg);
-            expect(targetObject[opcode].calls.mostRecent().args[6]).toBeBlobEqual(buffer);
+            expect(targetObject.iface.mock).toHaveBeenCalled();
+            expect(targetObject.iface.mock.calls.mostRecent().args[0]).toEqual(uintArg);
+            expect(targetObject.iface.mock.calls.mostRecent().args[1]).toEqual(intArg);
+            expect(targetObject.iface.mock.calls.mostRecent().args[2]).toEqual(fixedArg);
+            expect(targetObject.iface.mock.calls.mostRecent().args[3]).toEqual(objectArg);
+            expect(targetObject.iface.mock.calls.mostRecent().args[4]._id).toEqual(newObjectId);
+            expect(targetObject.iface.mock.calls.mostRecent().args[4].iface.name).toEqual(newObjectItfName);
+            expect(targetObject.iface.mock.calls.mostRecent().args[5]).toEqual(stringArg);
+            expect(targetObject.iface.mock.calls.mostRecent().args[6]).toBeBlobEqual(buffer);
         });
     });
 });
