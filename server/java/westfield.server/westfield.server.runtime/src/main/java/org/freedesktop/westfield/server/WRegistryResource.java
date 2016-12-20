@@ -14,8 +14,7 @@ public class WRegistryResource extends WResource<WRegistryRequests> {
     public void global(final int name,
                        final String interface_,
                        final int version) {
-        //TODO marshall
-        //getClient().getSession().getAsyncRemote().sendBinary()
+        getClient().marshall();
     }
 
     public void globalRemove(final int name) {

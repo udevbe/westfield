@@ -8,5 +8,6 @@ public interface WRegistryRequests {
 
     void bind(WRegistryResource wRegistryResource,
               int id,
+              int name,
               int version);
 }

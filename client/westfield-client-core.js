@@ -440,11 +440,12 @@ wfc.WRegistry = class WRegistry extends wfc.WObject {
      * Binds a new, client-created object to the server using the specified name as the identifier.
      *
      * @param {Number} name unique numeric name of the object
-     * @param {string} itfName class name of the new object
+     * @param {string} interface_ interface implemented by the new object
+     * @param {number} version The version used and supported by the client
      * @return {*} a new bounded object
      */
-    bind(name, itfName) {
-        return this._connection._marshallConstructor(this._id, 1, itfName, [wfc._uint(name), wfc._newObject()]);
+    bind(name, interface_, version) {
+        return this._connection._marshallConstructor(this._id, 1, interface_, [wfc._uint(name), wfc._newObject(), wfc._uint(version)]);
     }
 
     constructor(connection) {
@@ -461,8 +462,8 @@ wfc.WRegistry = class WRegistry extends wfc.WObject {
              * given version of the given interface.
              *
              * @param {Number} name numeric name of the global object
-             * @param {string} interface_ interface implemented by the object
-             * @param {Number} version interface version
+             * @param {string} interface_ interface implemented by the global
+             * @param {Number} version maximum supported interface version of the global
              */
             global(name, interface_, version){
             },

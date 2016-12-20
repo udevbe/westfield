@@ -50,7 +50,6 @@ public class WConnection {
         this.registry.publishGlobals(this.registry.createResource(client));
     }
 
-
     @OnError
     public void onError(final Throwable t,
                         final Session session) {
@@ -63,7 +62,6 @@ public class WConnection {
         this.wClients.remove(session)
                      .onClose();
     }
-
 
     public Collection<WClient> getClients() {
         return this.wClients.values();

@@ -18,7 +18,11 @@ public class WClient {
         this.session = session;
     }
 
-    void unmarshall(final ByteBuffer message) {
+    public void marshall(){
+
+    }
+
+    private void unmarshall(final ByteBuffer message) {
 
     }
 
@@ -34,12 +38,12 @@ public class WClient {
 
     }
 
-    public Session getSession() {
-        return this.session;
-    }
-
     void onClose() {
 
+    }
+
+    public Session getSession() {
+        return this.session;
     }
 
     public Collection<WResource> getResources() {

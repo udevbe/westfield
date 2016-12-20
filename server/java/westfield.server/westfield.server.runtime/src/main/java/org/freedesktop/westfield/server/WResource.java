@@ -17,7 +17,7 @@ public abstract class WResource<T> {
                                 this);
     }
 
-    public void destroy(){
+    public void destroy() {
         this.client.unregisterResource(this.id);
     }
 
@@ -45,5 +45,9 @@ public abstract class WResource<T> {
         int result = this.client != null ? this.client.hashCode() : 0;
         result = 31 * result + this.id;
         return result;
+    }
+
+    int getId() {
+        return id;
     }
 }

@@ -9,43 +9,47 @@ import java.util.Set;
 public class WRegistry implements WRegistryRequests {
 
     private final Set<WRegistryResource> wRegistryResources = new HashSet<>();
-
-    private final Map<Integer, WGlobal> globals = new HashMap<>();
+    private final Map<Integer, WGlobal>  globals            = new HashMap<>();
 
     WRegistry() {}
 
     @Override
     public void bind(final WRegistryResource wRegistryResource,
+                     final int name,
                      final int id,
                      final int version) {
-        this.globals.get(id)
+        this.globals.get(name)
                     .bindClient(wRegistryResource.getClient(),
                                 id,
                                 version);
     }
 
     public void register(final WGlobal global) {
-        if (this.globals.put(global.getId(),
+        if (this.globals.put(global.hashCode(),
                              global) == null) {
-            this.wRegistryResources.forEach(wRegistryResource -> wRegistryResource.global(global.getId(),
+            this.wRegistryResources.forEach(wRegistryResource -> wRegistryResource.global(global.hashCode(),
                                                                                           global.getInterfaceName(),
                                                                                           global.getVersion()));
         }
     }
 
     public void unregister(final WGlobal global) {
-        if (this.globals.remove(global.getId()) != null) {
-            this.wRegistryResources.forEach(wRegistryResource -> wRegistryResource.global(global.getId(),
+        if (this.globals.remove(global.hashCode()) != null) {
+            this.wRegistryResources.forEach(wRegistryResource -> wRegistryResource.global(global.hashCode(),
                                                                                           global.getInterfaceName(),
                                                                                           global.getVersion()));
         }
     }
 
     void publishGlobals(final WRegistryResource wRegistryResource) {
-        this.globals.values()
-                    .forEach(global -> wRegistryResource.global(global.getId(),
-                                                                global.getInterfaceName(),
-                                                                global.getVersion()));
+        this.globals.entrySet()
+                    .forEach(entry -> {
+                        final int     name   = entry.getKey();
+                        final WGlobal global = entry.getValue();
+                        wRegistryResource.global(name,
+                                                 global.getInterfaceName(),
+                                                 global.getVersion());
+                    });
     }
 
     WRegistryResource createResource(final WClient client) {
