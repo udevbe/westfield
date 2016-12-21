@@ -403,25 +403,6 @@ wfc._arrayOptional = function (arg) {
  * @param {{name: String, impl: *}} iface
  */
 wfc.WObject = class {
-
-    /**
-     * Deletes this object from the local pool of objects and notify the remote about this object's deletion.
-     */
-    destroy() {
-        this._connection._objects.remove(this._id);
-        this._connection._marshall(this._id, 0, []);//opcode 0 is reserved for destruction
-    }
-
-    /**
-     * Post an error to the remote.
-     *
-     * @param {Number} errorCode an integer error code
-     * @param {String} errorMsg the error message
-     */
-    postError(errorCode, errorMsg) {
-        this._connection._marshall(this._id, 255, [wfc._uint(errorCode), wfc._string(errorMsg)]);//opcode 255 is reserved for error
-    }
-
     /**
      *
      * @param {WConnection} connection
