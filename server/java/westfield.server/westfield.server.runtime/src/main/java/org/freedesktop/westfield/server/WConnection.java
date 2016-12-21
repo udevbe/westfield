@@ -15,7 +15,7 @@ import java.util.Map;
 @ServerEndpoint("/westfield")
 public class WConnection {
 
-    private static final String subprotocol = "westfield";
+    private static final String SUBPROTOCOL = "westfield";
 
     private final WRegistry             registry = new WRegistry();
     private final Map<Session, WClient> wClients = new HashMap<>();
@@ -33,11 +33,15 @@ public class WConnection {
     @OnOpen
     public void onOpen(final Session session) throws IOException {
         if (!session.getNegotiatedSubprotocol()
-                    .equals(subprotocol)) {
+                    .equals(SUBPROTOCOL)) {
             session.close(new CloseReason(CloseReason.CloseCodes.PROTOCOL_ERROR,
-                                          String.format("Expected subprotocol '%s'",
-                                                        subprotocol)));
+                                          String.format("Expected SUBPROTOCOL '%s'",
+                                                        SUBPROTOCOL)));
+            return;
         }
+
+        //non jumbo MTU is 1500, minus headers and such that would be ~1450 for a tcp packet, so 1024 should definitely fit in a single ethernet frame using a websocket.
+        session.setMaxBinaryMessageBufferSize(1024);
 
         final WClient client = new WClient(session);
         session.addMessageHandler(String.class,

@@ -2,6 +2,7 @@ package org.freedesktop.westfield.server;
 
 
 import javax.websocket.Session;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.HashMap;
@@ -18,8 +19,9 @@ public class WClient {
         this.session = session;
     }
 
-    public void marshall(){
-
+    public void marshall(WArgs messsage) {
+        session.getAsyncRemote()
+               .sendBinary(messsage.toWireMessage());
     }
 
     private void unmarshall(final ByteBuffer message) {
@@ -58,5 +60,10 @@ public class WClient {
 
     void unregisterResource(final int id) {
         this.objects.remove(id);
+    }
+
+    void flush() throws IOException {
+        session.getAsyncRemote()
+               .flushBatch();
     }
 }

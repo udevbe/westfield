@@ -14,11 +14,14 @@ public class WRegistryResource extends WResource<WRegistryRequests> {
     public void global(final int name,
                        final String interface_,
                        final int version) {
-        getClient().marshall();
+        getClient().marshall(new WArgs(this,
+                                       1).arg(name)
+                                         .arg(interface_)
+                                         .arg(version));
     }
 
     public void globalRemove(final int name) {
-        //TODO marshall
-        //getClient().getSession().getAsyncRemote().sendBinary()
+        getClient().marshall(new WArgs(this,
+                                       2).arg(name));
     }
 }
