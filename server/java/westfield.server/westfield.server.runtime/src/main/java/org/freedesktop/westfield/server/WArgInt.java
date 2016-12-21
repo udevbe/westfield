@@ -3,7 +3,7 @@ package org.freedesktop.westfield.server;
 
 import java.nio.ByteBuffer;
 
-public class WArgInt implements WArg {
+class WArgInt implements WArg {
 
     private final int arg;
 
@@ -11,10 +11,12 @@ public class WArgInt implements WArg {
         this.arg = arg;
     }
 
+    @Override
     public void write(ByteBuffer byteBuffer) {
         byteBuffer.putInt(this.arg);
     }
 
+    @Override
     public int size() {
         return Integer.BYTES;
     }

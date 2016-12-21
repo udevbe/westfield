@@ -44,7 +44,7 @@ public class WArgs {
         return this;
     }
 
-    public ByteBuffer toWireMessage() {
+    ByteBuffer toWireMessage() {
         short size = 8;//objectid+size+opcode
         for (WArg wArg : wArgs) {
             size += wArg.size();

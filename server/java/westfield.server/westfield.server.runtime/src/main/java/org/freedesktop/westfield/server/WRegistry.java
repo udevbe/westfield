@@ -14,12 +14,12 @@ public class WRegistry implements WRegistryRequests {
     WRegistry() {}
 
     @Override
-    public void bind(final WRegistryResource wRegistryResource,
+    public void bind(final WRegistryResource resource,
                      final int name,
                      final int id,
                      final int version) {
         this.globals.get(name)
-                    .bindClient(wRegistryResource.getClient(),
+                    .bindClient(resource.getClient(),
                                 id,
                                 version);
     }

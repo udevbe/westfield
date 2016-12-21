@@ -1,10 +1,18 @@
 package org.freedesktop.westfield.server;
 
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
+
 public abstract class WResource<T> {
     private final WClient client;
     private final int     id;
     private final T       implementation;
+
+    private final Map<Integer, Method> requests = new HashMap<>();
 
     public WResource(final WClient client,
                      final int id,
@@ -13,12 +21,14 @@ public abstract class WResource<T> {
         this.id = id;
         this.implementation = implementation;
 
-        client.registerResource(this.id,
-                                this);
+        getClient().registerResource(this);
     }
 
+    /**
+     * Remove this resource for the client's pool of objects. Making it eligible for garbage collection.
+     */
     public void destroy() {
-        this.client.unregisterResource(this.id);
+        getClient().unregisterResource(this);
     }
 
     public T getImplementation() {
@@ -36,18 +46,37 @@ public abstract class WResource<T> {
 
         final WResource<?> wResource = (WResource<?>) o;
 
-        if (this.id != wResource.id) { return false; }
-        return this.client != null ? this.client.equals(wResource.client) : wResource.client == null;
+        if (getId() != wResource.getId()) { return false; }
+        return getClient() != null ? getClient().equals(wResource.getClient()) : wResource.getClient() == null;
     }
 
     @Override
     public int hashCode() {
-        int result = this.client != null ? this.client.hashCode() : 0;
-        result = 31 * result + this.id;
+        int result = getClient() != null ? getClient().hashCode() : 0;
+        result = 31 * result + getId();
         return result;
     }
 
     int getId() {
         return id;
+    }
+
+    void dispatch(int opcode,
+                  ByteBuffer message,
+                  Map<Integer, WResource<?>> objects) throws NoSuchMethodException,
+                                                             InvocationTargetException,
+                                                             IllegalAccessException {
+        Method method = this.requests.get(opcode);
+        if (method == null) {
+            method = getClass().getDeclaredMethod("$" + opcode,
+                                                  ByteBuffer.class,
+                                                  Map.class);
+            method.setAccessible(true);
+            this.requests.put(opcode,
+                              method);
+        }
+        method.invoke(this,
+                      message,
+                      objects);
     }
 }

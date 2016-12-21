@@ -3,7 +3,7 @@ package org.freedesktop.westfield.server;
 
 import java.nio.ByteBuffer;
 
-public class WArgArray implements WArg {
+class WArgArray implements WArg {
 
     private ByteBuffer arg;
 
@@ -11,6 +11,7 @@ public class WArgArray implements WArg {
         this.arg = arg;
     }
 
+    @Override
     public void write(ByteBuffer byteBuffer) {
         this.arg.rewind();
         byteBuffer.put(this.arg);
@@ -18,6 +19,7 @@ public class WArgArray implements WArg {
         byteBuffer.position((byteBuffer.position() + 3) & ~3);
     }
 
+    @Override
     public int size() {
         //returns integer aligned size
         return ((arg.capacity() + 3) & ~3);

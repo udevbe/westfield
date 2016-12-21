@@ -1,6 +1,9 @@
 package org.freedesktop.westfield.server;
 
 
+import java.nio.ByteBuffer;
+import java.util.Map;
+
 public class WRegistryResource extends WResource<WRegistryRequests> {
 
     public WRegistryResource(final WClient client,
@@ -23,5 +26,15 @@ public class WRegistryResource extends WResource<WRegistryRequests> {
     public void globalRemove(final int name) {
         getClient().marshall(new WArgs(this,
                                        2).arg(name));
+    }
+
+    private void $1(ByteBuffer message,
+                    Map<Integer, WResource> objects) {
+        WArgsReader wArgsReader = new WArgsReader(message,
+                                                  objects);
+        getImplementation().bind(this,
+                                 wArgsReader.readInt(),
+                                 wArgsReader.readInt(),
+                                 wArgsReader.readInt());
     }
 }
