@@ -13,10 +13,10 @@ public class WRegistry {
 
     WRegistry() {}
 
-    public void bind(final WRegistryResource resource,
-                     final int name,
-                     final int id,
-                     final int version) {
+    void bind(final WRegistryResource resource,
+              final int name,
+              final int id,
+              final int version) {
         this.globals.get(name)
                     .bindClient(resource.getClient(),
                                 id,
