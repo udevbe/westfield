@@ -6,14 +6,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class WRegistry implements WRegistryRequests {
+public class WRegistry {
 
     private final Set<WRegistryResource> wRegistryResources = new HashSet<>();
     private final Map<Integer, WGlobal>  globals            = new HashMap<>();
 
     WRegistry() {}
 
-    @Override
     public void bind(final WRegistryResource resource,
                      final int name,
                      final int id,

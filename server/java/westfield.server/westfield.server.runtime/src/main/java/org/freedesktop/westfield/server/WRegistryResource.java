@@ -4,11 +4,11 @@ package org.freedesktop.westfield.server;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
-public class WRegistryResource extends WResource<WRegistryRequests> {
+public class WRegistryResource extends WResource<WRegistry> {
 
     public WRegistryResource(final WClient client,
                              final int id,
-                             final WRegistryRequests implementation) {
+                             final WRegistry implementation) {
         super(client,
               id,
               implementation);
