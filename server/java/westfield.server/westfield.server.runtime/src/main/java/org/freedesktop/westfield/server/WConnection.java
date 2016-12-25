@@ -70,4 +70,8 @@ public class WConnection {
     public Collection<WClient> getClients() {
         return this.wClients.values();
     }
+
+    public WRegistry getRegistry() {
+        return this.registry;
+    }
 }
