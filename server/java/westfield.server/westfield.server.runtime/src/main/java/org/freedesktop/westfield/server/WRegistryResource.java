@@ -28,10 +28,10 @@ public class WRegistryResource extends WResource<WRegistryRequests> {
                                        2).arg(name));
     }
 
-    private void $1(ByteBuffer message,
-                    Map<Integer, WResource> objects) {
-        WArgsReader wArgsReader = new WArgsReader(message,
-                                                  objects);
+    private void $1(final ByteBuffer message,
+                    final Map<Integer, WResource> objects) {
+        final WArgsReader wArgsReader = new WArgsReader(message,
+                                                        objects);
         getImplementation().bind(this,
                                  wArgsReader.readInt(),
                                  wArgsReader.readInt(),

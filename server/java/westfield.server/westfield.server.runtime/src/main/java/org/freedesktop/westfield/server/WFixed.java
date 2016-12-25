@@ -11,7 +11,7 @@ public class WFixed extends Number {
 
     @Override
     public int intValue() {
-        return raw >> 8;
+        return this.raw >> 8;
     }
 
     @Override
@@ -21,12 +21,12 @@ public class WFixed extends Number {
 
     @Override
     public float floatValue() {
-        return (float) (raw / 256.0);
+        return (float) (this.raw / 256.0);
     }
 
     @Override
     public double doubleValue() {
-        return (raw / 256.0);
+        return (this.raw / 256.0);
     }
 
     int rawValue() {
@@ -34,19 +34,19 @@ public class WFixed extends Number {
     }
 
 
-    public static WFixed valueOf(int value) {
+    public static WFixed valueOf(final int value) {
         return new WFixed(value << 8);
     }
 
-    public static WFixed valueOf(long value) {
+    public static WFixed valueOf(final long value) {
         return valueOf((int) value);
     }
 
-    public static WFixed valueOf(float value) {
+    public static WFixed valueOf(final float value) {
         return new WFixed((int) (value * 256.0));
     }
 
-    public static WFixed valueOf(double value) {
+    public static WFixed valueOf(final double value) {
         return new WFixed((int) (value * 256.0));
     }
 }

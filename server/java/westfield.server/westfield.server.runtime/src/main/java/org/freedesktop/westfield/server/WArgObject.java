@@ -11,8 +11,8 @@ class WArgObject implements WArg {
     }
 
     @Override
-    public void write(ByteBuffer byteBuffer) {
-        byteBuffer.putInt(wResource.getId());
+    public void write(final ByteBuffer byteBuffer) {
+        byteBuffer.putInt(this.wResource.getId());
     }
 
     @Override

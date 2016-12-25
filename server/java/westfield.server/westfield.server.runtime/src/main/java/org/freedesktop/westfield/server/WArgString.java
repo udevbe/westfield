@@ -13,9 +13,9 @@ class WArgString implements WArg {
     }
 
     @Override
-    public void write(ByteBuffer byteBuffer) {
-        byteBuffer.putInt(arg.length());
-        byteBuffer.put(arg.getBytes(StandardCharsets.US_ASCII));
+    public void write(final ByteBuffer byteBuffer) {
+        byteBuffer.putInt(this.arg.length());
+        byteBuffer.put(this.arg.getBytes(StandardCharsets.US_ASCII));
         //align to the next integer
         byteBuffer.position((byteBuffer.position() + 3) & ~3);
     }
@@ -23,6 +23,6 @@ class WArgString implements WArg {
     @Override
     public int size() {
         //returns integer aligned size
-        return Integer.BYTES + ((arg.length() + 3) & ~3);
+        return Integer.BYTES + ((this.arg.length() + 3) & ~3);
     }
 }

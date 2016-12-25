@@ -13,40 +13,40 @@ public class WArgs {
 
     private final List<WArg> wArgs = new LinkedList<>();
 
-    public WArgs(WResource<?> wResource,
-                 int opcode) {
+    public WArgs(final WResource<?> wResource,
+                 final int opcode) {
         this.wResource = wResource;
         this.opcode = (short) opcode;
     }
 
-    public WArgs arg(int arg) {
-        wArgs.add(new WArgInt(arg));
+    public WArgs arg(final int arg) {
+        this.wArgs.add(new WArgInt(arg));
         return this;
     }
 
-    public WArgs arg(String arg) {
-        wArgs.add(new WArgString(arg));
+    public WArgs arg(final String arg) {
+        this.wArgs.add(new WArgString(arg));
         return this;
     }
 
-    public WArgs arg(WResource<?> arg) {
-        wArgs.add(new WArgObject(arg));
+    public WArgs arg(final WResource<?> arg) {
+        this.wArgs.add(new WArgObject(arg));
         return this;
     }
 
-    public WArgs arg(ByteBuffer arg) {
-        wArgs.add(new WArgArray(arg));
+    public WArgs arg(final ByteBuffer arg) {
+        this.wArgs.add(new WArgArray(arg));
         return this;
     }
 
-    public WArgs arg(WFixed arg) {
-        wArgs.add(new WArgFixed(arg));
+    public WArgs arg(final WFixed arg) {
+        this.wArgs.add(new WArgFixed(arg));
         return this;
     }
 
     ByteBuffer toWireMessage() {
         short size = 8;//objectid+size+opcode
-        for (WArg wArg : wArgs) {
+        for (final WArg wArg : this.wArgs) {
             size += wArg.size();
         }
 
@@ -55,7 +55,7 @@ public class WArgs {
         wireMessage.putInt(this.wResource.getId());
         wireMessage.putShort(size);
         wireMessage.putShort(this.opcode);
-        wArgs.forEach(wArg -> wArg.write(wireMessage));
+        this.wArgs.forEach(wArg -> wArg.write(wireMessage));
 
         return wireMessage;
     }

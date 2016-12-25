@@ -5,14 +5,14 @@ import java.nio.ByteBuffer;
 
 class WArgArray implements WArg {
 
-    private ByteBuffer arg;
+    private final ByteBuffer arg;
 
     WArgArray(final ByteBuffer arg) {
         this.arg = arg;
     }
 
     @Override
-    public void write(ByteBuffer byteBuffer) {
+    public void write(final ByteBuffer byteBuffer) {
         this.arg.rewind();
         byteBuffer.put(this.arg);
         //align to the next integer

@@ -58,14 +58,14 @@ public abstract class WResource<T> {
     }
 
     int getId() {
-        return id;
+        return this.id;
     }
 
-    void dispatch(int opcode,
-                  ByteBuffer message,
-                  Map<Integer, WResource<?>> objects) throws NoSuchMethodException,
-                                                             InvocationTargetException,
-                                                             IllegalAccessException {
+    void dispatch(final int opcode,
+                  final ByteBuffer message,
+                  final Map<Integer, WResource<?>> objects) throws NoSuchMethodException,
+                                                                   InvocationTargetException,
+                                                                   IllegalAccessException {
         Method method = this.requests.get(opcode);
         if (method == null) {
             method = getClass().getDeclaredMethod("$" + opcode,

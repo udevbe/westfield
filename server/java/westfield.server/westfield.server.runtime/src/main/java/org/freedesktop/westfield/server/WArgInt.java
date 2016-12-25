@@ -12,7 +12,7 @@ class WArgInt implements WArg {
     }
 
     @Override
-    public void write(ByteBuffer byteBuffer) {
+    public void write(final ByteBuffer byteBuffer) {
         byteBuffer.putInt(this.arg);
     }
 

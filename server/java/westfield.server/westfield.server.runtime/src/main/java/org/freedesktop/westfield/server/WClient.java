@@ -21,19 +21,19 @@ public class WClient {
         this.session = session;
     }
 
-    public void marshall(WArgs messsage) {
-        session.getAsyncRemote()
-               .sendBinary(messsage.toWireMessage());
+    public void marshall(final WArgs messsage) {
+        this.session.getAsyncRemote()
+                    .sendBinary(messsage.toWireMessage());
     }
 
     private void unmarshall(final ByteBuffer message) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         final int          objectId  = message.getInt();
-        final WResource<?> wResource = objects.get(objectId);
+        final WResource<?> wResource = this.objects.get(objectId);
         final short        size      = message.getShort();//not used
         final short        opcode    = message.getShort();
         wResource.dispatch(opcode,
                            message,
-                           objects);
+                           this.objects);
     }
 
     void on(final ByteBuffer message) {
@@ -74,7 +74,7 @@ public class WClient {
     }
 
     public void flush() throws IOException {
-        session.getAsyncRemote()
-               .flushBatch();
+        this.session.getAsyncRemote()
+                    .flushBatch();
     }
 }
