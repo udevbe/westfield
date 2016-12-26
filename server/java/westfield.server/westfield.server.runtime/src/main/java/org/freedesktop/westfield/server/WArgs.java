@@ -50,13 +50,13 @@ public class WArgs {
             size += wArg.size();
         }
 
-        final ByteBuffer wireMessage = ByteBuffer.allocate(size);
-        wireMessage.order(ByteOrder.LITTLE_ENDIAN);
+        final ByteBuffer wireMessage = ByteBuffer.allocateDirect(size);
+        wireMessage.order(ByteOrder.nativeOrder());
         wireMessage.putInt(this.wResource.getId());
         wireMessage.putShort(size);
         wireMessage.putShort(this.opcode);
         this.wArgs.forEach(wArg -> wArg.write(wireMessage));
-
+        wireMessage.rewind();
         return wireMessage;
     }
 }

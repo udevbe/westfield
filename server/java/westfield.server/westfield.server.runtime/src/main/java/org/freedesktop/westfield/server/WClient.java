@@ -36,7 +36,7 @@ public class WClient {
     }
 
     void on(final ByteBuffer message) {
-        message.order(ByteOrder.LITTLE_ENDIAN);
+        message.order(ByteOrder.nativeOrder());
         try {
             unmarshall(message);
         }

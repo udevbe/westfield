@@ -14,6 +14,7 @@ class WArgArray implements WArg {
     @Override
     public void write(final ByteBuffer byteBuffer) {
         this.arg.rewind();
+        byteBuffer.putInt(this.arg.limit());
         byteBuffer.put(this.arg);
         //align to the next integer
         byteBuffer.position((byteBuffer.position() + 3) & ~3);
@@ -22,6 +23,6 @@ class WArgArray implements WArg {
     @Override
     public int size() {
         //returns integer aligned size
-        return ((arg.capacity() + 3) & ~3);
+        return Integer.BYTES + ((this.arg.capacity() + 3) & ~3);
     }
 }
