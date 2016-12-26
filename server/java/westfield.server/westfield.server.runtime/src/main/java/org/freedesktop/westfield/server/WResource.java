@@ -1,22 +1,15 @@
 package org.freedesktop.westfield.server;
 
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
-
 public abstract class WResource<T> {
     private final WClient client;
     private final int     id;
     private final T       implementation;
 
-    private final Map<Integer, Method> requests = new HashMap<>();
+    protected Requestable[] requestables;
 
-    public WResource(final WClient client,
-                     final int id,
-                     final T implementation) {
+    protected WResource(final WClient client,
+                        final int id,
+                        final T implementation) {
         this.client = client;
         this.id = id;
         this.implementation = implementation;
@@ -59,24 +52,5 @@ public abstract class WResource<T> {
 
     int getId() {
         return this.id;
-    }
-
-    void dispatch(final int opcode,
-                  final ByteBuffer message,
-                  final Map<Integer, WResource<?>> objects) throws NoSuchMethodException,
-                                                                   InvocationTargetException,
-                                                                   IllegalAccessException {
-        Method method = this.requests.get(opcode);
-        if (method == null) {
-            method = getClass().getDeclaredMethod("$" + opcode,
-                                                  ByteBuffer.class,
-                                                  Map.class);
-            method.setAccessible(true);
-            this.requests.put(opcode,
-                              method);
-        }
-        method.invoke(this,
-                      message,
-                      objects);
     }
 }

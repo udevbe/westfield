@@ -6,11 +6,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class WArgsReader {
-    private final ByteBuffer              byteBuffer;
-    private final Map<Integer, WResource> objects;
+    private final ByteBuffer                 byteBuffer;
+    private final Map<Integer, WResource<?>> objects;
 
     public WArgsReader(final ByteBuffer byteBuffer,
-                       final Map<Integer, WResource> objects) {
+                       final Map<Integer, WResource<?>> objects) {
         this.byteBuffer = byteBuffer;
         this.objects = objects;
     }

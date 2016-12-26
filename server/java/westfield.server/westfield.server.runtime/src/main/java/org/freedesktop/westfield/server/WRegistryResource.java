@@ -12,6 +12,10 @@ public class WRegistryResource extends WResource<WRegistry> {
         super(client,
               id,
               implementation);
+        this.requestables = new Requestable[]{
+                null,//reserved - opcode 0
+                this::$1//bind - opcode 1
+        };
     }
 
     public void global(final int name,
@@ -29,7 +33,7 @@ public class WRegistryResource extends WResource<WRegistry> {
     }
 
     private void $1(final ByteBuffer message,
-                    final Map<Integer, WResource> objects) {
+                    final Map<Integer, WResource<?>> objects) {
         final WArgsReader wArgsReader = new WArgsReader(message,
                                                         objects);
         getImplementation().bind(this,

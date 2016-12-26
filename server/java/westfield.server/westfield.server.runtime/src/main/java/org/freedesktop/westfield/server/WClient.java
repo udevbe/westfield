@@ -31,9 +31,8 @@ public class WClient {
         final WResource<?> wResource = this.objects.get(objectId);
         final short        size      = message.getShort();//not used
         final short        opcode    = message.getShort();
-        wResource.dispatch(opcode,
-                           message,
-                           this.objects);
+        wResource.requestables[opcode].request(message,
+                                               this.objects);
     }
 
     void on(final ByteBuffer message) {

@@ -32,21 +32,16 @@ public class WResourceTest {
         final Map<Integer, WResource<?>> objects = new HashMap<>();
 
         //when
-        dummyWResource.dispatch(1,
-                                message,
-                                objects);
-        dummyWResource.dispatch(1,
-                                message,
-                                objects);
-        dummyWResource.dispatch(2,
-                                message,
-                                objects);
-        dummyWResource.dispatch(1,
-                                message,
-                                objects);
-        dummyWResource.dispatch(2,
-                                message,
-                                objects);
+        dummyWResource.requestables[1].request(message,
+                                               objects);
+        dummyWResource.requestables[1].request(message,
+                                               objects);
+        dummyWResource.requestables[2].request(message,
+                                               objects);
+        dummyWResource.requestables[1].request(message,
+                                               objects);
+        dummyWResource.requestables[2].request(message,
+                                               objects);
         //then
         verify(this.dummyImplementation,
                times(3)).foo();
