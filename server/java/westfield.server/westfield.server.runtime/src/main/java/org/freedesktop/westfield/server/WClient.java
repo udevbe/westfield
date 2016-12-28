@@ -12,7 +12,7 @@ import java.util.Map;
 
 public class WClient {
 
-    private final Map<Integer, WResource<?>> objects = new HashMap<>();
+    private final Map<Integer, WResource<?>> objects = new HashMap<>(512);
 
     private final Session session;
 
