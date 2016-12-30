@@ -17,8 +17,10 @@ public class WClient {
     private final Session session;
 
 
-    WClient(final Session session) {
+    WClient(final Session session) throws IOException {
         this.session = session;
+        this.session.getAsyncRemote()
+                    .setBatchingAllowed(true);
     }
 
     public void marshall(final WArgs messsage) {
