@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 
 @FunctionalInterface
-public interface Requestable {
+public interface Request {
     void request(ByteBuffer message,
                  Map<Integer, WResource<?>> objects);
 }

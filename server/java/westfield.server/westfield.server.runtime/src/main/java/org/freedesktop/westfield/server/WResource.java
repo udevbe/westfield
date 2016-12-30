@@ -5,7 +5,7 @@ public abstract class WResource<T> {
     private final int     id;
     private final T       implementation;
 
-    protected Requestable[] requestables;
+    protected Request[] requests;
 
     protected WResource(final WClient client,
                         final int id,

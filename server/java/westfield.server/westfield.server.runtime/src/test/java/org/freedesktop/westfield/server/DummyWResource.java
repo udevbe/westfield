@@ -12,7 +12,7 @@ public class DummyWResource extends WResource<DummyImplementation> {
         super(client,
               id,
               implementation);
-        this.requestables = new Requestable[]{
+        this.requests = new Request[]{
                 null,
                 this::$1,
                 this::$2,

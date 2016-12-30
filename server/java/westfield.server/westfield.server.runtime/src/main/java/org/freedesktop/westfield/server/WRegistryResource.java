@@ -12,7 +12,7 @@ public class WRegistryResource extends WResource<WRegistry> {
         super(client,
               id,
               implementation);
-        this.requestables = new Requestable[]{
+        this.requests = new Request[]{
                 null,//reserved - opcode 0
                 this::$1//bind - opcode 1
         };
