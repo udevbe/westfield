@@ -12,10 +12,11 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-@ServerEndpoint("/westfield")
+@ServerEndpoint(value = "/westfield",
+                subprotocols = WConnection.SUBPROTOCOL)
 public class WConnection {
 
-    private static final String SUBPROTOCOL = "westfield";
+    public static final String SUBPROTOCOL = "westfield";
 
     private final WRegistry             registry = new WRegistry();
     private final Map<Session, WClient> wClients = new HashMap<>();
