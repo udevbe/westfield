@@ -759,11 +759,14 @@ wfc.WConnection = class {
          */
         this._objects = new Map();
 
+        //FIXME separate out to an 'open' function
         this._socket = new WebSocket(socketUrl, "westfield");
-        this._socket.onopen = this._onSocketOpen;
-        this._socket.onclose = this._onSocketClose;
-        this._socket.onerror = this._onSocketError;
-        this._socket.onmessage = this._onSocketMessage;
+        const wConnection = this;
+        this._socket.onopen = (event) => { wConnection._onSocketOpen(event); };
+        this._socket.onclose = (event) => { wConnection._onSocketClose(event); };
+        this._socket.onerror = (event) => { wConnection._onSocketError(event); };
+        this._socket.onmessage = (event) => { wConnection._onSocketMessage(event); };
+
         this.registry = new wfc.WRegistry(this);
         this.nextId = 1;
         this._registerObject(this.registry);
