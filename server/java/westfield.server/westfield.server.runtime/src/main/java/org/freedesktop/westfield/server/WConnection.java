@@ -1,6 +1,7 @@
 package org.freedesktop.westfield.server;
 
 import javax.websocket.CloseReason;
+import javax.websocket.MessageHandler;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnOpen;
@@ -33,22 +34,22 @@ public class WConnection {
 
     @OnOpen
     public void onOpen(final Session session) throws IOException {
-        if (!session.getNegotiatedSubprotocol()
-                    .equals(SUBPROTOCOL)) {
-            session.close(new CloseReason(CloseReason.CloseCodes.PROTOCOL_ERROR,
-                                          String.format("Expected SUBPROTOCOL '%s'",
-                                                        SUBPROTOCOL)));
-            return;
-        }
-
         //non jumbo MTU is 1500, minus headers and such that would be ~1450 for a tcp packet, so 1024 should definitely fit in a single ethernet frame using a websocket.
         session.setMaxBinaryMessageBufferSize(1024);
 
         final WClient client = new WClient(session);
-        session.addMessageHandler(String.class,
-                                  client::on);
-        session.addMessageHandler(ByteBuffer.class,
-                                  client::on);
+        session.addMessageHandler(new StringMessageHandler() {
+                                      @Override
+                                      public void onMessage(final String message) {
+                                          client.on(message);
+                                      }
+                                  });
+        session.addMessageHandler(new BlobMessageHandler() {
+            @Override
+            public void onMessage(final ByteBuffer message) {
+                client.on(message);
+            }
+        });
         this.wClients.put(session,
                           client);
 
