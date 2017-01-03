@@ -44,7 +44,7 @@ public class WArgs {
         return this;
     }
 
-    ByteBuffer toWireMessage() {
+    private ByteBuffer wireMessage() {
         short size = 8;//objectid+size+opcode
         for (final WArg wArg : this.wArgs) {
             size += wArg.size();
@@ -58,5 +58,10 @@ public class WArgs {
         this.wArgs.forEach(wArg -> wArg.write(wireMessage));
         wireMessage.rewind();
         return wireMessage;
+    }
+
+    public void send() {
+        this.wResource.getClient()
+                      .marshall(wireMessage());
     }
 }

@@ -21,15 +21,17 @@ public class WRegistryResource extends WResource<WRegistry> {
     public void global(final int name,
                        final String interface_,
                        final int version) {
-        getClient().marshall(new WArgs(this,
-                                       1).arg(name)
-                                         .arg(interface_)
-                                         .arg(version));
+        new WArgs(this,
+                  1).arg(name)
+                    .arg(interface_)
+                    .arg(version)
+                    .send();
     }
 
     public void globalRemove(final int name) {
-        getClient().marshall(new WArgs(this,
-                                       2).arg(name));
+        new WArgs(this,
+                  2).arg(name)
+                    .send();
     }
 
     private void $1(final ByteBuffer message,

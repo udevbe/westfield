@@ -1,9 +1,7 @@
 package org.freedesktop.westfield.server;
 
-
 import javax.websocket.Session;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
@@ -12,23 +10,23 @@ import java.util.Map;
 
 public class WClient {
 
-    private final Map<Integer, WResource<?>> objects = new HashMap<>(512);
-
+    private final Map<Integer, WResource<?>> objects = new HashMap<>(1024);
     private final Session session;
-
 
     WClient(final Session session) throws IOException {
         this.session = session;
+        //non jumbo MTU is 1500, minus headers and such that would be ~1450 for a tcp packet, so 1024 should definitely fit in a single ethernet frame using a websocket.
+        this.session.setMaxBinaryMessageBufferSize(1024);
         this.session.getAsyncRemote()
                     .setBatchingAllowed(true);
     }
 
-    public void marshall(final WArgs messsage) {
+    void marshall(final ByteBuffer byteBuffer) {
         this.session.getAsyncRemote()
-                    .sendBinary(messsage.toWireMessage());
+                    .sendBinary(byteBuffer);
     }
 
-    private void unmarshall(final ByteBuffer message) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    private void unmarshall(final ByteBuffer message) {
         final int          objectId  = message.getInt();
         final WResource<?> wResource = this.objects.get(objectId);
         final short        size      = message.getShort();//not used
@@ -37,27 +35,20 @@ public class WClient {
                                            this.objects);
     }
 
-    void on(final ByteBuffer message) {
+    public void on(final ByteBuffer message) {
         message.order(ByteOrder.nativeOrder());
-        try {
-            unmarshall(message);
-        }
-        catch (NoSuchMethodException |
-                IllegalAccessException |
-                InvocationTargetException e) {
-            e.printStackTrace();
-        }
+        unmarshall(message);
     }
 
-    void on(final String message) {
+    public void on(final String message) {
 
     }
 
-    void on(final Throwable t) {
+    public void on(final Throwable t) {
 
     }
 
-    void onClose() {
+    public void onClose() {
 
     }
 
