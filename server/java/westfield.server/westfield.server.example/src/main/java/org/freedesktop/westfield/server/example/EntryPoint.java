@@ -26,7 +26,8 @@ public class EntryPoint {
         final ServerContainer container = WebSocketServerContainerInitializer.configureContext(context);
 
         // Add endpoint to server container
-        container.addEndpoint(WConnection.class);
+        //TODO use a configuration that reuses the same wconnection class for each incoming connection.
+        //container.addEndpoint(WConnection.class);
 
         // Add default servlet (to serve the html/css/js)
         // Figure out where the static files are stored.
