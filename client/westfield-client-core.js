@@ -470,11 +470,11 @@ wfc.WRegistry = class WRegistry extends wfc.WObject {
     }
 
     [1](name, interface_, version) {
-        this._iface.global(name, interface_, version);
+        this.iface.global(name, interface_, version);
     }
 
     [2](name) {
-        this._iface.globalRemove(name);
+        this.iface.globalRemove(name);
     }
 };
 
