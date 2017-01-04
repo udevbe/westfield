@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-public class WConnection {
+public class WServer {
 
     public static final String SUBPROTOCOL = "westfield";
 

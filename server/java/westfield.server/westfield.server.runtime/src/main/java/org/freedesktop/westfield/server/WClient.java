@@ -9,12 +9,12 @@ import java.util.Map;
 public class WClient {
 
     private final Map<Integer, WResource<?>> objects = new HashMap<>(1024);
-    private final WConnection wConnection;
-    private final WSender     sender;
+    private final WServer wServer;
+    private final WSender sender;
 
-    WClient(final WConnection wConnection,
+    WClient(final WServer wServer,
             WSender sender) {
-        this.wConnection = wConnection;
+        this.wServer = wServer;
         this.sender = sender;
     }
 
@@ -45,8 +45,8 @@ public class WClient {
     }
 
     public void onClose() {
-        this.wConnection.getClients()
-                        .remove(this);
+        this.wServer.getClients()
+                    .remove(this);
     }
 
     public Collection<WResource<?>> getResources() {

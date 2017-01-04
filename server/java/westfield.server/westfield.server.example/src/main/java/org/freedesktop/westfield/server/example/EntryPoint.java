@@ -1,7 +1,7 @@
 package org.freedesktop.westfield.server.example;
 
 
-import org.freedesktop.westfield.server.WConnection;
+import org.freedesktop.westfield.server.WServer;
 import org.freedesktop.westfield.server.WRegistry;
 import org.glassfish.grizzly.PortRange;
 import org.glassfish.grizzly.http.server.CLStaticHttpHandler;
@@ -36,15 +36,15 @@ public class EntryPoint {
         listener.getTransport()
                 .setIOStrategy(SameThreadIOStrategy.getInstance());
 
-        final WConnection    wConnection          = new WConnection();
-        ExampleWSApplication exampleWSApplication = new ExampleWSApplication(wConnection);
+        final WServer        wServer              = new WServer();
+        ExampleWSApplication exampleWSApplication = new ExampleWSApplication(wServer);
         WebSocketEngine.getEngine()
                        .register("",
                                  "/westfield",
                                  exampleWSApplication);
         server.start();
 
-        final WRegistry registry = wConnection.getRegistry();
+        final WRegistry registry = wServer.getRegistry();
         registry.register(new ExampleGlobal());
 
         //exit when user presses enter

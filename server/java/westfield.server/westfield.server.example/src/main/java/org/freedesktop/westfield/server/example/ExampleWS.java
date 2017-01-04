@@ -1,7 +1,7 @@
 package org.freedesktop.westfield.server.example;
 
 import org.freedesktop.westfield.server.WClient;
-import org.freedesktop.westfield.server.WConnection;
+import org.freedesktop.westfield.server.WServer;
 import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.websockets.DataFrame;
 import org.glassfish.grizzly.websockets.DefaultWebSocket;
@@ -12,23 +12,23 @@ import java.nio.ByteBuffer;
 
 
 public class ExampleWS extends DefaultWebSocket {
-    private       WClient     wClient;
-    private final WConnection wConnection;
+    private       WClient wClient;
+    private final WServer wServer;
 
-    public ExampleWS(final WConnection wConnection,
+    public ExampleWS(final WServer wServer,
                      final ProtocolHandler protocolHandler,
                      final HttpRequestPacket request,
                      final WebSocketListener... listeners) {
         super(protocolHandler,
               request,
               listeners);
-        this.wConnection = wConnection;
+        this.wServer = wServer;
     }
 
     @Override
     public void onConnect() {
         super.onConnect();
-        this.wClient = wConnection.create(message -> {
+        this.wClient = wServer.create(message -> {
             final int limit = message.limit();
             byte[]    data  = new byte[limit];
             message.rewind();
