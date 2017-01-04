@@ -3,19 +3,29 @@ package org.freedesktop.westfield.generator.impl;
 import com.google.auto.common.BasicAnnotationProcessor;
 import com.google.common.base.CaseFormat;
 import com.google.common.collect.SetMultimap;
-import com.sun.tools.javac.util.StringUtils;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.TypeVariableName;
 import org.freedesktop.westfield.generator.api.Protocols;
+import org.freedesktop.westfield.server.WClient;
+import org.freedesktop.westfield.server.WResource;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.util.SimpleAnnotationValueVisitor8;
+import javax.lang.model.util.SimpleElementVisitor8;
 import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -28,10 +38,13 @@ import java.util.Set;
 
 public class ProtocolsProcessingStep implements BasicAnnotationProcessor.ProcessingStep {
 
-    private final ProcessingEnvironment processingEnv;
-
-    ProtocolsProcessingStep(final ProcessingEnvironment processingEnv) {
-        this.processingEnv = processingEnv;
+    private static class PackageElementQualifiedNameVisitor extends SimpleElementVisitor8<String, Void> {
+        @Override
+        public String visitPackage(final PackageElement e,
+                                   final Void aVoid) {
+            return e.getQualifiedName()
+                    .toString();
+        }
     }
 
     private static class ProtocolsValueVisitor extends SimpleAnnotationValueVisitor8<List<? extends AnnotationValue>, Void> {
@@ -60,6 +73,12 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                                   final Void aVoid) {
             return s;
         }
+    }
+
+    private final ProcessingEnvironment processingEnv;
+
+    ProtocolsProcessingStep(final ProcessingEnvironment processingEnv) {
+        this.processingEnv = processingEnv;
     }
 
 
@@ -139,13 +158,43 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         final String name    = interfaceElement.getAttribute("name");
         final String version = interfaceElement.getAttribute("version");
 
-        final String className = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL,
-                                                                String.format("%s_resource_v%s",
-                                                                              name,
-                                                                              version));
-        final JavaFileObject sourceFile = this.processingEnv.getFiler()
-                                                            .createSourceFile(className,
-                                                                              e);
+        final String packageName = e.accept(new PackageElementQualifiedNameVisitor(),
+                                            null);
+        final String resourceName = resourceName(name,
+                                                 version);
+        final String requestsName = requestsName(name,
+                                                 version);
+
+        final TypeSpec.Builder resourceBuilder = TypeSpec.classBuilder(resourceName);
+        final TypeName superTypeName = ParameterizedTypeName.get(ClassName.get(WResource.class),
+                                                                 ClassName.get(packageName,
+                                                                               requestsName));
+        resourceBuilder.superclass(superTypeName);
+
+        final MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder();
+        constructorBuilder.addModifiers(Modifier.PUBLIC)
+                          .addParameter(WClient.class,
+                                        "client",
+                                        Modifier.PUBLIC,
+                                        Modifier.FINAL)
+                          .addParameter(int.class,
+                                        "id",
+                                        Modifier.PUBLIC,
+                                        Modifier.FINAL)
+                          .addParameter(ClassName.get(packageName,
+                                                      requestsName),
+                                        "implementation",
+                                        Modifier.PUBLIC,
+                                        Modifier.FINAL)
+                          .addCode(CodeBlock.builder()
+                                            .addStatement("super($N, $N, $N)")//TODO use parameterspecs here
+                                            .build());
+
+
+        final JavaFile javaFile = JavaFile.builder(packageName,
+                                                   resourceBuilder.build())
+                                          .build();
+        javaFile.writeTo(this.processingEnv.getFiler());
     }
 
     private void processRequests(final org.w3c.dom.Element interfaceElement,
@@ -153,12 +202,31 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         final String name    = interfaceElement.getAttribute("name");
         final String version = interfaceElement.getAttribute("version");
 
-        final String className = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL,
-                                                                String.format("%s_requests_v%s",
-                                                                              name,
-                                                                              version));
-        final JavaFileObject sourceFile = this.processingEnv.getFiler()
-                                                            .createSourceFile(className,
-                                                                              e);
+        final String requestsName = requestsName(name,
+                                                 version);
+        final TypeSpec.Builder requestBuilder = TypeSpec.interfaceBuilder(requestsName);
+
+
+        final JavaFile javaFile = JavaFile.builder(e.accept(new PackageElementQualifiedNameVisitor(),
+                                                            null),
+                                                   requestBuilder.build())
+                                          .build();
+        javaFile.writeTo(this.processingEnv.getFiler());
+    }
+
+    private String requestsName(final String name,
+                                final String version) {
+        return CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL,
+                                              String.format("%s_requests_v%s",
+                                                            name,
+                                                            version));
+    }
+
+    private String resourceName(final String name,
+                                final String version) {
+        return CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL,
+                                              String.format("%s_resource_v%s",
+                                                            name,
+                                                            version));
     }
 }
