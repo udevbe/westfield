@@ -28,9 +28,9 @@ public class ExampleWS extends DefaultWebSocket {
     @Override
     public void onConnect() {
         super.onConnect();
-        this.wClient = wServer.create(message -> {
-            final int limit = message.limit();
-            byte[]    data  = new byte[limit];
+        this.wClient = this.wServer.create(message -> {
+            final int    limit = message.limit();
+            final byte[] data  = new byte[limit];
             message.rewind();
             message.get(data);
             send(data);
@@ -51,7 +51,7 @@ public class ExampleWS extends DefaultWebSocket {
 
     @Override
     public void onClose(final DataFrame frame) {
-        if (state.get() == State.CLOSED) {
+        if (this.state.get() == State.CLOSED) {
             setClosed();
             System.out.println(String.format("Client connection %s closed.",
                                              getUpgradeRequest().getRemoteAddr()));
@@ -61,6 +61,6 @@ public class ExampleWS extends DefaultWebSocket {
     }
 
     public WClient getClient() {
-        return wClient;
+        return this.wClient;
     }
 }

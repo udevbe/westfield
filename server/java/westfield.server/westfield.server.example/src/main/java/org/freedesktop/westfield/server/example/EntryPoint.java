@@ -36,8 +36,8 @@ public class EntryPoint {
         listener.getTransport()
                 .setIOStrategy(SameThreadIOStrategy.getInstance());
 
-        final WServer        wServer              = new WServer();
-        ExampleWSApplication exampleWSApplication = new ExampleWSApplication(wServer);
+        final WServer              wServer              = new WServer();
+        final ExampleWSApplication exampleWSApplication = new ExampleWSApplication(wServer);
         WebSocketEngine.getEngine()
                        .register("",
                                  "/westfield",
