@@ -13,8 +13,7 @@
     <name>Westfield Server Example</name>
 
     <properties>
-        <jetty.version>9.4.0.v20161208</jetty.version>
-        <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
+        <grizzly.version>2.3.28</grizzly.version>
     </properties>
 
     <dependencies>
@@ -27,17 +26,28 @@
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
-            <version>${javax.servlet-api.version}</version>
+            <version>3.1.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.grizzly</groupId>
+            <artifactId>grizzly-framework</artifactId>
+            <version>${grizzly.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-server</artifactId>
-            <version>${jetty.version}</version>
+            <groupId>org.glassfish.grizzly</groupId>
+            <artifactId>grizzly-http-server</artifactId>
+            <version>${grizzly.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.jetty.websocket</groupId>
-            <artifactId>javax-websocket-server-impl</artifactId>
-            <version>${jetty.version}</version>
+            <groupId>org.glassfish.grizzly</groupId>
+            <artifactId>grizzly-http-servlet</artifactId>
+            <version>${grizzly.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.grizzly</groupId>
+            <artifactId>grizzly-websockets</artifactId>
+            <version>${grizzly.version}</version>
         </dependency>
     </dependencies>
 </project>

@@ -1,60 +1,55 @@
 package org.freedesktop.westfield.server.example;
 
 
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.DefaultServlet;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
 import org.freedesktop.westfield.server.WConnection;
+import org.freedesktop.westfield.server.WRegistry;
+import org.glassfish.grizzly.PortRange;
+import org.glassfish.grizzly.http.server.CLStaticHttpHandler;
+import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.grizzly.http.server.NetworkListener;
+import org.glassfish.grizzly.http.server.ServerConfiguration;
+import org.glassfish.grizzly.strategies.SameThreadIOStrategy;
+import org.glassfish.grizzly.websockets.WebSocketAddOn;
+import org.glassfish.grizzly.websockets.WebSocketEngine;
 
-import javax.servlet.ServletException;
-import javax.websocket.DeploymentException;
-import javax.websocket.server.ServerContainer;
-import java.net.URL;
-import java.util.Objects;
+import java.io.IOException;
+import java.util.Scanner;
 
 public class EntryPoint {
-    public static void main(final String[] args) throws ServletException, DeploymentException {
-        final Server server = new Server(8080);
+    public static void main(final String[] args) throws InterruptedException, IOException {
 
-        final ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-        context.setContextPath("/");
-        server.setHandler(context);
+        final HttpServer server = new HttpServer();
 
-        // Add javax.websocket support
-        final ServerContainer container = WebSocketServerContainerInitializer.configureContext(context);
+        final ServerConfiguration config = server.getServerConfiguration();
+        config.addHttpHandler(new CLStaticHttpHandler(EntryPoint.class.getClassLoader(),
+                                                      "/"));
 
-        // Add endpoint to server container
-        //TODO use a configuration that reuses the same wconnection class for each incoming connection.
-        //container.addEndpoint(WConnection.class);
+        final NetworkListener listener = new NetworkListener("westfield",
+                                                             "0.0.0.0",
+                                                             new PortRange(8080));
+        listener.setSecure(false);
+        server.addListener(listener);
 
-        // Add default servlet (to serve the html/css/js)
-        // Figure out where the static files are stored.
-        final URL urlStatics = Thread.currentThread()
-                                     .getContextClassLoader()
-                                     .getResource("index.html");
-        Objects.requireNonNull(urlStatics,
-                               "Unable to find index.html in classpath");
-        final String urlBase = urlStatics.toExternalForm()
-                                         .replaceFirst("/[^/]*$",
-                                                       "/");
-        final ServletHolder defHolder = new ServletHolder("default",
-                                                          new DefaultServlet());
-        defHolder.setInitParameter("resourceBase",
-                                   urlBase);
-        defHolder.setInitParameter("dirAllowed",
-                                   "true");
-        context.addServlet(defHolder,
-                           "/");
+        final WebSocketAddOn addon = new WebSocketAddOn();
+        listener.registerAddOn(addon);
 
-        try {
-            server.start();
-            server.join();
+        listener.getTransport()
+                .setIOStrategy(SameThreadIOStrategy.getInstance());
+
+        final WConnection    wConnection          = new WConnection();
+        ExampleWSApplication exampleWSApplication = new ExampleWSApplication(wConnection);
+        WebSocketEngine.getEngine()
+                       .register("",
+                                 "/westfield",
+                                 exampleWSApplication);
+        server.start();
+
+        final WRegistry registry = wConnection.getRegistry();
+        registry.register(new ExampleGlobal());
+
+        //exit when user presses enter
+        try (Scanner scan = new Scanner(System.in)) {
+            scan.next();
         }
-        catch (final Exception e) {
-            e.printStackTrace();
-        }
-
     }
 }
