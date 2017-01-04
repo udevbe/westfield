@@ -1,7 +1,5 @@
 package org.freedesktop.westfield.server;
 
-import javax.websocket.Session;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
@@ -11,19 +9,17 @@ import java.util.Map;
 public class WClient {
 
     private final Map<Integer, WResource<?>> objects = new HashMap<>(1024);
-    private final Session session;
+    private final WConnection wConnection;
+    private final WSender     sender;
 
-    WClient(final Session session) throws IOException {
-        this.session = session;
-        //non jumbo MTU is 1500, minus headers and such that would be ~1450 for a tcp packet, so 1024 should definitely fit in a single ethernet frame using a websocket.
-        this.session.setMaxBinaryMessageBufferSize(1024);
-        this.session.getAsyncRemote()
-                    .setBatchingAllowed(true);
+    WClient(final WConnection wConnection,
+            WSender sender) {
+        this.wConnection = wConnection;
+        this.sender = sender;
     }
 
     void marshall(final ByteBuffer byteBuffer) {
-        this.session.getAsyncRemote()
-                    .sendBinary(byteBuffer);
+        this.sender.send(byteBuffer);
     }
 
     private void unmarshall(final ByteBuffer message) {
@@ -49,7 +45,8 @@ public class WClient {
     }
 
     public void onClose() {
-
+        this.wConnection.getClients()
+                        .remove(this);
     }
 
     public Collection<WResource<?>> getResources() {
@@ -63,10 +60,5 @@ public class WClient {
 
     void unregisterResource(final WResource<?> resource) {
         this.objects.remove(resource.getId());
-    }
-
-    public void flush() throws IOException {
-        this.session.getAsyncRemote()
-                    .flushBatch();
     }
 }

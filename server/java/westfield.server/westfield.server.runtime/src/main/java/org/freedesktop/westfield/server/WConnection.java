@@ -1,17 +1,15 @@
 package org.freedesktop.westfield.server;
 
-import javax.websocket.Session;
-import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 public class WConnection {
 
     public static final String SUBPROTOCOL = "westfield";
 
-    private final WRegistry             registry = new WRegistry();
-    private final Map<Session, WClient> wClients = new HashMap<>();
+    private final WRegistry    registry = new WRegistry();
+    private final Set<WClient> wClients = new HashSet<>();
 
     /*
      * IDs allocated by the client are in the range [1, 0xfeffffff] while IDs allocated by the server are
@@ -26,24 +24,20 @@ public class WConnection {
     /**
      * Create a new client and publish globals.
      *
-     * @param session
+     * @param sender
      *
      * @return
-     *
-     * @throws IOException
      */
-    public WClient create(final Session session) throws IOException {
-        final WClient client = new WClient(session);
-
-        this.wClients.put(session,
-                          client);
+    public WClient create(final WSender sender) {
+        final WClient client = new WClient(this,
+                                           sender);
+        wClients.add(client);
         this.registry.publishGlobals(this.registry.createResource(client));
-
         return client;
     }
 
     public Collection<WClient> getClients() {
-        return this.wClients.values();
+        return this.wClients;
     }
 
     public WRegistry getRegistry() {
