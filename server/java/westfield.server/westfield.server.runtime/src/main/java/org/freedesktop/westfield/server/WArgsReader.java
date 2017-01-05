@@ -23,9 +23,9 @@ public class WArgsReader {
         return new WFixed(readInt());
     }
 
-    public WResource<?> readObject() {
+    public <T extends WResource<?>> T readObject() {
         final int objectId = readInt();
-        return this.objects.get(objectId);
+        return (T) this.objects.get(objectId);
     }
 
     public int readNewObject() {
