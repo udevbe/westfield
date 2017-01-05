@@ -13,14 +13,19 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.WildcardTypeName;
 import org.freedesktop.westfield.generator.api.Protocols;
+import org.freedesktop.westfield.server.Request;
+import org.freedesktop.westfield.server.WArgs;
 import org.freedesktop.westfield.server.WArgsReader;
 import org.freedesktop.westfield.server.WClient;
+import org.freedesktop.westfield.server.WFixed;
 import org.freedesktop.westfield.server.WResource;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
@@ -47,7 +52,7 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         @Override
         protected String defaultAction(final Element e,
                                        final Void aVoid) {
-            throw new AssertionError();
+            throw new AssertionError("Expected a package element, instead got: " + e.toString());
         }
 
         @Override
@@ -62,7 +67,7 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         @Override
         protected List<? extends AnnotationValue> defaultAction(final Object o,
                                                                 final Void aVoid) {
-            throw new AssertionError();
+            throw new AssertionError("Expected array value, instead got: " + o.toString());
         }
 
         @Override
@@ -72,11 +77,25 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         }
     }
 
+    private static class ProtocolAnnotationVisitor extends SimpleAnnotationValueVisitor8<AnnotationMirror, Void> {
+        @Override
+        protected AnnotationMirror defaultAction(final Object o,
+                                                 final Void aVoid) {
+            throw new AssertionError("Expected annotation value, instead got: " + o.toString());
+        }
+
+        @Override
+        public AnnotationMirror visitAnnotation(final AnnotationMirror a,
+                                                final Void aVoid) {
+            return a;
+        }
+    }
+
     private static class ProtocolValueVisitor extends SimpleAnnotationValueVisitor8<String, Void> {
         @Override
         protected String defaultAction(final Object o,
                                        final Void aVoid) {
-            throw new AssertionError();
+            throw new AssertionError("Expected array value, instead got: " + o.toString());
         }
 
         @Override
@@ -100,24 +119,31 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
 
     @Override
     public Set<Element> process(final SetMultimap<Class<? extends Annotation>, Element> elementsByAnnotation) {
-        elementsByAnnotation.get(Protocols.class)
+        elementsByAnnotation.get(Protocols.class)//get package element
                             .forEach(element -> {
                                 element.getAnnotationMirrors()
-                                       .forEach(annotationMirror -> {
-                                           annotationMirror.getElementValues()
-                                                           .forEach((executableElement, protocolsAnnotationValue) -> {
-                                                               if (executableElement.getSimpleName()
-                                                                                    .contentEquals("value")) {
-                                                                   protocolsAnnotationValue.accept(new ProtocolsValueVisitor(),
-                                                                                                   null)
-                                                                                           .forEach(protocolAnnotationValue -> {
-                                                                                               final String protocolXmlFile = protocolAnnotationValue.accept(new ProtocolValueVisitor(),
-                                                                                                                                                             null);
-                                                                                               processProtocolXmlFile(protocolXmlFile,
-                                                                                                                      element);
-                                                                                           });
-                                                               }
-                                                           });
+                                       .forEach(protocolsAnnotationMirror -> {//get package level annotations (@Protocols)
+                                           protocolsAnnotationMirror.getElementValues()
+                                                                    .forEach((executableElement, protocolsAnnotationValue) -> {
+                                                                        if (executableElement.getSimpleName()
+                                                                                             .contentEquals("value")) {//get @Protocols.value()
+                                                                            protocolsAnnotationValue.accept(new ProtocolsValueVisitor(),
+                                                                                                            null)
+                                                                                                    .forEach(annotationValue -> {
+                                                                                                        final AnnotationMirror protocolAnnotationMirror = annotationValue.accept(new ProtocolAnnotationVisitor(),
+                                                                                                                                                                                 null);//get @Protocol
+                                                                                                        protocolAnnotationMirror.getElementValues()
+                                                                                                                                .forEach((executableElement1, protocolAnnotationValue) -> {
+                                                                                                                                    if (executableElement1.getSimpleName()
+                                                                                                                                                          .contentEquals("value")) {//get @Protocol.value()
+                                                                                                                                        processProtocolXmlFile(protocolAnnotationValue.accept(new ProtocolValueVisitor(),
+                                                                                                                                                                                              null),
+                                                                                                                                                               element);
+                                                                                                                                    }
+                                                                                                                                });
+                                                                                                    });
+                                                                        }
+                                                                    });
                                        });
                             });
         return Collections.emptySet();
@@ -170,47 +196,50 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         final MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder();
         final ParameterSpec clientParameterSpec = ParameterSpec.builder(WClient.class,
                                                                         "client",
-                                                                        Modifier.PUBLIC,
                                                                         Modifier.FINAL)
                                                                .build();
+        final ParameterSpec versionParameterSpec = ParameterSpec.builder(int.class,
+                                                                         "version",
+                                                                         Modifier.FINAL)
+                                                                .build();
         final ParameterSpec idParameterSpec = ParameterSpec.builder(int.class,
                                                                     "id",
-                                                                    Modifier.PUBLIC,
                                                                     Modifier.FINAL)
                                                            .build();
         final ParameterSpec implementationParameterSpec = ParameterSpec.builder(ClassName.get(packageName,
                                                                                               requestsName),
                                                                                 "implementation",
-                                                                                Modifier.PUBLIC,
                                                                                 Modifier.FINAL)
                                                                        .build();
         constructorBuilder.addModifiers(Modifier.PUBLIC)
                           .addParameter(clientParameterSpec)
+                          .addParameter(versionParameterSpec)
                           .addParameter(idParameterSpec)
                           .addParameter(implementationParameterSpec)
                           .addCode(CodeBlock.builder()
-                                            .addStatement("super($N, $N, $N)",
+                                            .addStatement("super($N, $N, $N, $N)",
                                                           clientParameterSpec,
+                                                          versionParameterSpec,
                                                           idParameterSpec,
                                                           implementationParameterSpec)
                                             .build());
 
         //process request method references
         final CodeBlock.Builder requestsCallbackArray = CodeBlock.builder();
-        requestsCallbackArray.add("$[this.requests = new Request[]{null");
+        requestsCallbackArray.add("$[this.requests = new $T[]{null",
+                                  Request.class);
         final NodeList requestElements = interfaceElement.getElementsByTagName("request");
         for (int i = 0; i < requestElements.getLength(); i++) {
-            requestsCallbackArray.add(", this::%L",
-                                      i);
+            requestsCallbackArray.add(", this::$$$L",
+                                      i + 1);
         }
-        requestsCallbackArray.add("}$]");
+        requestsCallbackArray.add("};\n$]");
+        constructorBuilder.addCode(requestsCallbackArray.build());
 
         return constructorBuilder.build();
     }
 
-    private List<MethodSpec> createResourceRequestMethods(final org.w3c.dom.Element interfaceElement,
-                                                          final String packageName,
-                                                          final String requestsName) {
+    private List<MethodSpec> createResourceRequestMethods(final org.w3c.dom.Element interfaceElement) {
         final List<MethodSpec> methodSpecs = new LinkedList<>();
 
         final ParameterSpec messageParameter = ParameterSpec.builder(ByteBuffer.class,
@@ -221,16 +250,16 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                                                                                                TypeName.get(Integer.class),
                                                                                                ParameterizedTypeName.get(ClassName.get(WResource.class),
                                                                                                                          WildcardTypeName.subtypeOf(Object.class))),
-                                                                     "message",
+                                                                     "objects",
                                                                      Modifier.FINAL)
                                                             .build();
 
         final NodeList requestElements = interfaceElement.getElementsByTagName("request");
         for (int i = 0; i < requestElements.getLength(); i++) {
 
-            org.w3c.dom.Element requestElement   = (org.w3c.dom.Element) requestElements.item(i);
-            final String        requestName      = requestElement.getAttribute("name");
-            final NodeList      requestArguments = requestElement.getElementsByTagName("arg");
+            final org.w3c.dom.Element requestElement   = (org.w3c.dom.Element) requestElements.item(i);
+            final String              requestName      = normalizeName(requestElement.getAttribute("name"));
+            final NodeList            requestArguments = requestElement.getElementsByTagName("arg");
 
             final MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder(String.format("$%d",
                                                                                             i + 1));
@@ -251,11 +280,12 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
             methodBuilder.addCode("$[getImplementation().$L(this",
                                   requestName);
             for (int j = 0; j < requestArguments.getLength(); j++) {
-                org.w3c.dom.Element requestArgument = (org.w3c.dom.Element) requestArguments.item(j);
-                final String        argumentType    = requestArgument.getAttribute("type");
+                final org.w3c.dom.Element requestArgument = (org.w3c.dom.Element) requestArguments.item(j);
+                final String              argumentType    = requestArgument.getAttribute("type");
 
                 final String readArgument;
                 switch (argumentType) {
+                    case "fd":
                     case "uint":
                     case "int":
                         readArgument = "readInt";
@@ -276,13 +306,13 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                         readArgument = "readArray";
                         break;
                     default:
-                        throw new AssertionError();
+                        throw new AssertionError("Encountered unexpected argument type: " + argumentType);
                 }
                 methodBuilder.addCode(", $L.$L()",
                                       wArgsReader,
                                       readArgument);
             }
-            methodBuilder.addCode("$]");
+            methodBuilder.addCode(");\n$]");
 
             methodSpecs.add(methodBuilder.build());
         }
@@ -292,17 +322,18 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
 
     private void createResource(final org.w3c.dom.Element interfaceElement,
                                 final Element packageElement) throws IOException {
-        final String name    = interfaceElement.getAttribute("name");
-        final String version = interfaceElement.getAttribute("version");
+        final String interfaceName    = interfaceElement.getAttribute("name");
+        final String interfaceVersion = interfaceElement.getAttribute("version");
 
         final String packageName = packageElement.accept(new PackageElementQualifiedNameVisitor(),
                                                          null);
-        final String resourceName = resourceName(name);
-        final String requestsName = requestsName(name,
-                                                 version);
+        final String resourceName = resourceNameCamelCase(interfaceName);
+        final String requestsName = requestsNameCamelCase(interfaceName,
+                                                          interfaceVersion);
 
         //resource type
         final TypeSpec.Builder resourceBuilder = TypeSpec.classBuilder(resourceName);
+        resourceBuilder.addModifiers(Modifier.PUBLIC);
         final TypeName superTypeName = ParameterizedTypeName.get(ClassName.get(WResource.class),
                                                                  ClassName.get(packageName,
                                                                                requestsName));
@@ -313,15 +344,12 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                                                             packageName,
                                                             requestsName));
 
-        //request methods
-        createResourceRequestMethods(interfaceElement,
-                                     packageName,
-                                     requestsName).forEach(resourceBuilder::addMethod);
+        //request callback methods
+        createResourceRequestMethods(interfaceElement).forEach(resourceBuilder::addMethod);
 
         //event methods
         createResourceEventMethods(interfaceElement,
-                                   packageElement,
-                                   requestsName).forEach(resourceBuilder::addMethod);
+                                   packageName).forEach(resourceBuilder::addMethod);
 
         final JavaFile javaFile = JavaFile.builder(packageName,
                                                    resourceBuilder.build())
@@ -329,22 +357,74 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         javaFile.writeTo(this.processingEnv.getFiler());
     }
 
+    private String normalizeName(final String name) {
+        final String camelCaseName = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL,
+                                                                    name);
+
+        return SourceVersion.isName(camelCaseName) ? camelCaseName : camelCaseName + "_";
+    }
+
     private List<MethodSpec> createResourceEventMethods(final org.w3c.dom.Element interfaceElement,
-                                                        final Element packageElement,
-                                                        final String requestsName) {
+                                                        final String packageName) {
         final List<MethodSpec> methodSpecs = new LinkedList<>();
 
         final NodeList eventElements = interfaceElement.getElementsByTagName("event");
         for (int i = 0; i < eventElements.getLength(); i++) {
             final org.w3c.dom.Element eventElement = (org.w3c.dom.Element) eventElements.item(i);
 
-            final String eventName = eventElement.getAttribute("name");
+            final String   eventName      = normalizeName(eventElement.getAttribute("name"));
+            final NodeList eventArguments = eventElement.getElementsByTagName("arg");
 
-            final MethodSpec.Builder builder = MethodSpec.methodBuilder(eventName);
+            final MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder(eventName);
 
-            //TODO more
+            final CodeBlock.Builder methodBody = CodeBlock.builder();
+            methodBody.add("$[new $T(this, $L)",
+                           WArgs.class,
+                           i + 1);
+            for (int j = 0; j < eventArguments.getLength(); j++) {
+                final org.w3c.dom.Element eventArgument = (org.w3c.dom.Element) eventArguments.item(j);
+                final String              argumentName  = normalizeName(eventArgument.getAttribute("name"));
+                final String              argumentType  = eventArgument.getAttribute("type");
+                final TypeName            argumentJavaType;
+                switch (argumentType) {
+                    case "fd":
+                    case "uint":
+                    case "int":
+                        argumentJavaType = TypeName.INT;
+                        break;
+                    case "fixed":
+                        argumentJavaType = ClassName.get(WFixed.class);
+                        break;
+                    case "object":
+                        argumentJavaType = ClassName.get(packageName,
+                                                         resourceNameCamelCase(eventArgument.getAttribute("interface")));
+                        break;
+                    case "new_id":
+                        argumentJavaType = TypeName.INT;
+                        break;
+                    case "string":
+                        argumentJavaType = ClassName.get(String.class);
+                        break;
+                    case "array":
+                        argumentJavaType = ClassName.get(ByteBuffer.class);
+                        break;
+                    default:
+                        throw new AssertionError("Encountered unexpected argument type: " + argumentType);
+                }
+                final ParameterSpec parameterSpec = ParameterSpec.builder(argumentJavaType,
+                                                                          argumentName,
+                                                                          Modifier.FINAL)
+                                                                 .build();
+                //add method parameters
+                methodBuilder.addParameter(parameterSpec);
+                //use method parameter in method body
+                methodBody.add(".arg($N)",
+                               parameterSpec);
+            }
+            methodBody.add(".send();\n$]");
 
-            methodSpecs.add(builder.build());
+            methodBuilder.addCode(methodBody.build());
+            methodSpecs.add(methodBuilder.build());
         }
 
         return methodSpecs;
@@ -352,11 +432,11 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
 
     private void createRequestsInterface(final org.w3c.dom.Element interfaceElement,
                                          final Element packageElement) throws IOException {
-        final String name    = interfaceElement.getAttribute("name");
-        final String version = interfaceElement.getAttribute("version");
+        final String interfaceName    = interfaceElement.getAttribute("name");
+        final String interfaceVersion = interfaceElement.getAttribute("version");
 
-        final String requestsName = requestsName(name,
-                                                 version);
+        final String requestsName = requestsNameCamelCase(interfaceName,
+                                                          interfaceVersion);
         final TypeSpec.Builder requestBuilder = TypeSpec.interfaceBuilder(requestsName);
 
 
@@ -367,15 +447,15 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         javaFile.writeTo(this.processingEnv.getFiler());
     }
 
-    private String requestsName(final String name,
-                                final String version) {
+    private String requestsNameCamelCase(final String name,
+                                         final String version) {
         return CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL,
                                               String.format("%s_requests_v%s",
                                                             name,
                                                             version));
     }
 
-    private String resourceName(final String name) {
+    private String resourceNameCamelCase(final String name) {
         return CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL,
                                               String.format("%s_resource",
                                                             name));
