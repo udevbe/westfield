@@ -61,4 +61,10 @@ public class WClient {
     void unregisterResource(final WResource<?> resource) {
         this.objects.remove(resource.getId());
     }
+
+    public void onConnect() {
+        final WRegistry         wRegistry         = this.wServer.getRegistry();
+        final WRegistryResource wRegistryResource = wRegistry.createResource(this);
+        wRegistry.publishGlobals(wRegistryResource);
+    }
 }

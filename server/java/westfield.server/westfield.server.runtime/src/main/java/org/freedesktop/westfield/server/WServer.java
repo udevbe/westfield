@@ -32,7 +32,6 @@ public class WServer {
         final WClient client = new WClient(this,
                                            sender);
         wClients.add(client);
-        this.registry.publishGlobals(this.registry.createResource(client));
         return client;
     }
 
