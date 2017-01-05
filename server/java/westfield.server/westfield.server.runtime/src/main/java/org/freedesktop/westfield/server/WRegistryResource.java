@@ -10,6 +10,7 @@ public class WRegistryResource extends WResource<WRegistry> {
                              final int id,
                              final WRegistry implementation) {
         super(client,
+              1,
               id,
               implementation);
         this.requests = new Request[]{

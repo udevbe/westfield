@@ -2,15 +2,18 @@ package org.freedesktop.westfield.server;
 
 public abstract class WResource<T> {
     private final WClient client;
+    private final int     version;
     private final int     id;
     private final T       implementation;
 
     protected Request[] requests;
 
     protected WResource(final WClient client,
+                        final int version,
                         final int id,
                         final T implementation) {
         this.client = client;
+        this.version = version;
         this.id = id;
         this.implementation = implementation;
 
@@ -52,5 +55,9 @@ public abstract class WResource<T> {
 
     int getId() {
         return this.id;
+    }
+
+    public int getVersion() {
+        return this.version;
     }
 }

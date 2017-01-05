@@ -25,6 +25,7 @@ public class WResourceTest {
     public void dispatch() throws Exception {
         //given
         final DummyWResource dummyWResource = new DummyWResource(this.wClient,
+                                                                 1,
                                                                  123,
                                                                  this.dummyImplementation);
 

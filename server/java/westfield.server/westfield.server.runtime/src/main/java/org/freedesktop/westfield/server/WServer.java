@@ -31,7 +31,7 @@ public class WServer {
     public WClient create(final WSender sender) {
         final WClient client = new WClient(this,
                                            sender);
-        wClients.add(client);
+        this.wClients.add(client);
         return client;
     }
 

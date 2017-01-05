@@ -7,9 +7,11 @@ import java.util.Map;
 public class DummyWResource extends WResource<DummyImplementation> {
 
     public DummyWResource(final WClient client,
+                          final int version,
                           final int id,
                           final DummyImplementation implementation) {
         super(client,
+              version,
               id,
               implementation);
         this.requests = new Request[]{

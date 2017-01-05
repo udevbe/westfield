@@ -20,7 +20,7 @@ public class WServerTest {
     private WServer wServer;
 
     @Test
-    public void onOpen() throws Exception {
+    public void create() throws Exception {
         //given
         final WRegistry         wRegistry         = mock(WRegistry.class);
         final WRegistryResource wRegistryResource = mock(WRegistryResource.class);
@@ -28,13 +28,12 @@ public class WServerTest {
         Whitebox.setInternalState(this.wServer,
                                   "registry",
                                   wRegistry);
-        WSender wSender = mock(WSender.class);
+        final WSender wSender = mock(WSender.class);
 
         //when
         this.wServer.create(wSender);
 
         //then
         assertThat(this.wServer.getClients()).hasSize(1);
-        verify(wRegistry).publishGlobals(wRegistryResource);
     }
 }
