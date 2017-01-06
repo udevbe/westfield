@@ -412,7 +412,6 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
 
                 final String readArgument;
                 switch (argumentType) {
-                    case "fd":
                     case "uint":
                     case "int":
                         readArgument = "readInt";
@@ -502,7 +501,6 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                                     final String argumentType) {
         final TypeName argumentJavaType;
         switch (argumentType) {
-            case "fd":
             case "uint":
             case "int":
                 argumentJavaType = TypeName.INT;
