@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.nio.ByteBuffer;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -171,14 +172,25 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                                                           protocolXmlFile),
                                             element);
 
+            final NodeList copyrightElements = documentElement.getElementsByTagName("copyright");
+            final String[] copyrights        = new String[copyrightElements.getLength()];
+
+            for (int i = 0; i < copyrightElements.getLength(); i++) {
+                final org.w3c.dom.Element copyrightElement = (org.w3c.dom.Element) copyrightElements.item(i);
+                copyrights[i] = copyrightElement.getTextContent();
+            }
+
             final NodeList interfaceElements = documentElement.getElementsByTagName("interface");
             for (int i = 0; i < interfaceElements.getLength(); i++) {
                 final org.w3c.dom.Element interfaceElement = (org.w3c.dom.Element) interfaceElements.item(i);
-                createRequestsInterface(interfaceElement,
+                createRequestsInterface(copyrights,
+                                        interfaceElement,
                                         element);
-                createResource(interfaceElement,
+                createResource(copyrights,
+                               interfaceElement,
                                element);
-                createEnums(interfaceElement,
+                createEnums(copyrights,
+                            interfaceElement,
                             element);
             }
 
@@ -192,7 +204,43 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         }
     }
 
-    private void createEnums(final org.w3c.dom.Element interfaceElement,
+    private void addCopyright(final String[] copyrights,
+                              final TypeSpec.Builder builder) {
+        for (String copyright : copyrights) {
+            //javapoet doesnt allow comments on types :(
+            //builder.addJavadoc(copyright);
+        }
+    }
+
+    private void addDescriptions(final NodeList descriptionElements,
+                                 final TypeSpec.Builder builder) {
+        for (int i = 0; i < descriptionElements.getLength(); i++) {
+            final org.w3c.dom.Element descriptionElement = (org.w3c.dom.Element) descriptionElements.item(i);
+            builder.addJavadoc("<pre>" + descriptionElement.getTextContent() + "</pre>");
+        }
+    }
+
+    private void addDescriptions(final NodeList methodDescriptionElements,
+                                 final MethodSpec.Builder builder,
+                                 final LinkedHashMap<String, String> argumentSummaries) {
+        for (int i = 0; i < methodDescriptionElements.getLength(); i++) {
+            final org.w3c.dom.Element descriptionElement = (org.w3c.dom.Element) methodDescriptionElements.item(i);
+            final StringBuilder stringBuffer = new StringBuilder().append("<pre>")
+                                                                  .append(descriptionElement.getTextContent())
+                                                                  .append("</pre>\n");
+            argumentSummaries.forEach((argName, argSummary) -> {
+                stringBuffer.append("\n@param ")
+                            .append(argName)
+                            .append(' ')
+                            .append(argSummary);
+            });
+
+            builder.addJavadoc(stringBuffer.toString());
+        }
+    }
+
+    private void createEnums(final String[] copyrights,
+                             final org.w3c.dom.Element interfaceElement,
                              final Element packageElement) throws IOException {
         final String packageName = packageElement.accept(new PackageElementQualifiedNameVisitor(),
                                                          null);
@@ -203,10 +251,18 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         for (int i = 0; i < interfaceEnums.getLength(); i++) {
             final org.w3c.dom.Element interfaceEnum = (org.w3c.dom.Element) interfaceEnums.item(i);
 
-            final String enumName = interfaceEnum.getAttribute("name");
+            final String   enumName            = interfaceEnum.getAttribute("name");
+            final NodeList descriptionElements = interfaceEnum.getElementsByTagName("description");
 
             final TypeSpec.Builder enumBuilder = TypeSpec.enumBuilder(enumNameCamelCase(interfaceName,
                                                                                         enumName));
+            enumBuilder.addModifiers(Modifier.PUBLIC);
+
+            addCopyright(copyrights,
+                         enumBuilder);
+            addDescriptions(descriptionElements,
+                            enumBuilder);
+
             enumBuilder.addField(TypeName.INT,
                                  "value",
                                  Modifier.PUBLIC,
@@ -224,10 +280,12 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
 
                 final String entryName  = normalizeName(enumEntry.getAttribute("name"));
                 final String entryValue = enumEntry.getAttribute("value");
+                final String summary    = enumEntry.getAttribute("summary");
 
                 enumBuilder.addEnumConstant(entryName,
                                             TypeSpec.anonymousClassBuilder("$L",
                                                                            entryValue)
+                                                    .addJavadoc("<pre>" + summary + "</pre>")
                                                     .build());
             }
 
@@ -287,7 +345,9 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         return constructorBuilder.build();
     }
 
-    private List<MethodSpec> createResourceRequestMethods(final org.w3c.dom.Element interfaceElement) {
+    private List<MethodSpec> createResourceRequestMethods(final org.w3c.dom.Element interfaceElement,
+                                                          final String packageName,
+                                                          final String interfaceName) {
         final List<MethodSpec> methodSpecs = new LinkedList<>();
 
         final ParameterSpec messageParameter = ParameterSpec.builder(ByteBuffer.class,
@@ -307,6 +367,7 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
 
             final org.w3c.dom.Element requestElement   = (org.w3c.dom.Element) requestElements.item(i);
             final String              requestName      = normalizeName(requestElement.getAttribute("name"));
+            final String              since            = requestElement.getAttribute("since");
             final NodeList            requestArguments = requestElement.getElementsByTagName("arg");
 
             final MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder(String.format("$%d",
@@ -325,7 +386,10 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                                            objectsParameter);
             }
 
-            methodBuilder.addCode("$[getImplementation().$L(this",
+            methodBuilder.addCode("$[this.<$T>getImplementation().$L(this",
+                                  ClassName.get(packageName,
+                                                requestsNameCamelCase(interfaceName,
+                                                                      since.isEmpty() ? "1" : since)),
                                   requestName);
             for (int j = 0; j < requestArguments.getLength(); j++) {
                 final org.w3c.dom.Element requestArgument = (org.w3c.dom.Element) requestArguments.item(j);
@@ -368,19 +432,25 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         return methodSpecs;
     }
 
-    private void createResource(final org.w3c.dom.Element interfaceElement,
+    private void createResource(final String[] copyrights,
+                                final org.w3c.dom.Element interfaceElement,
                                 final Element packageElement) throws IOException {
-        final String interfaceName    = interfaceElement.getAttribute("name");
-        final String interfaceVersion = interfaceElement.getAttribute("version");
+        final String   interfaceName       = interfaceElement.getAttribute("name");
+        final NodeList descriptionElements = interfaceElement.getElementsByTagName("description");
 
         final String packageName = packageElement.accept(new PackageElementQualifiedNameVisitor(),
                                                          null);
         final String resourceName = resourceNameCamelCase(interfaceName);
         final String requestsName = requestsNameCamelCase(interfaceName,
-                                                          interfaceVersion);
+                                                          "1");
 
         //resource type
         final TypeSpec.Builder resourceBuilder = TypeSpec.classBuilder(resourceName);
+        addCopyright(copyrights,
+                     resourceBuilder);
+        addDescriptions(descriptionElements,
+                        resourceBuilder);
+
         resourceBuilder.addModifiers(Modifier.PUBLIC);
         final TypeName superTypeName = ParameterizedTypeName.get(ClassName.get(WResource.class),
                                                                  ClassName.get(packageName,
@@ -393,7 +463,9 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                                                             requestsName));
 
         //request callback methods
-        createResourceRequestMethods(interfaceElement).forEach(resourceBuilder::addMethod);
+        createResourceRequestMethods(interfaceElement,
+                                     packageName,
+                                     interfaceName).forEach(resourceBuilder::addMethod);
 
         //event methods
         createResourceEventMethods(interfaceElement,
@@ -459,8 +531,9 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         for (int i = 0; i < eventElements.getLength(); i++) {
             final org.w3c.dom.Element eventElement = (org.w3c.dom.Element) eventElements.item(i);
 
-            final String   eventName      = normalizeName(eventElement.getAttribute("name"));
-            final NodeList eventArguments = eventElement.getElementsByTagName("arg");
+            final String   eventName         = normalizeName(eventElement.getAttribute("name"));
+            final NodeList eventDescriptions = eventElement.getElementsByTagName("description");
+            final NodeList eventArguments    = eventElement.getElementsByTagName("arg");
 
             final MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder(eventName);
 
@@ -468,10 +541,15 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
             methodBody.add("$[new $T(this, $L)",
                            WArgs.class,
                            i + 1);
+            final LinkedHashMap<String, String> argumentSummaries = new LinkedHashMap<>();
             for (int j = 0; j < eventArguments.getLength(); j++) {
-                final org.w3c.dom.Element eventArgument = (org.w3c.dom.Element) eventArguments.item(j);
-                final String              argumentName  = normalizeName(eventArgument.getAttribute("name"));
-                final String              argumentType  = eventArgument.getAttribute("type");
+                final org.w3c.dom.Element eventArgument   = (org.w3c.dom.Element) eventArguments.item(j);
+                final String              argumentName    = normalizeName(eventArgument.getAttribute("name"));
+                final String              argumentType    = eventArgument.getAttribute("type");
+                final String              argumentSummary = eventArgument.getAttribute("summary");
+
+                argumentSummaries.put(argumentName,
+                                      argumentSummary);
 
                 final TypeName javaTypeName = toJavaTypeName(eventArgument,
                                                              packageName,
@@ -489,6 +567,9 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
             }
             methodBody.add(".send();\n$]");
 
+            addDescriptions(eventDescriptions,
+                            methodBuilder,
+                            argumentSummaries);
             methodBuilder.addCode(methodBody.build());
             methodSpecs.add(methodBuilder.build());
         }
@@ -496,13 +577,15 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         return methodSpecs;
     }
 
-    private void createRequestsInterface(final org.w3c.dom.Element interfaceElement,
+    private void createRequestsInterface(final String[] copyrights,
+                                         final org.w3c.dom.Element interfaceElement,
                                          final Element packageElement) throws IOException {
         final String packageName = packageElement.accept(new PackageElementQualifiedNameVisitor(),
                                                          null);
 
-        final String interfaceName    = interfaceElement.getAttribute("name");
-        final String interfaceVersion = interfaceElement.getAttribute("version");
+        final String   interfaceName       = interfaceElement.getAttribute("name");
+        final String   interfaceVersion    = interfaceElement.getAttribute("version");
+        final NodeList descriptionElements = interfaceElement.getElementsByTagName("description");
 
         final int maxVersion = Integer.parseInt(interfaceVersion);
 
@@ -511,6 +594,11 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
             final String requestsName = requestsNameCamelCase(interfaceName,
                                                               Integer.toString(version));
             final TypeSpec.Builder requestBuilder = TypeSpec.interfaceBuilder(requestsName);
+            addCopyright(copyrights,
+                         requestBuilder);
+            addDescriptions(descriptionElements,
+                            requestBuilder);
+
             if (version > 1) {
                 requestBuilder.addSuperinterface(ClassName.get(packageName,
                                                                requestsNameCamelCase(interfaceName,
@@ -529,7 +617,8 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                     continue;
                 }
 
-                final String requestName = normalizeName(requestElement.getAttribute("name"));
+                final String   requestName         = normalizeName(requestElement.getAttribute("name"));
+                final NodeList requestDescriptions = requestElement.getElementsByTagName("description");
 
                 final MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder(requestName);
                 methodBuilder.addModifiers(Modifier.PUBLIC,
@@ -540,11 +629,17 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                                                          resourceNameCamelCase(interfaceName)),
                                            "resource");
                 final NodeList requestArguments = requestElement.getElementsByTagName("arg");
+
+                final LinkedHashMap<String, String> argumentSummaries = new LinkedHashMap<>();
                 for (int j = 0; j < requestArguments.getLength(); j++) {
                     final org.w3c.dom.Element requestArgument = (org.w3c.dom.Element) requestArguments.item(j);
 
-                    final String argumentName = normalizeName(requestArgument.getAttribute("name"));
-                    final String argumentType = requestArgument.getAttribute("type");
+                    final String argumentName    = normalizeName(requestArgument.getAttribute("name"));
+                    final String argumentType    = requestArgument.getAttribute("type");
+                    final String argumentSummary = requestArgument.getAttribute("summary");
+
+                    argumentSummaries.put(argumentName,
+                                          argumentSummary);
 
                     final TypeName javaTypeName = toJavaTypeName(requestArgument,
                                                                  packageName,
@@ -556,6 +651,9 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                     methodBuilder.addParameter(parameterSpec);
                 }
 
+                addDescriptions(requestDescriptions,
+                                methodBuilder,
+                                argumentSummaries);
                 methodSpecs.add(methodBuilder.build());
             }
 

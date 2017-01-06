@@ -27,8 +27,8 @@ public abstract class WResource<T> {
         getClient().unregisterResource(this);
     }
 
-    public T getImplementation() {
-        return this.implementation;
+    public <U extends T> U getImplementation() {
+        return (U) this.implementation;
     }
 
     public WClient getClient() {
@@ -42,8 +42,7 @@ public abstract class WResource<T> {
 
         final WResource<?> wResource = (WResource<?>) o;
 
-        if (getId() != wResource.getId()) { return false; }
-        return getClient() != null ? getClient().equals(wResource.getClient()) : wResource.getClient() == null;
+        return getId() == wResource.getId() && (getClient() != null ? getClient().equals(wResource.getClient()) : wResource.getClient() == null);
     }
 
     @Override
