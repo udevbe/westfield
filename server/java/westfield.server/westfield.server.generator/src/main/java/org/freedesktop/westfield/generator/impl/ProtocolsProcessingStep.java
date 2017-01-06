@@ -205,10 +205,9 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
     }
 
     private void addCopyright(final String[] copyrights,
-                              final TypeSpec.Builder builder) {
+                              final JavaFile.Builder javaFileBuilder) {
         for (String copyright : copyrights) {
-            //javapoet doesnt allow comments on types :(
-            //builder.addJavadoc(copyright);
+            javaFileBuilder.addFileComment(copyright);
         }
     }
 
@@ -258,8 +257,7 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                                                                                         enumName));
             enumBuilder.addModifiers(Modifier.PUBLIC);
 
-            addCopyright(copyrights,
-                         enumBuilder);
+
             addDescriptions(descriptionElements,
                             enumBuilder);
 
@@ -289,9 +287,11 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                                                     .build());
             }
 
-            final JavaFile javaFile = JavaFile.builder(packageName,
-                                                       enumBuilder.build())
-                                              .build();
+            final JavaFile.Builder builder = JavaFile.builder(packageName,
+                                                              enumBuilder.build());
+            addCopyright(copyrights,
+                         builder);
+            final JavaFile javaFile = builder.build();
             javaFile.writeTo(this.processingEnv.getFiler());
         }
     }
@@ -446,8 +446,6 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
 
         //resource type
         final TypeSpec.Builder resourceBuilder = TypeSpec.classBuilder(resourceName);
-        addCopyright(copyrights,
-                     resourceBuilder);
         addDescriptions(descriptionElements,
                         resourceBuilder);
 
@@ -471,9 +469,11 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         createResourceEventMethods(interfaceElement,
                                    packageName).forEach(resourceBuilder::addMethod);
 
-        final JavaFile javaFile = JavaFile.builder(packageName,
-                                                   resourceBuilder.build())
-                                          .build();
+        final JavaFile.Builder builder = JavaFile.builder(packageName,
+                                                          resourceBuilder.build());
+        addCopyright(copyrights,
+                     builder);
+        final JavaFile javaFile = builder.build();
         javaFile.writeTo(this.processingEnv.getFiler());
     }
 
@@ -594,8 +594,6 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
             final String requestsName = requestsNameCamelCase(interfaceName,
                                                               Integer.toString(version));
             final TypeSpec.Builder requestBuilder = TypeSpec.interfaceBuilder(requestsName);
-            addCopyright(copyrights,
-                         requestBuilder);
             addDescriptions(descriptionElements,
                             requestBuilder);
 
@@ -658,11 +656,12 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
             }
 
             methodSpecs.forEach(requestBuilder::addMethod);
-
-            final JavaFile javaFile = JavaFile.builder(packageElement.accept(new PackageElementQualifiedNameVisitor(),
-                                                                             null),
-                                                       requestBuilder.build())
-                                              .build();
+            final JavaFile.Builder builder = JavaFile.builder(packageElement.accept(new PackageElementQualifiedNameVisitor(),
+                                                                                    null),
+                                                              requestBuilder.build());
+            addCopyright(copyrights,
+                         builder);
+            final JavaFile javaFile = builder.build();
             javaFile.writeTo(this.processingEnv.getFiler());
         }
     }
