@@ -364,6 +364,38 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         return SourceVersion.isName(camelCaseName) ? camelCaseName : camelCaseName + "_";
     }
 
+    private TypeName toJavaTypeName(org.w3c.dom.Element argumentElement,
+                                    String packageName,
+                                    String argumentType) {
+        final TypeName argumentJavaType;
+        switch (argumentType) {
+            case "fd":
+            case "uint":
+            case "int":
+                argumentJavaType = TypeName.INT;
+                break;
+            case "fixed":
+                argumentJavaType = ClassName.get(WFixed.class);
+                break;
+            case "object":
+                argumentJavaType = ClassName.get(packageName,
+                                                 resourceNameCamelCase(argumentElement.getAttribute("interface")));
+                break;
+            case "new_id":
+                argumentJavaType = TypeName.INT;
+                break;
+            case "string":
+                argumentJavaType = ClassName.get(String.class);
+                break;
+            case "array":
+                argumentJavaType = ClassName.get(ByteBuffer.class);
+                break;
+            default:
+                throw new AssertionError("Encountered unexpected argument type: " + argumentType);
+        }
+        return argumentJavaType;
+    }
+
     private List<MethodSpec> createResourceEventMethods(final org.w3c.dom.Element interfaceElement,
                                                         final String packageName) {
         final List<MethodSpec> methodSpecs = new LinkedList<>();
@@ -385,33 +417,12 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                 final org.w3c.dom.Element eventArgument = (org.w3c.dom.Element) eventArguments.item(j);
                 final String              argumentName  = normalizeName(eventArgument.getAttribute("name"));
                 final String              argumentType  = eventArgument.getAttribute("type");
-                final TypeName            argumentJavaType;
-                switch (argumentType) {
-                    case "fd":
-                    case "uint":
-                    case "int":
-                        argumentJavaType = TypeName.INT;
-                        break;
-                    case "fixed":
-                        argumentJavaType = ClassName.get(WFixed.class);
-                        break;
-                    case "object":
-                        argumentJavaType = ClassName.get(packageName,
-                                                         resourceNameCamelCase(eventArgument.getAttribute("interface")));
-                        break;
-                    case "new_id":
-                        argumentJavaType = TypeName.INT;
-                        break;
-                    case "string":
-                        argumentJavaType = ClassName.get(String.class);
-                        break;
-                    case "array":
-                        argumentJavaType = ClassName.get(ByteBuffer.class);
-                        break;
-                    default:
-                        throw new AssertionError("Encountered unexpected argument type: " + argumentType);
-                }
-                final ParameterSpec parameterSpec = ParameterSpec.builder(argumentJavaType,
+
+                final TypeName javaTypeName = toJavaTypeName(eventArgument,
+                                                             packageName,
+                                                             argumentType);
+
+                final ParameterSpec parameterSpec = ParameterSpec.builder(javaTypeName,
                                                                           argumentName,
                                                                           Modifier.FINAL)
                                                                  .build();
@@ -432,19 +443,71 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
 
     private void createRequestsInterface(final org.w3c.dom.Element interfaceElement,
                                          final Element packageElement) throws IOException {
+        final String packageName = packageElement.accept(new PackageElementQualifiedNameVisitor(),
+                                                         null);
+
         final String interfaceName    = interfaceElement.getAttribute("name");
         final String interfaceVersion = interfaceElement.getAttribute("version");
 
-        final String requestsName = requestsNameCamelCase(interfaceName,
-                                                          interfaceVersion);
-        final TypeSpec.Builder requestBuilder = TypeSpec.interfaceBuilder(requestsName);
+        final int maxVersion = Integer.parseInt(interfaceVersion);
 
+        for (int version = 1; version <= maxVersion; version++) {
+            final String requestsName = requestsNameCamelCase(interfaceName,
+                                                              Integer.toString(version));
+            final TypeSpec.Builder requestBuilder = TypeSpec.interfaceBuilder(requestsName);
+            if (version > 1) {
+                requestBuilder.addSuperinterface(ClassName.get(packageName,
+                                                               requestsNameCamelCase(interfaceName,
+                                                                                     Integer.toString(version - 1))));
+            }
 
-        final JavaFile javaFile = JavaFile.builder(packageElement.accept(new PackageElementQualifiedNameVisitor(),
-                                                                         null),
-                                                   requestBuilder.build())
-                                          .build();
-        javaFile.writeTo(this.processingEnv.getFiler());
+            //methods
+            final List<MethodSpec> methodSpecs     = new LinkedList<>();
+            final NodeList         requestElements = interfaceElement.getElementsByTagName("request");
+            for (int i = 0; i < requestElements.getLength(); i++) {
+                final org.w3c.dom.Element requestElement = (org.w3c.dom.Element) requestElements.item(i);
+
+                final String since          = requestElement.getAttribute("since");
+                final int    requestVersion = Integer.parseInt(since.isEmpty() ? "1" : since);
+                if (requestVersion != version) {
+                    continue;
+                }
+
+                final String requestName = normalizeName(requestElement.getAttribute("name"));
+
+                final MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder(requestName);
+                methodBuilder.addModifiers(Modifier.PUBLIC,
+                                           Modifier.ABSTRACT);
+
+                //arguments
+                final NodeList requestArguments = requestElement.getElementsByTagName("arg");
+                for (int j = 0; j < requestArguments.getLength(); j++) {
+                    final org.w3c.dom.Element requestArgument = (org.w3c.dom.Element) requestArguments.item(j);
+
+                    final String argumentName = normalizeName(requestArgument.getAttribute("name"));
+                    final String argumentType = requestArgument.getAttribute("type");
+
+                    final TypeName javaTypeName = toJavaTypeName(requestArgument,
+                                                                 packageName,
+                                                                 argumentType);
+
+                    final ParameterSpec parameterSpec = ParameterSpec.builder(javaTypeName,
+                                                                              argumentName)
+                                                                     .build();
+                    methodBuilder.addParameter(parameterSpec);
+                }
+
+                methodSpecs.add(methodBuilder.build());
+            }
+
+            methodSpecs.forEach(requestBuilder::addMethod);
+
+            final JavaFile javaFile = JavaFile.builder(packageElement.accept(new PackageElementQualifiedNameVisitor(),
+                                                                             null),
+                                                       requestBuilder.build())
+                                              .build();
+            javaFile.writeTo(this.processingEnv.getFiler());
+        }
     }
 
     private String requestsNameCamelCase(final String name,
