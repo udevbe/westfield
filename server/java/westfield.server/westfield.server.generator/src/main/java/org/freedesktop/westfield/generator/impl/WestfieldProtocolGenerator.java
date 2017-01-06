@@ -11,7 +11,6 @@ import java.util.Collections;
 @SupportedAnnotationTypes({"org.freedesktop.westfield.generator.api.Protocols"})
 public class WestfieldProtocolGenerator extends BasicAnnotationProcessor {
     protected Iterable<? extends ProcessingStep> initSteps() {
-        //TODO
-        return Collections.singleton(new ProtocolsProcessingStep(processingEnv));
+        return Collections.singleton(new ProtocolsProcessingStep(this.processingEnv));
     }
 }
