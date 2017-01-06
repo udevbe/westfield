@@ -33,6 +33,8 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.util.SimpleAnnotationValueVisitor8;
 import javax.lang.model.util.SimpleElementVisitor8;
 import javax.tools.Diagnostic;
+import javax.tools.FileObject;
+import javax.tools.StandardLocation;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -151,12 +153,27 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
     }
 
     private void processProtocolXmlFile(final String protocolXmlFile,
-                                        final Element element) {
+                                        final Element packageElement) {
         try {
-            final File                   xmlFile  = new File(protocolXmlFile);
-            final DocumentBuilderFactory factory  = DocumentBuilderFactory.newInstance();
-            final DocumentBuilder        builder  = factory.newDocumentBuilder();
-            final Document               document = builder.parse(xmlFile);
+            final String packageName = packageElement.accept(new PackageElementQualifiedNameVisitor(),
+                                                             null);
+
+            final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            final DocumentBuilder        builder = factory.newDocumentBuilder();
+            final Document               document;
+            final File                   xmlFile = new File(protocolXmlFile);
+            if (xmlFile.exists()) {
+                document = builder.parse(xmlFile);
+            }
+            else {
+                //try source path
+                final FileObject resource = this.processingEnv.getFiler()
+                                                              .getResource(StandardLocation.SOURCE_PATH,
+                                                                           packageName,
+                                                                           protocolXmlFile);
+                document = builder.parse(resource.openInputStream());
+            }
+
             document.normalize();
 
             final org.w3c.dom.Element documentElement = document.getDocumentElement();
@@ -170,7 +187,7 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                                                           name,
                                                           version,
                                                           protocolXmlFile),
-                                            element);
+                                            packageElement);
 
             final NodeList copyrightElements = documentElement.getElementsByTagName("copyright");
             final String[] copyrights        = new String[copyrightElements.getLength()];
@@ -185,13 +202,13 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                 final org.w3c.dom.Element interfaceElement = (org.w3c.dom.Element) interfaceElements.item(i);
                 createRequestsInterface(copyrights,
                                         interfaceElement,
-                                        element);
+                                        packageName);
                 createResource(copyrights,
                                interfaceElement,
-                               element);
+                               packageName);
                 createEnums(copyrights,
                             interfaceElement,
-                            element);
+                            packageName);
             }
 
         }
@@ -199,14 +216,14 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
             this.processingEnv.getMessager()
                               .printMessage(Diagnostic.Kind.ERROR,
                                             "Failed to parse protocol xml file. " + e.getMessage(),
-                                            element);
+                                            packageElement);
             e.printStackTrace();
         }
     }
 
     private void addCopyright(final String[] copyrights,
                               final JavaFile.Builder javaFileBuilder) {
-        for (String copyright : copyrights) {
+        for (final String copyright : copyrights) {
             javaFileBuilder.addFileComment(copyright);
         }
     }
@@ -240,9 +257,7 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
 
     private void createEnums(final String[] copyrights,
                              final org.w3c.dom.Element interfaceElement,
-                             final Element packageElement) throws IOException {
-        final String packageName = packageElement.accept(new PackageElementQualifiedNameVisitor(),
-                                                         null);
+                             final String packageName) throws IOException {
 
         final String interfaceName = interfaceElement.getAttribute("name");
 
@@ -434,12 +449,10 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
 
     private void createResource(final String[] copyrights,
                                 final org.w3c.dom.Element interfaceElement,
-                                final Element packageElement) throws IOException {
+                                final String packageName) throws IOException {
         final String   interfaceName       = interfaceElement.getAttribute("name");
         final NodeList descriptionElements = interfaceElement.getElementsByTagName("description");
 
-        final String packageName = packageElement.accept(new PackageElementQualifiedNameVisitor(),
-                                                         null);
         final String resourceName = resourceNameCamelCase(interfaceName);
         final String requestsName = requestsNameCamelCase(interfaceName,
                                                           "1");
@@ -484,9 +497,9 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         return SourceVersion.isName(camelCaseName) ? camelCaseName : "_" + camelCaseName;
     }
 
-    private TypeName toJavaTypeName(org.w3c.dom.Element argumentElement,
-                                    String packageName,
-                                    String argumentType) {
+    private TypeName toJavaTypeName(final org.w3c.dom.Element argumentElement,
+                                    final String packageName,
+                                    final String argumentType) {
         final TypeName argumentJavaType;
         switch (argumentType) {
             case "fd":
@@ -579,9 +592,7 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
 
     private void createRequestsInterface(final String[] copyrights,
                                          final org.w3c.dom.Element interfaceElement,
-                                         final Element packageElement) throws IOException {
-        final String packageName = packageElement.accept(new PackageElementQualifiedNameVisitor(),
-                                                         null);
+                                         final String packageName) throws IOException {
 
         final String   interfaceName       = interfaceElement.getAttribute("name");
         final String   interfaceVersion    = interfaceElement.getAttribute("version");
@@ -656,8 +667,7 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
             }
 
             methodSpecs.forEach(requestBuilder::addMethod);
-            final JavaFile.Builder builder = JavaFile.builder(packageElement.accept(new PackageElementQualifiedNameVisitor(),
-                                                                                    null),
+            final JavaFile.Builder builder = JavaFile.builder(packageName,
                                                               requestBuilder.build());
             addCopyright(copyrights,
                          builder);
