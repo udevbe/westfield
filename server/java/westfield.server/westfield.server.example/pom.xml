@@ -13,6 +13,8 @@
     <name>Westfield Server Example</name>
 
     <properties>
+
+
         <grizzly.version>2.3.28</grizzly.version>
     </properties>
 
@@ -49,5 +51,37 @@
             <artifactId>grizzly-websockets</artifactId>
             <version>${grizzly.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.freedesktop</groupId>
+            <artifactId>westfield.server.generator</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.compiler.plugin.version}</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <compilerArgument>-Xlint:all</compilerArgument>
+                    <showWarnings>true</showWarnings>
+                    <showDeprecation>true</showDeprecation>
+                    <useIncrementalCompilation>false</useIncrementalCompilation>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.freedesktop</groupId>
+                            <artifactId>westfield.server.generator</artifactId>
+                            <version>${project.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

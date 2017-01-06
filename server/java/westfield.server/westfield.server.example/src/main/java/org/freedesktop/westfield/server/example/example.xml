@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<protocol name="example" version="1">
+    <copyright>
+        Example HTML5 Protocol
+        Copyright (C) 2017 Erik De Rijcke
+
+        This program is free software: you can redistribute it and/or modify
+        it under the terms of the GNU Affero General Public License as
+        published by the Free Software Foundation, either version 3 of the
+        License, or (at your option) any later version.
+
+        This program is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+        GNU Affero General Public License for more details.
+
+        You should have received a copy of the GNU Affero General Public License
+        along with this program. If not, see &gt;http://www.gnu.org/licenses/&lt;.
+    </copyright>
+
+    <interface name="example_global" version="1">
+        <description>
+            An example global singleton. Functions as a factory for other example objects.
+        </description>
+
+        <request name="create_example_clock" since="1">
+            <description>
+                Creates an example clock object that sends out time events.
+            </description>
+            <arg name="id" type="new_id" interface="example_clock" summary="A new example clock."/>
+        </request>
+    </interface>
+
+    <interface name="example_clock" version="1">
+        <event name="time_update" since="1">
+            <description>
+                Called when the clock receives a time update.
+            </description>
+            <arg name="the_time" type="uint" summary="The updated time."/>
+        </event>
+    </interface>
+</protocol>
