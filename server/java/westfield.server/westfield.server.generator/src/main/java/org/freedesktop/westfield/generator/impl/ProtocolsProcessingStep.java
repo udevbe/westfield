@@ -178,6 +178,8 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                                         element);
                 createResource(interfaceElement,
                                element);
+                createEnums(interfaceElement,
+                            element);
             }
 
         }
@@ -187,6 +189,52 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                                             "Failed to parse protocol xml file. " + e.getMessage(),
                                             element);
             e.printStackTrace();
+        }
+    }
+
+    private void createEnums(final org.w3c.dom.Element interfaceElement,
+                             final Element packageElement) throws IOException {
+        final String packageName = packageElement.accept(new PackageElementQualifiedNameVisitor(),
+                                                         null);
+
+        final String interfaceName = interfaceElement.getAttribute("name");
+
+        final NodeList interfaceEnums = interfaceElement.getElementsByTagName("enum");
+        for (int i = 0; i < interfaceEnums.getLength(); i++) {
+            final org.w3c.dom.Element interfaceEnum = (org.w3c.dom.Element) interfaceEnums.item(i);
+
+            final String enumName = interfaceEnum.getAttribute("name");
+
+            final TypeSpec.Builder enumBuilder = TypeSpec.enumBuilder(enumNameCamelCase(interfaceName,
+                                                                                        enumName));
+            enumBuilder.addField(TypeName.INT,
+                                 "value",
+                                 Modifier.PUBLIC,
+                                 Modifier.FINAL);
+            final MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder();
+            constructorBuilder.addParameter(TypeName.INT,
+                                            "value",
+                                            Modifier.FINAL);
+            constructorBuilder.addStatement("this.value = value");
+            enumBuilder.addMethod(constructorBuilder.build());
+
+            final NodeList enumEntries = interfaceEnum.getElementsByTagName("entry");
+            for (int j = 0; j < enumEntries.getLength(); j++) {
+                final org.w3c.dom.Element enumEntry = (org.w3c.dom.Element) enumEntries.item(j);
+
+                final String entryName  = normalizeName(enumEntry.getAttribute("name"));
+                final String entryValue = enumEntry.getAttribute("value");
+
+                enumBuilder.addEnumConstant(entryName,
+                                            TypeSpec.anonymousClassBuilder("$L",
+                                                                           entryValue)
+                                                    .build());
+            }
+
+            final JavaFile javaFile = JavaFile.builder(packageName,
+                                                       enumBuilder.build())
+                                              .build();
+            javaFile.writeTo(this.processingEnv.getFiler());
         }
     }
 
@@ -361,7 +409,7 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         final String camelCaseName = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL,
                                                                     name);
 
-        return SourceVersion.isName(camelCaseName) ? camelCaseName : camelCaseName + "_";
+        return SourceVersion.isName(camelCaseName) ? camelCaseName : "_" + camelCaseName;
     }
 
     private TypeName toJavaTypeName(org.w3c.dom.Element argumentElement,
@@ -378,8 +426,15 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                 argumentJavaType = ClassName.get(WFixed.class);
                 break;
             case "object":
-                argumentJavaType = ClassName.get(packageName,
-                                                 resourceNameCamelCase(argumentElement.getAttribute("interface")));
+                final String interfaceName = argumentElement.getAttribute("interface");
+                if (interfaceName.isEmpty()) {
+                    argumentJavaType = ParameterizedTypeName.get(ClassName.get(WResource.class),
+                                                                 WildcardTypeName.subtypeOf(Object.class));
+                }
+                else {
+                    argumentJavaType = ClassName.get(packageName,
+                                                     resourceNameCamelCase(interfaceName));
+                }
                 break;
             case "new_id":
                 argumentJavaType = TypeName.INT;
@@ -451,6 +506,7 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
 
         final int maxVersion = Integer.parseInt(interfaceVersion);
 
+        //iterate versions
         for (int version = 1; version <= maxVersion; version++) {
             final String requestsName = requestsNameCamelCase(interfaceName,
                                                               Integer.toString(version));
@@ -480,6 +536,9 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                                            Modifier.ABSTRACT);
 
                 //arguments
+                methodBuilder.addParameter(ClassName.get(packageName,
+                                                         resourceNameCamelCase(interfaceName)),
+                                           "resource");
                 final NodeList requestArguments = requestElement.getElementsByTagName("arg");
                 for (int j = 0; j < requestArguments.getLength(); j++) {
                     final org.w3c.dom.Element requestArgument = (org.w3c.dom.Element) requestArguments.item(j);
@@ -510,12 +569,22 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
         }
     }
 
+    private String enumNameCamelCase(final String interfaceName,
+                                     final String enumName) {
+        return CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL,
+                                              String.format("%s_%s",
+                                                            interfaceName,
+                                                            enumName));
+    }
+
     private String requestsNameCamelCase(final String name,
                                          final String version) {
+        final String underscoreName = version.equals("1") ? String.format("%s_requests",
+                                                                          name) : String.format("%s_requests_v%s",
+                                                                                                name,
+                                                                                                version);
         return CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL,
-                                              String.format("%s_requests_v%s",
-                                                            name,
-                                                            version));
+                                              underscoreName);
     }
 
     private String resourceNameCamelCase(final String name) {
