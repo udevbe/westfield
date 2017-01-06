@@ -75,3 +75,4 @@ westfield.server.generator/westfield.server.generator.iml
 westfield.server.iml
 westfield.server.protocol/westfield.server.protocol.iml
 westfield.server.runtime/westfield.server.runtime.iml
+/westfield.server.example/westfield.server.example.iml
