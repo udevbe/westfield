@@ -262,15 +262,17 @@ wfg.ProtocolParser = class {
 
             //class docs
             const description = protocolItf.description;
-            description.forEach((val) => {
-                out.write("\n/**\n");
-                if (val.hasOwnProperty("_")) {
-                    val._.split("\n").forEach((line) => {
-                        out.write(" *" + line + "\n");
-                    });
-                }
-                out.write(" */\n");
-            });
+            if (description) {
+                description.forEach((val) => {
+                    out.write("\n/**\n");
+                    if (val.hasOwnProperty("_")) {
+                        val._.split("\n").forEach((line) => {
+                            out.write(" *" + line + "\n");
+                        });
+                    }
+                    out.write(" */\n");
+                });
+            }
 
             //class
             if (i === 1) {
@@ -375,7 +377,7 @@ wfg.ProtocolParser = class {
     }
 };
 
-const configurationFile = 'generator/config.spec.json';
+const configurationFile = 'generator/config.json';
 const configuration = JSON.parse(fs.readFileSync(configurationFile));
 
 configuration.protocols.forEach((protocol) => {
