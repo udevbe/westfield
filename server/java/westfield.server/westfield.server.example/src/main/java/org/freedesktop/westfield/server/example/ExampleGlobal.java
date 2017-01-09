@@ -6,8 +6,10 @@ import org.freedesktop.westfield.server.WGlobal;
 
 public class ExampleGlobal extends WGlobal implements ExampleGlobalRequests {
 
+    private final ExampleClock exampleClock = new ExampleClock();
+
     public ExampleGlobal() {
-        super(ExampleGlobal.class.getSimpleName(),
+        super("example_global",
               1);
     }
 
@@ -24,9 +26,8 @@ public class ExampleGlobal extends WGlobal implements ExampleGlobalRequests {
     @Override
     public void createExampleClock(final ExampleGlobalResource resource,
                                    final int id) {
-        new ExampleClockResource(resource.getClient(),
-                                 resource.getVersion(),
-                                 id,
-                                 new ExampleClockRequests() {});
+        this.exampleClock.createResource(resource.getClient(),
+                                         resource.getVersion(),
+                                         id);
     }
 }
