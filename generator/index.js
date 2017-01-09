@@ -10,6 +10,7 @@ wfg.ProtocolParser = class {
 
     ["uint"](argName, optional) {
         return {
+            signature: optional ? "?u" : "u",
             jsType: optional ? "?Number" : "Number",
             marshallGen: optional ? util.format("wfc._uintOptional(%s)", argName) : util.format("wfc._uint(%s)", argName)
         };
@@ -17,6 +18,7 @@ wfg.ProtocolParser = class {
 
     ["int"](argName, optional) {
         return {
+            signature: optional ? "?i" : "i",
             jsType: optional ? "?Number" : "Number",
             marshallGen: optional ? util.format("wfc._intOptional(%s)", argName) : util.format("wfc._int(%s)", argName)
         };
@@ -24,6 +26,7 @@ wfg.ProtocolParser = class {
 
     ["fixed"](argName, optional) {
         return {
+            signature: optional ? "?f" : "f",
             jsType: optional ? "?WFixed" : "WFixed",
             marshallGen: optional ? util.format("wfc._fixedOptional(%s)", argName) : util.format("wfc._fixed(%s)", argName)
         };
@@ -31,6 +34,7 @@ wfg.ProtocolParser = class {
 
     ["object"](argName, optional) {
         return {
+            signature: optional ? "?o" : "o",
             jsType: optional ? "?*" : "*",
             marshallGen: optional ? util.format("wfc._objectOptional(%s)", argName) : util.format("wfc._object(%s)", argName)
         };
@@ -38,6 +42,7 @@ wfg.ProtocolParser = class {
 
     ["new_id"](argName, optional) {
         return {
+            signature: optional ? "?n" : "n",
             jsType: "*",
             marshallGen: "wfc._newObject()"
         };
@@ -45,6 +50,7 @@ wfg.ProtocolParser = class {
 
     ["string"](argName, optional) {
         return {
+            signature: optional ? "?s" : "s",
             jsType: optional ? "?string" : "string",
             marshallGen: optional ? util.format("wfc._stringOptional(%s)", argName) : util.format("wfc._string(%s)", argName)
         };
@@ -52,6 +58,7 @@ wfg.ProtocolParser = class {
 
     ["array"](argName, optional) {
         return {
+            signature: optional ? "?a" : "a",
             jsType: optional ? "?ArrayBuffer" : "ArrayBuffer",
             marshallGen: optional ? util.format("wfc._arrayOptional(%s)", argName) : util.format("wfc._array(%s)", argName)
         };
@@ -91,21 +98,37 @@ wfg.ProtocolParser = class {
         }
     }
 
+    _parseEventSignature(ev) {
+        let evSig = "";
+        if (ev.hasOwnProperty("arg")) {
+            const evArgs = ev.arg;
+            for (let i = 0; i < evArgs.length; i++) {
+                const arg = evArgs[i];
+
+                const argName = arg.$.name;
+                const optional = arg.$.hasOwnProperty("allow-null") && (arg.$["allow-null"] === "true");
+                const argType = arg.$.type;
+
+                evSig += this[argType](argName, optional).signature;
+            }
+        }
+
+        return evSig;
+    }
+
     _generateIfEventGlue(out, ev, opcode) {
 
         const evName = ev.$.name;
 
         out.write(util.format("\t[%d](message){\n", opcode));
-        out.write(util.format("\t\tconst args = this._connection._unmarshallArgs(message);\n"));
-        out.write(util.format("\t\tthis.iface.%s.call(", evName));
+        const evSig = this._parseEventSignature(ev);
+        out.write(util.format("\t\tconst args = this._connection._unmarshallArgs(message,\"%s\");\n", evSig));
+        out.write(util.format("\t\tthis.iface.%s.call(this.iface", evName));
 
         if (ev.hasOwnProperty("arg")) {
             const evArgs = ev.arg;
             for (let i = 0; i < evArgs.length; i++) {
-                if (i !== 0) {
-                    out.write(", ");
-                }
-
+                out.write(", ");
                 const arg = evArgs[i];
                 const argType = arg.$.type;
                 out.write(util.format("args[%d]", i));
