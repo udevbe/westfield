@@ -32,6 +32,9 @@
     </interface>
 
     <interface name="example_clock" version="1">
+        <description>
+            An example clock object. A clock sends out a time update every millisecond.
+        </description>
         <event name="time_update" since="1">
             <description>
                 Called when the clock receives a time update.
