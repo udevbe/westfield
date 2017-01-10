@@ -19,7 +19,6 @@
     <modules>
         <module>westfield.server.generator</module>
         <module>westfield.server.runtime</module>
-        <module>westfield.server.protocol</module>
         <module>westfield.server.example</module>
     </modules>
 
