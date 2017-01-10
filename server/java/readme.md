@@ -3,7 +3,7 @@ Westfield Java server side implementation
 
 A Java implementation of the Westfield server side library.
 
-The Westfield Jave implementation consists of 4 parts:
+The Westfield Java implementation consists of 3 parts:
 
  - Common runtime library
  - Protocol generator
