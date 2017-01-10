@@ -1,7 +1,7 @@
 package org.freedesktop.westfield.server.example;
 
 
-import org.freedesktop.westfield.server.WClient;
+import org.freedesktop.westfield.server.Client;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
@@ -21,7 +21,7 @@ public class ExampleClock implements ExampleClockRequests {
                                                      TimeUnit.MILLISECONDS);
     }
 
-    public ExampleClockResource createResource(WClient client,
+    public ExampleClockResource createResource(Client client,
                                                int version,
                                                int id) {
         final ExampleClockResource exampleClockResource = new ExampleClockResource(client,

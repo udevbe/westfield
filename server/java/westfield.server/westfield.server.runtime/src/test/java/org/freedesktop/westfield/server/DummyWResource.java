@@ -4,9 +4,9 @@ package org.freedesktop.westfield.server;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
-public class DummyWResource extends WResource<DummyImplementation> {
+public class DummyWResource extends Resource<DummyImplementation> {
 
-    public DummyWResource(final WClient client,
+    public DummyWResource(final Client client,
                           final int version,
                           final int id,
                           final DummyImplementation implementation) {
@@ -22,12 +22,12 @@ public class DummyWResource extends WResource<DummyImplementation> {
     }
 
     private void $1(final ByteBuffer message,
-                    final Map<Integer, WResource<?>> objects) {
+                    final Map<Integer, Resource<?>> objects) {
         getImplementation().foo();
     }
 
     private void $2(final ByteBuffer message,
-                    final Map<Integer, WResource<?>> objects) {
+                    final Map<Integer, Resource<?>> objects) {
         getImplementation().bar();
     }
 }

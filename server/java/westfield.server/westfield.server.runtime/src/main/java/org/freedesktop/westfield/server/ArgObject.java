@@ -3,10 +3,10 @@ package org.freedesktop.westfield.server;
 
 import java.nio.ByteBuffer;
 
-class WArgObject implements WArg {
-    private final WResource<?> wResource;
+class ArgObject implements Arg {
+    private final Resource<?> wResource;
 
-    WArgObject(final WResource<?> wResource) {
+    ArgObject(final Resource<?> wResource) {
         this.wResource = wResource;
     }
 

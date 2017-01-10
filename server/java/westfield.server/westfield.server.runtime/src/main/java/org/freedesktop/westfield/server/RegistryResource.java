@@ -4,11 +4,11 @@ package org.freedesktop.westfield.server;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
-public class WRegistryResource extends WResource<WRegistry> {
+public class RegistryResource extends Resource<Registry> {
 
-    public WRegistryResource(final WClient client,
+    public RegistryResource(final Client client,
                              final int id,
-                             final WRegistry implementation) {
+                             final Registry implementation) {
         super(client,
               1,
               id,
@@ -22,23 +22,23 @@ public class WRegistryResource extends WResource<WRegistry> {
     public void global(final int name,
                        final String interface_,
                        final int version) {
-        new WArgs(this,
-                  1).arg(name)
+        new Args(this,
+                 1).arg(name)
                     .arg(interface_)
                     .arg(version)
                     .send();
     }
 
     public void globalRemove(final int name) {
-        new WArgs(this,
-                  2).arg(name)
+        new Args(this,
+                 2).arg(name)
                     .send();
     }
 
     private void $1(final ByteBuffer message,
-                    final Map<Integer, WResource<?>> objects) {
-        final WArgsReader wArgsReader = new WArgsReader(message,
-                                                        objects);
+                    final Map<Integer, Resource<?>> objects) {
+        final ArgsReader wArgsReader = new ArgsReader(message,
+                                                      objects);
         getImplementation().bind(this,
                                  wArgsReader.readInt(),
                                  wArgsReader.readInt(),

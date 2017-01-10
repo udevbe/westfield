@@ -17,18 +17,18 @@ import static org.mockito.Mockito.when;
 public class WServerTest {
 
     @InjectMocks
-    private WServer wServer;
+    private Server wServer;
 
     @Test
     public void create() throws Exception {
         //given
-        final WRegistry         wRegistry         = mock(WRegistry.class);
-        final WRegistryResource wRegistryResource = mock(WRegistryResource.class);
-        when(wRegistry.createResource(any(WClient.class))).thenReturn(wRegistryResource);
+        final Registry         registry         = mock(Registry.class);
+        final RegistryResource registryResource = mock(RegistryResource.class);
+        when(registry.createResource(any(Client.class))).thenReturn(registryResource);
         Whitebox.setInternalState(this.wServer,
                                   "registry",
-                                  wRegistry);
-        final WSender wSender = mock(WSender.class);
+                                  registry);
+        final Sender wSender = mock(Sender.class);
 
         //when
         this.wServer.create(wSender);

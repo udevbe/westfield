@@ -1,10 +1,10 @@
 package org.freedesktop.westfield.server.example;
 
 
-import org.freedesktop.westfield.server.WClient;
-import org.freedesktop.westfield.server.WGlobal;
+import org.freedesktop.westfield.server.Client;
+import org.freedesktop.westfield.server.Global;
 
-public class ExampleGlobal extends WGlobal implements ExampleGlobalRequests {
+public class ExampleGlobal extends Global implements ExampleGlobalRequests {
 
     private final ExampleClock exampleClock = new ExampleClock();
 
@@ -14,7 +14,7 @@ public class ExampleGlobal extends WGlobal implements ExampleGlobalRequests {
     }
 
     @Override
-    public void bindClient(final WClient client,
+    public void bindClient(final Client client,
                            final int id,
                            final int version) {
         new ExampleGlobalResource(client,

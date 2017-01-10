@@ -3,17 +3,16 @@ package org.freedesktop.westfield.server;
 
 import java.nio.ByteBuffer;
 
-class WArgInt implements WArg {
+class ArgFixed implements Arg {
+    private final Fixed arg;
 
-    private final int arg;
-
-    WArgInt(final int arg) {
+    ArgFixed(final Fixed arg) {
         this.arg = arg;
     }
 
     @Override
     public void write(final ByteBuffer byteBuffer) {
-        byteBuffer.putInt(this.arg);
+        byteBuffer.putInt(this.arg.rawValue());
     }
 
     @Override

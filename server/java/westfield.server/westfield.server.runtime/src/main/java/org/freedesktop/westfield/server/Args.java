@@ -6,47 +6,47 @@ import java.nio.ByteOrder;
 import java.util.LinkedList;
 import java.util.List;
 
-public class WArgs {
+public class Args {
 
-    private final WResource<?> wResource;
-    private final short        opcode;
+    private final Resource<?> wResource;
+    private final short       opcode;
 
-    private final List<WArg> wArgs = new LinkedList<>();
+    private final List<Arg> wArgs = new LinkedList<>();
 
-    public WArgs(final WResource<?> wResource,
-                 final int opcode) {
+    public Args(final Resource<?> wResource,
+                final int opcode) {
         this.wResource = wResource;
         this.opcode = (short) opcode;
     }
 
-    public WArgs arg(final int arg) {
-        this.wArgs.add(new WArgInt(arg));
+    public Args arg(final int arg) {
+        this.wArgs.add(new ArgInt(arg));
         return this;
     }
 
-    public WArgs arg(final String arg) {
-        this.wArgs.add(new WArgString(arg));
+    public Args arg(final String arg) {
+        this.wArgs.add(new ArgString(arg));
         return this;
     }
 
-    public WArgs arg(final WResource<?> arg) {
-        this.wArgs.add(new WArgObject(arg));
+    public Args arg(final Resource<?> arg) {
+        this.wArgs.add(new ArgObject(arg));
         return this;
     }
 
-    public WArgs arg(final ByteBuffer arg) {
-        this.wArgs.add(new WArgArray(arg));
+    public Args arg(final ByteBuffer arg) {
+        this.wArgs.add(new ArgArray(arg));
         return this;
     }
 
-    public WArgs arg(final WFixed arg) {
-        this.wArgs.add(new WArgFixed(arg));
+    public Args arg(final Fixed arg) {
+        this.wArgs.add(new ArgFixed(arg));
         return this;
     }
 
     private ByteBuffer wireMessage() {
         short size = 8;//objectid+size+opcode
-        for (final WArg wArg : this.wArgs) {
+        for (final Arg wArg : this.wArgs) {
             size += wArg.size();
         }
 

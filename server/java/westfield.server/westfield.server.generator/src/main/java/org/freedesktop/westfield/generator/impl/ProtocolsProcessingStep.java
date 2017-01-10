@@ -13,12 +13,12 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.WildcardTypeName;
 import org.freedesktop.westfield.generator.api.Protocols;
+import org.freedesktop.westfield.server.ArgsReader;
 import org.freedesktop.westfield.server.Request;
-import org.freedesktop.westfield.server.WArgs;
-import org.freedesktop.westfield.server.WArgsReader;
-import org.freedesktop.westfield.server.WClient;
-import org.freedesktop.westfield.server.WFixed;
-import org.freedesktop.westfield.server.WResource;
+import org.freedesktop.westfield.server.Args;
+import org.freedesktop.westfield.server.Client;
+import org.freedesktop.westfield.server.Fixed;
+import org.freedesktop.westfield.server.Resource;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -323,7 +323,7 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                                                  final String packageName,
                                                  final String requestsName) {
         final MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder();
-        final ParameterSpec clientParameterSpec = ParameterSpec.builder(WClient.class,
+        final ParameterSpec clientParameterSpec = ParameterSpec.builder(Client.class,
                                                                         "client",
                                                                         Modifier.FINAL)
                                                                .build();
@@ -379,7 +379,7 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                                                             .build();
         final ParameterSpec objectsParameter = ParameterSpec.builder(ParameterizedTypeName.get(ClassName.get(Map.class),
                                                                                                TypeName.get(Integer.class),
-                                                                                               ParameterizedTypeName.get(ClassName.get(WResource.class),
+                                                                                               ParameterizedTypeName.get(ClassName.get(Resource.class),
                                                                                                                          WildcardTypeName.subtypeOf(Object.class))),
                                                                      "objects",
                                                                      Modifier.FINAL)
@@ -402,9 +402,9 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
             final String wArgsReader = "wArgsReader";
             if (requestArguments.getLength() > 0) {
                 methodBuilder.addStatement("final $T $L = new $T($N, $N)",
-                                           WArgsReader.class,
+                                           ArgsReader.class,
                                            wArgsReader,
-                                           WArgsReader.class,
+                                           ArgsReader.class,
                                            messageParameter,
                                            objectsParameter);
             }
@@ -470,7 +470,7 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                         resourceBuilder);
 
         resourceBuilder.addModifiers(Modifier.PUBLIC);
-        final TypeName superTypeName = ParameterizedTypeName.get(ClassName.get(WResource.class),
+        final TypeName superTypeName = ParameterizedTypeName.get(ClassName.get(Resource.class),
                                                                  ClassName.get(packageName,
                                                                                requestsName));
         resourceBuilder.superclass(superTypeName);
@@ -514,12 +514,12 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
                 argumentJavaType = TypeName.INT;
                 break;
             case "fixed":
-                argumentJavaType = ClassName.get(WFixed.class);
+                argumentJavaType = ClassName.get(Fixed.class);
                 break;
             case "object":
                 final String interfaceName = argumentElement.getAttribute("interface");
                 if (interfaceName.isEmpty()) {
-                    argumentJavaType = ParameterizedTypeName.get(ClassName.get(WResource.class),
+                    argumentJavaType = ParameterizedTypeName.get(ClassName.get(Resource.class),
                                                                  WildcardTypeName.subtypeOf(Object.class));
                 }
                 else {
@@ -558,7 +558,7 @@ public class ProtocolsProcessingStep implements BasicAnnotationProcessor.Process
 
             final CodeBlock.Builder methodBody = CodeBlock.builder();
             methodBody.add("$[new $T(this, $L)",
-                           WArgs.class,
+                           Args.class,
                            i + 1);
             final LinkedHashMap<String, String> argumentSummaries = new LinkedHashMap<>();
             for (int j = 0; j < eventArguments.getLength(); j++) {

@@ -25,10 +25,10 @@ public class WArgsReaderTest {
         wireMessage.putInt(wireArg);
         wireMessage.rewind();
 
-        final Map<Integer, WResource<?>> resources = new HashMap<>();
+        final Map<Integer, Resource<?>> resources = new HashMap<>();
 
-        final WArgsReader wArgsReader = new WArgsReader(wireMessage,
-                                                        resources);
+        final ArgsReader wArgsReader = new ArgsReader(wireMessage,
+                                                      resources);
 
         //when
         final int arg = wArgsReader.readInt();
@@ -42,18 +42,18 @@ public class WArgsReaderTest {
         //given
         final ByteBuffer wireMessage = ByteBuffer.allocate(4);
         wireMessage.order(ByteOrder.nativeOrder());
-        final int wireArg = WFixed.valueOf(1234.56)
+        final int wireArg = Fixed.valueOf(1234.56)
                                   .rawValue();
         wireMessage.putInt(wireArg);
         wireMessage.rewind();
 
-        final Map<Integer, WResource<?>> resources = new HashMap<>();
+        final Map<Integer, Resource<?>> resources = new HashMap<>();
 
-        final WArgsReader wArgsReader = new WArgsReader(wireMessage,
-                                                        resources);
+        final ArgsReader wArgsReader = new ArgsReader(wireMessage,
+                                                      resources);
 
         //when
-        final WFixed arg = wArgsReader.readFixed();
+        final Fixed arg = wArgsReader.readFixed();
 
         //then
         assertThat(arg.doubleValue()).isWithin(0.002)
@@ -69,16 +69,16 @@ public class WArgsReaderTest {
         wireMessage.putInt(wireArg);
         wireMessage.rewind();
 
-        final Map<Integer, WResource<?>> resources  = new HashMap<>();
-        final WResource<?>               wireObject = mock(WResource.class);
+        final Map<Integer, Resource<?>> resources  = new HashMap<>();
+        final Resource<?>               wireObject = mock(Resource.class);
         resources.put(wireArg,
                       wireObject);
 
-        final WArgsReader wArgsReader = new WArgsReader(wireMessage,
-                                                        resources);
+        final ArgsReader wArgsReader = new ArgsReader(wireMessage,
+                                                      resources);
 
         //when
-        final WResource<?> arg = wArgsReader.readObject();
+        final Resource<?> arg = wArgsReader.readObject();
 
         //then
         assertThat(arg).isEqualTo(wireObject);
@@ -93,10 +93,10 @@ public class WArgsReaderTest {
         wireMessage.putInt(wireArg);
         wireMessage.rewind();
 
-        final Map<Integer, WResource<?>> resources = new HashMap<>();
+        final Map<Integer, Resource<?>> resources = new HashMap<>();
 
-        final WArgsReader wArgsReader = new WArgsReader(wireMessage,
-                                                        resources);
+        final ArgsReader wArgsReader = new ArgsReader(wireMessage,
+                                                      resources);
 
         //when
         final int arg = wArgsReader.readNewObject();
@@ -116,10 +116,10 @@ public class WArgsReaderTest {
         wireMessage.put((byte) 0);//padding
         wireMessage.rewind();
 
-        final Map<Integer, WResource<?>> resources = new HashMap<>();
+        final Map<Integer, Resource<?>> resources = new HashMap<>();
 
-        final WArgsReader wArgsReader = new WArgsReader(wireMessage,
-                                                        resources);
+        final ArgsReader wArgsReader = new ArgsReader(wireMessage,
+                                                      resources);
 
         //when
         final String arg = wArgsReader.readString();
@@ -141,10 +141,10 @@ public class WArgsReaderTest {
         wireMessage.put((byte) 0);//padding
         wireMessage.rewind();
 
-        final Map<Integer, WResource<?>> resources = new HashMap<>();
+        final Map<Integer, Resource<?>> resources = new HashMap<>();
 
-        final WArgsReader wArgsReader = new WArgsReader(wireMessage,
-                                                        resources);
+        final ArgsReader wArgsReader = new ArgsReader(wireMessage,
+                                                      resources);
 
         //when
         final ByteBuffer arg = wArgsReader.readArray();
@@ -188,13 +188,13 @@ public class WArgsReaderTest {
         //object
         final int wireArg3 = 123456;
         wireMessage.putInt(wireArg3);
-        final Map<Integer, WResource<?>> resources  = new HashMap<>();
-        final WResource<?>               wireObject = mock(WResource.class);
+        final Map<Integer, Resource<?>> resources  = new HashMap<>();
+        final Resource<?>               wireObject = mock(Resource.class);
         resources.put(wireArg3,
                       wireObject);
 
         //fixed
-        final int wireArg4 = WFixed.valueOf(1234.56)
+        final int wireArg4 = Fixed.valueOf(1234.56)
                                    .rawValue();
         wireMessage.putInt(wireArg4);
 
@@ -203,16 +203,16 @@ public class WArgsReaderTest {
         wireMessage.putInt(wireArg5);
 
         wireMessage.rewind();
-        final WArgsReader wArgsReader = new WArgsReader(wireMessage,
-                                                        resources);
+        final ArgsReader wArgsReader = new ArgsReader(wireMessage,
+                                                      resources);
 
         //when
-        final ByteBuffer   arg0 = wArgsReader.readArray();
-        final String       arg1 = wArgsReader.readString();
-        final int          arg2 = wArgsReader.readNewObject();
-        final WResource<?> arg3 = wArgsReader.readObject();
-        final WFixed       arg4 = wArgsReader.readFixed();
-        final int          arg5 = wArgsReader.readInt();
+        final ByteBuffer  arg0 = wArgsReader.readArray();
+        final String      arg1 = wArgsReader.readString();
+        final int         arg2 = wArgsReader.readNewObject();
+        final Resource<?> arg3 = wArgsReader.readObject();
+        final Fixed       arg4 = wArgsReader.readFixed();
+        final int         arg5 = wArgsReader.readInt();
 
         //then
 

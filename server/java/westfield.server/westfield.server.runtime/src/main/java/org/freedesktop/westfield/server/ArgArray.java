@@ -3,11 +3,11 @@ package org.freedesktop.westfield.server;
 
 import java.nio.ByteBuffer;
 
-class WArgArray implements WArg {
+class ArgArray implements Arg {
 
     private final ByteBuffer arg;
 
-    WArgArray(final ByteBuffer arg) {
+    ArgArray(final ByteBuffer arg) {
         this.arg = arg;
     }
 

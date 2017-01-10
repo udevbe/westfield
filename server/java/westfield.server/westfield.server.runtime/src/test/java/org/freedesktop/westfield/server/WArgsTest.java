@@ -20,25 +20,25 @@ import static org.mockito.Mockito.when;
 public class WArgsTest {
 
     @Mock
-    private WResource<?> wResource;
+    private Resource<?> wResource;
 
     @Test
     public void toWireMessage() throws Exception {
         //given
         final int resourceId = 123;
         when(this.wResource.getId()).thenReturn(resourceId);
-        final WClient client = mock(WClient.class);
+        final Client client = mock(Client.class);
         when(this.wResource.getClient()).thenReturn(client);
         final int opcode = 456;
-        final WArgs wArgs = new WArgs(this.wResource,
-                                      opcode);
-        final int          intArg        = 987654;
-        final String       stringArg     = "lorum ipsum";
-        final WResource<?> resourceArg   = mock(WResource.class);
-        final int          argResourceId = 987;
+        final Args wArgs = new Args(this.wResource,
+                                    opcode);
+        final int         intArg        = 987654;
+        final String      stringArg     = "lorum ipsum";
+        final Resource<?> resourceArg   = mock(Resource.class);
+        final int         argResourceId = 987;
         when(resourceArg.getId()).thenReturn(argResourceId);
         final ByteBuffer byteBufferArg = ByteBuffer.wrap(new byte[]{11, 22, 33, 44, 55});
-        final WFixed     fixedArg      = WFixed.valueOf(123.45);
+        final Fixed     fixedArg      = Fixed.valueOf(123.45);
 
         wArgs.arg(intArg)
              .arg(stringArg)

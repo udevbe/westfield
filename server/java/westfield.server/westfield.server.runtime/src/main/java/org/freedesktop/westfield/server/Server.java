@@ -4,12 +4,12 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-public class WServer {
+public class Server {
 
     public static final String SUBPROTOCOL = "westfield";
 
-    private final WRegistry    registry = new WRegistry();
-    private final Set<WClient> wClients = new HashSet<>();
+    private final Registry    registry = new Registry();
+    private final Set<Client> wClients = new HashSet<>();
 
     /*
      * IDs allocated by the client are in the range [1, 0xfeffffff] while IDs allocated by the server are
@@ -28,18 +28,18 @@ public class WServer {
      *
      * @return
      */
-    public WClient create(final WSender sender) {
-        final WClient client = new WClient(this,
-                                           sender);
+    public Client create(final Sender sender) {
+        final Client client = new Client(this,
+                                         sender);
         this.wClients.add(client);
         return client;
     }
 
-    public Collection<WClient> getClients() {
+    public Collection<Client> getClients() {
         return this.wClients;
     }
 
-    public WRegistry getRegistry() {
+    public Registry getRegistry() {
         return this.registry;
     }
 }

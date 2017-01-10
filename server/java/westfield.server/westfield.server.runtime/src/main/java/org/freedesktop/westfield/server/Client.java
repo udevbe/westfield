@@ -6,14 +6,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class WClient {
+public class Client {
 
-    private final Map<Integer, WResource<?>> objects = new HashMap<>(1024);
-    private final WServer wServer;
-    private final WSender sender;
+    private final Map<Integer, Resource<?>> objects = new HashMap<>(1024);
+    private final Server wServer;
+    private final Sender sender;
 
-    WClient(final WServer wServer,
-            WSender sender) {
+    Client(final Server wServer,
+           Sender sender) {
         this.wServer = wServer;
         this.sender = sender;
     }
@@ -23,10 +23,10 @@ public class WClient {
     }
 
     private void unmarshall(final ByteBuffer message) {
-        final int          objectId  = message.getInt();
-        final WResource<?> wResource = this.objects.get(objectId);
-        final short        size      = message.getShort();//not used
-        final short        opcode    = message.getShort();
+        final int         objectId  = message.getInt();
+        final Resource<?> wResource = this.objects.get(objectId);
+        final short       size      = message.getShort();//not used
+        final short       opcode    = message.getShort();
         wResource.requests[opcode].request(message,
                                            this.objects);
     }
@@ -49,22 +49,22 @@ public class WClient {
                     .remove(this);
     }
 
-    public Collection<WResource<?>> getResources() {
+    public Collection<Resource<?>> getResources() {
         return this.objects.values();
     }
 
-    void registerResource(final WResource<?> resource) {
+    void registerResource(final Resource<?> resource) {
         this.objects.put(resource.getId(),
                          resource);
     }
 
-    void unregisterResource(final WResource<?> resource) {
+    void unregisterResource(final Resource<?> resource) {
         this.objects.remove(resource.getId());
     }
 
     public void onConnect() {
-        final WRegistry         wRegistry         = this.wServer.getRegistry();
-        final WRegistryResource wRegistryResource = wRegistry.createResource(this);
-        wRegistry.publishGlobals(wRegistryResource);
+        final Registry         registry         = this.wServer.getRegistry();
+        final RegistryResource registryResource = registry.createResource(this);
+        registry.publishGlobals(registryResource);
     }
 }

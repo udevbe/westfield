@@ -4,11 +4,11 @@ package org.freedesktop.westfield.server;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-class WArgString implements WArg {
+class ArgString implements Arg {
 
     private final String arg;
 
-    WArgString(final String arg) {
+    ArgString(final String arg) {
         this.arg = arg;
     }
 

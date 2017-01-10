@@ -27,7 +27,7 @@ wfg.ProtocolParser = class {
     ["fixed"](argName, optional) {
         return {
             signature: optional ? "?f" : "f",
-            jsType: optional ? "?WFixed" : "WFixed",
+            jsType: optional ? "?Fixed" : "Fixed",
             marshallGen: optional ? util.format("wfc._fixedOptional(%s)", argName) : util.format("wfc._fixed(%s)", argName)
         };
     }

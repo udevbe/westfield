@@ -17,7 +17,7 @@ import static org.mockito.Mockito.verify;
 public class WResourceTest {
 
     @Mock
-    private WClient             wClient;
+    private Client              wClient;
     @Mock
     private DummyImplementation dummyImplementation;
 
@@ -29,8 +29,8 @@ public class WResourceTest {
                                                                  123,
                                                                  this.dummyImplementation);
 
-        final ByteBuffer                 message = mock(ByteBuffer.class);
-        final Map<Integer, WResource<?>> objects = new HashMap<>();
+        final ByteBuffer                message = mock(ByteBuffer.class);
+        final Map<Integer, Resource<?>> objects = new HashMap<>();
 
         //when
         dummyWResource.requests[1].request(message,

@@ -1,17 +1,17 @@
 package org.freedesktop.westfield.server;
 
-public abstract class WResource<T> {
-    private final WClient client;
-    private final int     version;
-    private final int     id;
-    private final T       implementation;
+public abstract class Resource<T> {
+    private final Client client;
+    private final int    version;
+    private final int    id;
+    private final T      implementation;
 
     protected Request[] requests;
 
-    protected WResource(final WClient client,
-                        final int version,
-                        final int id,
-                        final T implementation) {
+    protected Resource(final Client client,
+                       final int version,
+                       final int id,
+                       final T implementation) {
         this.client = client;
         this.version = version;
         this.id = id;
@@ -31,7 +31,7 @@ public abstract class WResource<T> {
         return (U) this.implementation;
     }
 
-    public WClient getClient() {
+    public Client getClient() {
         return this.client;
     }
 
@@ -40,7 +40,7 @@ public abstract class WResource<T> {
         if (this == o) { return true; }
         if (o == null || getClass() != o.getClass()) { return false; }
 
-        final WResource<?> wResource = (WResource<?>) o;
+        final Resource<?> wResource = (Resource<?>) o;
 
         return getId() == wResource.getId() && (getClient() != null ? getClient().equals(wResource.getClient()) : wResource.getClient() == null);
     }

@@ -5,12 +5,12 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-public class WArgsReader {
-    private final ByteBuffer                 byteBuffer;
-    private final Map<Integer, WResource<?>> objects;
+public class ArgsReader {
+    private final ByteBuffer                byteBuffer;
+    private final Map<Integer, Resource<?>> objects;
 
-    public WArgsReader(final ByteBuffer byteBuffer,
-                       final Map<Integer, WResource<?>> objects) {
+    public ArgsReader(final ByteBuffer byteBuffer,
+                      final Map<Integer, Resource<?>> objects) {
         this.byteBuffer = byteBuffer;
         this.objects = objects;
     }
@@ -19,11 +19,11 @@ public class WArgsReader {
         return this.byteBuffer.getInt();
     }
 
-    public WFixed readFixed() {
-        return new WFixed(readInt());
+    public Fixed readFixed() {
+        return new Fixed(readInt());
     }
 
-    public <T extends WResource<?>> T readObject() {
+    public <T extends Resource<?>> T readObject() {
         final int objectId = readInt();
         return (T) this.objects.get(objectId);
     }

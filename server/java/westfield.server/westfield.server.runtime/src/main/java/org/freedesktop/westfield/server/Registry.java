@@ -6,14 +6,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class WRegistry {
+public class Registry {
 
-    private final Set<WRegistryResource> wRegistryResources = new HashSet<>();
-    private final Map<Integer, WGlobal>  globals            = new HashMap<>();
+    private final Set<RegistryResource> registryResources = new HashSet<>();
+    private final Map<Integer, Global>  globals           = new HashMap<>();
 
-    WRegistry() {}
+    Registry() {}
 
-    void bind(final WRegistryResource resource,
+    void bind(final RegistryResource resource,
               final int name,
               final int id,
               final int version) {
@@ -23,39 +23,39 @@ public class WRegistry {
                                 version);
     }
 
-    public void register(final WGlobal global) {
+    public void register(final Global global) {
         if (this.globals.put(global.hashCode(),
                              global) == null) {
-            this.wRegistryResources.forEach(wRegistryResource -> wRegistryResource.global(global.hashCode(),
+            this.registryResources.forEach(registryResource -> registryResource.global(global.hashCode(),
                                                                                           global.getInterfaceName(),
                                                                                           global.getVersion()));
         }
     }
 
-    public void unregister(final WGlobal global) {
+    public void unregister(final Global global) {
         if (this.globals.remove(global.hashCode()) != null) {
-            this.wRegistryResources.forEach(wRegistryResource -> wRegistryResource.global(global.hashCode(),
+            this.registryResources.forEach(registryResource -> registryResource.global(global.hashCode(),
                                                                                           global.getInterfaceName(),
                                                                                           global.getVersion()));
         }
     }
 
-    void publishGlobals(final WRegistryResource wRegistryResource) {
+    void publishGlobals(final RegistryResource registryResource) {
         this.globals.entrySet()
                     .forEach(entry -> {
-                        final int     name   = entry.getKey();
-                        final WGlobal global = entry.getValue();
-                        wRegistryResource.global(name,
+                        final int    name   = entry.getKey();
+                        final Global global = entry.getValue();
+                        registryResource.global(name,
                                                  global.getInterfaceName(),
                                                  global.getVersion());
                     });
     }
 
-    WRegistryResource createResource(final WClient client) {
-        final WRegistryResource wRegistryResource = new WRegistryResource(client,
+    RegistryResource createResource(final Client client) {
+        final RegistryResource registryResource = new RegistryResource(client,
                                                                           1,
                                                                           this);
-        this.wRegistryResources.add(wRegistryResource);
-        return wRegistryResource;
+        this.registryResources.add(registryResource);
+        return registryResource;
     }
 }

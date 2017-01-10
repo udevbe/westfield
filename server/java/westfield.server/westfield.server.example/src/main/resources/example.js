@@ -1,4 +1,4 @@
-const wConnection = new wfc.WConnection("ws://127.0.0.1:8080/westfield");
+const connection = new wfc.Connection("ws://127.0.0.1:8080/westfield");
 
 let exampleGlobal;
 let exampleClock;
@@ -10,10 +10,10 @@ function onTimeUpdate(time) {
 
 function onGlobal(name, interface_, version) {
     if (interface_ === "example_global") {
-        exampleGlobal = wConnection.registry.bind(name, interface_, version);
+        exampleGlobal = connection.registry.bind(name, interface_, version);
         exampleClock = exampleGlobal.create_example_clock();
         exampleClock.listener.time_update = onTimeUpdate;
     }
     //else unknown/unsupported global
 }
-wConnection.registry.listener.global = onGlobal;
+connection.registry.listener.global = onGlobal;

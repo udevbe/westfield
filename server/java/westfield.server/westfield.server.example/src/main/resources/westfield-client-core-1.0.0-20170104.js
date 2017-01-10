@@ -3,7 +3,7 @@
 //westfield client namespace
 const wfc = {};
 
-wfc.WFixed = class WFixed {
+wfc.Fixed = class Fixed {
 
     /**
      * Represent fixed as a signed 24-bit integer.
@@ -34,7 +34,7 @@ wfc.WFixed = class WFixed {
 };
 
 wfc.parseFixed = function (number) {
-    return new wfc.WFixed((number * 256.0) >> 0);
+    return new wfc.Fixed((number * 256.0) >> 0);
 };
 
 /**
@@ -139,8 +139,8 @@ wfc._intOptional = function (arg) {
 
 /**
  *
- * @param {WFixed} arg
- * @returns {{value: WFixed, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+ * @param {Fixed} arg
+ * @returns {{value: Fixed, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
  */
 wfc._fixed = function (arg) {
     return {
@@ -163,8 +163,8 @@ wfc._fixed = function (arg) {
 
 /**
  *
- * @param {WFixed} arg
- * @returns {{value: WFixed, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+ * @param {Fixed} arg
+ * @returns {{value: Fixed, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
  */
 wfc._fixedOptional = function (arg) {
     return {
@@ -399,13 +399,13 @@ wfc._arrayOptional = function (arg) {
 
 /**
  *
- * @param {WConnection} connection
+ * @param {Connection} connection
  * @param {{name: String, impl: *}} listener
  */
 wfc.WObject = class {
     /**
      *
-     * @param {WConnection} connection
+     * @param {Connection} connection
      * @param {*} listener
      */
     constructor(connection, listener) {
@@ -414,7 +414,7 @@ wfc.WObject = class {
     }
 };
 
-wfc.WRegistry = class WRegistry extends wfc.WObject {
+wfc.Registry = class Registry extends wfc.WObject {
     /**
      * Bind an object to the connection.
      *
@@ -431,7 +431,7 @@ wfc.WRegistry = class WRegistry extends wfc.WObject {
 
     constructor(connection) {
         super(connection, {
-            name: "WRegistry",
+            name: "Registry",
             version: 1,
 
             /**
@@ -485,7 +485,7 @@ wfc.WRegistry = class WRegistry extends wfc.WObject {
  * @param {String} socketUrl
  * @constructor
  */
-wfc.WConnection = class {
+wfc.Connection = class {
 
     /**
      *
@@ -517,7 +517,7 @@ wfc.WConnection = class {
     ["f"](wireMsg) {//float {Number}
         const arg = new Int32Array(wireMsg, wireMsg.offset, 1)[0];
         wireMsg.offset += 4;
-        return new wfc.WFixed(arg >> 0);
+        return new wfc.Fixed(arg >> 0);
     }
 
     /**
@@ -765,13 +765,13 @@ wfc.WConnection = class {
 
         //FIXME separate out to an 'open' function
         this._socket = new WebSocket(socketUrl, "westfield");
-        const wConnection = this;
-        this._socket.onopen = (event) => { wConnection._onSocketOpen(event); };
-        this._socket.onclose = (event) => { wConnection._onSocketClose(event); };
-        this._socket.onerror = (event) => { wConnection._onSocketError(event); };
-        this._socket.onmessage = (event) => { wConnection._onSocketMessage(event); };
+        const connection = this;
+        this._socket.onopen = (event) => { connection._onSocketOpen(event); };
+        this._socket.onclose = (event) => { connection._onSocketClose(event); };
+        this._socket.onerror = (event) => { connection._onSocketError(event); };
+        this._socket.onmessage = (event) => { connection._onSocketMessage(event); };
 
-        this.registry = new wfc.WRegistry(this);
+        this.registry = new wfc.Registry(this);
         this.nextId = 1;
         this._registerObject(this.registry);
         Object.freeze(this.registry);
