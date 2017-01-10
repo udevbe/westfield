@@ -1073,8 +1073,8 @@ describe("westfield-client-core", function () {
             });
             targetObject[opcode] = function (wireMsg) {
                 const args = this._connection._unmarshallArgs(wireMsg, "uifonsa");
-                this.iface.mock.call(
-                    this.iface,
+                this.listener.mock.call(
+                    this.listener,
                     args[0], //u
                     args[1], //i
                     args[2], //f
@@ -1133,15 +1133,15 @@ describe("westfield-client-core", function () {
             connection._onSocketMessage(wireMsg);
 
             //then
-            expect(targetObject.iface.mock).toHaveBeenCalled();
-            expect(targetObject.iface.mock.calls.mostRecent().args[0]).toEqual(uintArg);
-            expect(targetObject.iface.mock.calls.mostRecent().args[1]).toEqual(intArg);
-            expect(targetObject.iface.mock.calls.mostRecent().args[2]).toEqual(fixedArg);
-            expect(targetObject.iface.mock.calls.mostRecent().args[3]).toEqual(objectArg);
-            expect(targetObject.iface.mock.calls.mostRecent().args[4]._id).toEqual(newObjectId);
-            expect(targetObject.iface.mock.calls.mostRecent().args[4].iface.name).toEqual(newObjectItfName);
-            expect(targetObject.iface.mock.calls.mostRecent().args[5]).toEqual(stringArg);
-            expect(targetObject.iface.mock.calls.mostRecent().args[6]).toBeBlobEqual(buffer);
+            expect(targetObject.listener.mock).toHaveBeenCalled();
+            expect(targetObject.listener.mock.calls.mostRecent().args[0]).toEqual(uintArg);
+            expect(targetObject.listener.mock.calls.mostRecent().args[1]).toEqual(intArg);
+            expect(targetObject.listener.mock.calls.mostRecent().args[2]).toEqual(fixedArg);
+            expect(targetObject.listener.mock.calls.mostRecent().args[3]).toEqual(objectArg);
+            expect(targetObject.listener.mock.calls.mostRecent().args[4]._id).toEqual(newObjectId);
+            expect(targetObject.listener.mock.calls.mostRecent().args[4].listener.name).toEqual(newObjectItfName);
+            expect(targetObject.listener.mock.calls.mostRecent().args[5]).toEqual(stringArg);
+            expect(targetObject.listener.mock.calls.mostRecent().args[6]).toBeBlobEqual(buffer);
         });
     });
 });

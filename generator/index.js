@@ -123,7 +123,7 @@ wfg.ProtocolParser = class {
         out.write(util.format("\t[%d](message){\n", opcode));
         const evSig = this._parseEventSignature(ev);
         out.write(util.format("\t\tconst args = this._connection._unmarshallArgs(message,\"%s\");\n", evSig));
-        out.write(util.format("\t\tthis.iface.%s.call(this.iface", evName));
+        out.write(util.format("\t\tthis.listener.%s.call(this.listener", evName));
 
         if (ev.hasOwnProperty("arg")) {
             const evArgs = ev.arg;

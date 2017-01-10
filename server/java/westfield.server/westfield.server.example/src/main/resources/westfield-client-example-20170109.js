@@ -61,7 +61,7 @@ wfc.example_clock = class example_clock extends wfc.WObject {
 
 	[1](message){
 		const args = this._connection._unmarshallArgs(message,"u");
-		this.iface.time_update.call(this.iface, args[0]);
+		this.listener.time_update.call(this.listener, args[0]);
 	}
 
 };

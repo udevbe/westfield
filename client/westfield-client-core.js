@@ -400,17 +400,17 @@ wfc._arrayOptional = function (arg) {
 /**
  *
  * @param {WConnection} connection
- * @param {{name: String, impl: *}} iface
+ * @param {{name: String, impl: *}} listener
  */
 wfc.WObject = class {
     /**
      *
      * @param {WConnection} connection
-     * @param {*} iface
+     * @param {*} listener
      */
-    constructor(connection, iface) {
+    constructor(connection, listener) {
         this._connection = connection;
-        this.iface = iface;
+        this.listener = listener;
     }
 };
 
@@ -471,12 +471,12 @@ wfc.WRegistry = class WRegistry extends wfc.WObject {
 
     [1](message) {
     	const args = this._connection._unmarshallArgs(message,"isu");
-    	this.iface.global.call(this.iface, args[0], args[1], args[2]);
+    	this.listener.global.call(this.listener, args[0], args[1], args[2]);
     }
 
     [2](message) {
         const args = this._connection._unmarshallArgs(message,"i");
-        this.iface.globalRemove.call(this.iface, args[0]);
+        this.listener.globalRemove.call(this.listener, args[0]);
     }
 };
 
