@@ -1,22 +1,24 @@
 {
   "name": "westfield",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Wayland HTML5 protocol generator",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node generator/westfield-scanner.js",
     "test": "node ./node_modules/jasmine/bin/jasmine.js"
   },
   "dependencies": {
-    "xml2js": "0.4.17"
+    "xml2js": "0.4.17",
+    "meow": "3.7.0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Zubnix/westfield.git"
+    "url": "git+https://github.com/udevbe/westfield.git"
   },
   "keywords": [
     "wayland",
     "html5",
+    "weboscket",
     "compositor",
     "browser",
     "javascript",
@@ -25,9 +27,9 @@
   "author": "Erik De Rijcke",
   "license": "AGPL-3.0",
   "bugs": {
-    "url": "https://github.com/Zubnix/westfield/issues"
+    "url": "https://github.com/udevbe/westfield/issues"
   },
-  "homepage": "https://github.com/Zubnix/westfield#readme",
+  "homepage": "https://github.com/udevbe/westfield#readme",
   "devDependencies": {
     "jasmine": "2.5.2",
     "jasmine-core": "2.5.2"
