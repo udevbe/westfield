@@ -1130,7 +1130,7 @@ describe("westfield-client-core", function () {
             }
 
             //when
-            connection._onSocketMessage(wireMsg);
+            connection._onSocketMessage({data: wireMsg});
 
             //then
             expect(targetObject.listener.mock).toHaveBeenCalled();
