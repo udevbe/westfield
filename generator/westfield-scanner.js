@@ -1,8 +1,10 @@
-"use strict";
+#!/usr/bin/env node
+'use strict';
 
 const fs = require('fs');
 const util = require('util');
 const xml2js = require('xml2js');
+const meow = require('meow');
 
 const wfg = {};
 
@@ -400,9 +402,19 @@ wfg.ProtocolParser = class {
     }
 };
 
-const configurationFile = 'generator/config.json';
-const configuration = JSON.parse(fs.readFileSync(configurationFile));
+const cli = meow(`Usage:
+        westfield-scanner.js FILE... [options]
 
-configuration.protocols.forEach((protocol) => {
+    Generates a javascript protocol file based on the given FILE argument.
+    The FILE argument is a relative or absolute path to a Westfield compatible Wayland XML.
+    The generated javascript protocol file is named "westfield-client-FILE.js".
+
+    Options:
+        -h, --help         print usage information
+        -v, --version      show version info and exit
+        
+`, {});
+
+cli.input.forEach((protocol) => {
     new wfg.ProtocolParser(protocol).parse();
 });
