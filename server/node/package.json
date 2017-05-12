@@ -1,0 +1,37 @@
+{
+  "name": "westfield-scanner-node",
+  "version": "0.0.1",
+  "description": "Wayland HTML5 protocol generator for Node.js",
+  "main": "index.js",
+  "scripts": {
+    "start": "node generator/westfield-scanner-node.js",
+    "test": "node ./../../node_modules/jasmine/bin/jasmine.js"
+  },
+  "dependencies": {
+    "xml2js": "0.4.17",
+    "meow": "3.7.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/udevbe/westfield.git"
+  },
+  "keywords": [
+    "wayland",
+    "html5",
+    "weboscket",
+    "compositor",
+    "browser",
+    "javascript",
+    "ipc"
+  ],
+  "author": "Erik De Rijcke",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/udevbe/westfield/issues"
+  },
+  "homepage": "https://github.com/udevbe/westfield#readme",
+  "devDependencies": {
+    "jasmine": "2.5.2",
+    "jasmine-core": "2.5.2"
+  }
+}
