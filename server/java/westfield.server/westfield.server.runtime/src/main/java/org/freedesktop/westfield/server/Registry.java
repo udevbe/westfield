@@ -34,9 +34,7 @@ public class Registry {
 
     public void unregister(final Global global) {
         if (this.globals.remove(global.hashCode()) != null) {
-            this.registryResources.forEach(registryResource -> registryResource.global(global.hashCode(),
-                                                                                          global.getInterfaceName(),
-                                                                                          global.getVersion()));
+            this.registryResources.forEach(registryResource -> registryResource.globalRemove(global.hashCode()));
         }
     }
 
