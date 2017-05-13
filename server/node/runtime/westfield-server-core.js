@@ -57,7 +57,7 @@ wfs._uint = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Uint32Array(wireMsg, wireMsg.offset, 1);
+            const buf = new Uint32Array(wireMsg, wireMsg.offset, 1)[0];
             buf[0] = this.value;
             wireMsg.offset += this.size;
         }
@@ -273,6 +273,7 @@ wfs._string = function (arg) {
         value: arg,
         type: "s",
         size: 4 + (function () {
+            //fancy logic to calculate size with padding to a multiple of 4 bytes (int).
             return (arg.length + 3) & ~3;
         })(),
         optional: false,
@@ -309,6 +310,7 @@ wfs._stringOptional = function (arg) {
             if (arg === null) {
                 return 0;
             } else {
+                //fancy logic to calculate size with padding to a multiple of 4 bytes (int).
                 return (arg.length + 3) & ~3;
             }
         })(),
@@ -347,6 +349,7 @@ wfs._array = function (arg) {
         value: arg,
         type: "a",
         size: 4 + (function () {
+            //fancy logic to calculate size with padding to a multiple of 4 bytes (int).
             return (arg.byteLength + 3) & ~3;
         })(),
         optional: false,
@@ -381,6 +384,7 @@ wfs._arrayOptional = function (arg) {
             if (arg === null) {
                 return 0;
             } else {
+                //fancy logic to calculate size with padding to a multiple of 4 bytes (int).
                 return (arg.byteLength + 3) & ~3;
             }
         })(),
@@ -400,11 +404,8 @@ wfs._arrayOptional = function (arg) {
     };
 };
 
-//TODO model objects after their java counterpart.
-
-wfs.Client = class Client {
-
-};
+//TODO model objects
+//TODO unit tests
 
 wfs.Global = class Global {
 
@@ -419,13 +420,16 @@ wfs.Global = class Global {
     }
 
     /**
-     * Implemented by subclass
+     *
+     * Invoked when a client binds to this global. Subclasses implement this method so they instantiate a
+     * corresponding wfs.Resource subtype.
      *
      * @param {wfs.Client} client
      * @param {Number} id
      * @param {Number} version
      */
-    bindClient(client, id, version) {}
+    bindClient(client, id, version) {
+    }
 };
 
 wfs.Resource = class Resource {
@@ -436,11 +440,11 @@ wfs.Resource = class Resource {
         this.id = id;
         this.implementation = implementation;
 
-        client.registerResource(this);
+        client._registerObject(this);
     }
 
     destroy() {
-        client.unregisterResource(this);
+        client._unregisterObject(this);
     }
 };
 
@@ -450,26 +454,32 @@ wfs.RegistryResource = class RegistryResource extends wfs.Resource {
         super(client, 1, id, implementation);
     }
 
-
+    /**
+     * @param {Number} name
+     * @param {Number} interface_
+     * @param {Number} version
+     */
     global(name, interface_, version) {
-        //TODO construct args object & send to remote
+        this.client._marshall(this.id, 1, [wfs._uint(name), wfs._uint(interface_), wfs._uint(version)])
     }
 
+    /**
+     * Notify the client that the global with the given name id is removed.
+     * @param {Number} name
+     */
     globalRemove(name) {
-        //TODO construct args object & send to remote
+        this.client._marshall(this.id, 2, [wfs._uint(name)]);
     }
 
     /**
      * opcode 1 -> bind
      *
      * @param {ArrayBuffer} message
-     * @param {Map} objects
+     * @param {Client} client
      */
-    [1](message, objects) {
-        const argsReader = new _ArgsReader(message, objects);
-        this.implementation.bind(this, argsReader.readInt(), argsReader.readInt(), argsReader.readInt())
+    [1](message) {
+        this.implementation.bind(this, this.client["u"](message), this.client["u"](message), this.client["u"](message))
     }
-
 };
 
 wfs.Registry = class Registry {
@@ -512,23 +522,40 @@ wfs.Registry = class Registry {
      * @param {wfs.Global} global
      */
     unregister(global) {
-        if (this._globals.remove(global._name) !== = false) {
+        if (this._globals.remove(global._name) !== false) {
             this._registryResources.forEach(registryResource => registryResource.globalRemove(global._name));
         }
     }
 
-    //TODO publishGlobals
-    //TODO createResource
+    /**
+     *
+     * @param {wfs.RegistryResource} registryResource
+     * @private
+     */
+    _publishGlobals(registryResource) {
+        this._globals.forEach((name, global) => registryResource.global(name, global.interfaceName, global.version));
+    }
+
+    /**
+     *
+     * @param {Client} client
+     * @private
+     */
+    _createResource(client) {
+        const registryResource = new wfs.RegistryResource(client, 1, this);
+        this._registryResources.push(registryResource);
+        return registryResource;
+    }
 };
 
 
-//TODO see what we can reuse from the this c/p client side connection class
+//TODO implement websocket server connection hooks
 /**
  *
  * @param {String} socketUrl
  * @constructor
  */
-wfs.Connection = class {
+wfs.Client = class {
 
     /**
      *
@@ -674,7 +701,7 @@ wfs.Connection = class {
         buffer.offset = 8;
 
         const obj = this._objects.get(id);
-        obj[opcode](buffer);
+        obj[opcode](buffer, this._objects);
     }
 
     /**
@@ -682,27 +709,19 @@ wfs.Connection = class {
      * @param {ArrayBuffer} event
      * @private
      */
-    _onSocketOpen(event) {
-        //TODO send back-end minimal required browser info (we start with screen size)
-        //TODO the first request shall be a json informing the host of our properties.
-        //all subsequent message will be in the binary wire format.
-//        this._socket.send(JSON.stringify({
-//            id: "client1"
-//        }));
-        this._socket.binaryType = "arraybuffer";
-    }
-
-    _onSocketClose(event) {
+    _onOpen(event) {
 
     }
 
-    _onSocketError(event) {
+    _onClose(event) {
+
+    }
+
+    _onError(event) {
 
     }
 
     _onSocketMessage(event) {
-        //TODO the first response shall be a json informing us of the host's properties.
-        //all subsequent message will be in the binary wire format.
         this._unmarshall(event);
     }
 
@@ -728,36 +747,6 @@ wfs.Connection = class {
      *
      * @param {Number} id
      * @param {Number} opcode
-     * @param {string} itfName
-     * @param {Array} argsArray
-     * @private
-     */
-    _marshallConstructor(id, opcode, itfName, argsArray) {
-
-        //cosntruct new object
-        const wObject = new wfs[itfName](this);
-        this._registerObject(wObject);
-        Object.freeze(wObject);
-
-        //determine required wire message length
-        let size = 4 + 2 + 2;  //id+size+opcode
-        argsArray.forEach(function (arg) {
-            if (arg.type === "n") {
-                arg.value = wObject;
-            }
-
-            size += arg.size; //add size of the actual argument values
-        });
-
-        this.__marshallMsg(id, opcode, size, argsArray);
-
-        return wObject;
-    };
-
-    /**
-     *
-     * @param {Number} id
-     * @param {Number} opcode
      * @param {Array} argsArray
      * @private
      */
@@ -770,68 +759,11 @@ wfs.Connection = class {
 
         this.__marshallMsg(id, opcode, size, argsArray);
     };
-
-    /**
-     * Close the connection to the remote host. All objects will be deleted before the connection is closed.
-     */
-    close() {
-        this._objects.values().slice().forEach(function (object) {
-            object.delete();
-        });
-        this._socket.close();
-    };
-
-    /**
-     *
-     * @param {WObject} object
-     * @private
-     */
-    _registerObject(object) {
-        /*
-         * IDs allocated by the client are in the range [1, 0xfeffffff] while IDs allocated by the server are
-         * in the range [0xff000000, 0xffffffff]. The 0 ID is reserved to represent a null or non-existant object
-         */
-        object._id = this.nextId;
-        this._objects.set(object._id, object);
-        this.nextId++;
-    };
-
-    constructor(socketUrl) {
-        /**
-         * Pool of objects that live on this connection.
-         * Key: Number, Value: a subtype of wfc._Object with wfc._Object._id === Key
-         *
-         * @type {Map}
-         * @private
-         */
-        this._objects = new Map();
-
-        //FIXME separate out to an 'open' function
-        this._socket = new WebSocket(socketUrl, "westfield");
-        const connection = this;
-        this._socket.onopen = (event) => {
-            connection._onSocketOpen(event);
-        };
-        this._socket.onclose = (event) => {
-            connection._onSocketClose(event);
-        };
-        this._socket.onerror = (event) => {
-            connection._onSocketError(event);
-        };
-        this._socket.onmessage = (event) => {
-            connection._onSocketMessage(event);
-        };
-
-        this.registry = new wfs.Registry(this);
-        this.nextId = 1;
-        this._registerObject(this.registry);
-        Object.freeze(this.registry);
-    }
 };
 
 //make this module available in both nodejs & browser
 (function () {
-    if (typeof module !== = 'undefined' && typeof module.exports !== = 'undefined')
+    if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
         module.exports = wfs;
     else
         window.wfc = wfs;
