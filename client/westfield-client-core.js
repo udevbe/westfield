@@ -81,7 +81,7 @@ wfc._uintOptional = function (arg) {
          */
         _marshallArg: function (wireMsg) {
             const buf = new Uint32Array(wireMsg, wireMsg.offset, 1);
-            buf[0] = arg == null ? 0 : this.value;
+            buf[0] = arg === null ? 0 : this.value;
             wireMsg.offset += this.size;
         }
     }
@@ -131,7 +131,7 @@ wfc._intOptional = function (arg) {
          */
         _marshallArg: function (wireMsg) {
             const buf = new Int32Array(wireMsg, wireMsg.offset, 1);
-            buf[0] = arg == null ? 0 : this.value;
+            buf[0] = arg === null ? 0 : this.value;
             wireMsg.offset += this.size;
         }
     }
@@ -179,7 +179,7 @@ wfc._fixedOptional = function (arg) {
          */
         _marshallArg: function (wireMsg) {
             const buf = new Int32Array(wireMsg, wireMsg.offset, 1);
-            buf[0] = arg == null ? 0 : this.value._raw;
+            buf[0] = arg === null ? 0 : this.value._raw;
             wireMsg.offset += this.size;
         }
     }
@@ -229,7 +229,7 @@ wfc._objectOptional = function (arg) {
          */
         _marshallArg: function (wireMsg) {
             const buf = new Uint32Array(wireMsg, wireMsg.offset, 1);
-            buf[0] = arg == null ? 0 : this.value._id;
+            buf[0] = arg === null ? 0 : this.value._id;
             wireMsg.offset += this.size;
         }
     };
@@ -303,7 +303,7 @@ wfc._stringOptional = function (arg) {
         value: arg,
         type: "s",
         size: 4 + (function () {
-            if (arg == null) {
+            if (arg === null) {
                 return 0;
             } else {
                 return (arg.length + 3) & ~3;
@@ -317,7 +317,7 @@ wfc._stringOptional = function (arg) {
          */
         _marshallArg: function (wireMsg) {
             const buf32 = new Uint32Array(wireMsg, wireMsg.offset, 1);
-            if (this.value == null) {
+            if (this.value === null) {
                 buf32[0] = 0;
             } else {
                 buf32[0] = this.value.length;
@@ -375,7 +375,7 @@ wfc._arrayOptional = function (arg) {
         value: arg,
         type: "a",
         size: 4 + (function () {
-            if (arg == null) {
+            if (arg === null) {
                 return 0;
             } else {
                 return (arg.byteLength + 3) & ~3;
@@ -384,7 +384,7 @@ wfc._arrayOptional = function (arg) {
         optional: true,
         _marshallArg: function (wireMsg) {
             const buf32 = new Uint32Array(wireMsg, wireMsg.offset, 1);
-            if (this.value == null) {
+            if (this.value === null) {
                 buf32[0] = 0;
             } else {
                 buf32[0] = this.value.byteLength;
