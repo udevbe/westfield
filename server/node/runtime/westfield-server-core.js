@@ -83,7 +83,7 @@ wfs._uintOptional = function (arg) {
          */
         _marshallArg: function (wireMsg) {
             const buf = new Uint32Array(wireMsg, wireMsg.offset, 1);
-            buf[0] = arg == null ? 0 : this.value;
+            buf[0] = arg === null ? 0 : this.value;
             wireMsg.offset += this.size;
         }
     }
@@ -133,7 +133,7 @@ wfs._intOptional = function (arg) {
          */
         _marshallArg: function (wireMsg) {
             const buf = new Int32Array(wireMsg, wireMsg.offset, 1);
-            buf[0] = arg == null ? 0 : this.value;
+            buf[0] = arg === null ? 0 : this.value;
             wireMsg.offset += this.size;
         }
     }
@@ -181,7 +181,7 @@ wfs._fixedOptional = function (arg) {
          */
         _marshallArg: function (wireMsg) {
             const buf = new Int32Array(wireMsg, wireMsg.offset, 1);
-            buf[0] = arg == null ? 0 : this.value._raw;
+            buf[0] = arg === null ? 0 : this.value._raw;
             wireMsg.offset += this.size;
         }
     }
@@ -232,7 +232,7 @@ wfs._objectOptional = function (arg) {
          */
         _marshallArg: function (wireMsg) {
             const buf = new Uint32Array(wireMsg, wireMsg.offset, 1);
-            buf[0] = arg == null ? 0 : this.value._id;
+            buf[0] = arg === null ? 0 : this.value._id;
             wireMsg.offset += this.size;
         }
     };
@@ -306,7 +306,7 @@ wfs._stringOptional = function (arg) {
         value: arg,
         type: "s",
         size: 4 + (function () {
-            if (arg == null) {
+            if (arg === null) {
                 return 0;
             } else {
                 return (arg.length + 3) & ~3;
@@ -320,7 +320,7 @@ wfs._stringOptional = function (arg) {
          */
         _marshallArg: function (wireMsg) {
             const buf32 = new Uint32Array(wireMsg, wireMsg.offset, 1);
-            if (this.value == null) {
+            if (this.value === null) {
                 buf32[0] = 0;
             } else {
                 buf32[0] = this.value.length;
@@ -378,7 +378,7 @@ wfs._arrayOptional = function (arg) {
         value: arg,
         type: "a",
         size: 4 + (function () {
-            if (arg == null) {
+            if (arg === null) {
                 return 0;
             } else {
                 return (arg.byteLength + 3) & ~3;
@@ -387,7 +387,7 @@ wfs._arrayOptional = function (arg) {
         optional: true,
         _marshallArg: function (wireMsg) {
             const buf32 = new Uint32Array(wireMsg, wireMsg.offset, 1);
-            if (this.value == null) {
+            if (this.value === null) {
                 buf32[0] = 0;
             } else {
                 buf32[0] = this.value.byteLength;
@@ -402,16 +402,74 @@ wfs._arrayOptional = function (arg) {
 
 //TODO model objects after their java counterpart.
 
-wfs.Global = class Global {
-//TODO
+wfs.Client = class Client {
+
 };
 
-wfs.Resource = class Resource extends wfs.WObject {
-//TODO
+wfs.Global = class Global {
+
+    /**
+     *
+     * @param {String} interfaceName
+     * @param {Number} version
+     */
+    constructor(interfaceName, version) {
+        this.interfaceName = interfaceName;
+        this.version = version;
+    }
+
+    /**
+     * Implemented by subclass
+     *
+     * @param {wfs.Client} client
+     * @param {Number} id
+     * @param {Number} version
+     */
+    bindClient(client, id, version) {}
+};
+
+wfs.Resource = class Resource {
+
+    constructor(client, version, id, implementation) {
+        this.client = client;
+        this.version = version;
+        this.id = id;
+        this.implementation = implementation;
+
+        client.registerResource(this);
+    }
+
+    destroy() {
+        client.unregisterResource(this);
+    }
 };
 
 wfs.RegistryResource = class RegistryResource extends wfs.Resource {
-//TODO
+
+    constructor(client, id, implementation) {
+        super(client, 1, id, implementation);
+    }
+
+
+    global(name, interface_, version) {
+        //TODO construct args object & send to remote
+    }
+
+    globalRemove(name) {
+        //TODO construct args object & send to remote
+    }
+
+    /**
+     * opcode 1 -> bind
+     *
+     * @param {ArrayBuffer} message
+     * @param {Map} objects
+     */
+    [1](message, objects) {
+        const argsReader = new _ArgsReader(message, objects);
+        this.implementation.bind(this, argsReader.readInt(), argsReader.readInt(), argsReader.readInt())
+    }
+
 };
 
 wfs.Registry = class Registry {
@@ -426,14 +484,15 @@ wfs.Registry = class Registry {
      * Bind an object to the connection.
      *
      * Binds a new, client-created object to the server using the specified name as the identifier.
+     *
      * @param {wfs.RegistryResource} resource registry resource mapping a specific client
      * @param {Number} name unique numeric name of the object
-     * @param {string} interface_ interface implemented by the new object
+     * @param {Number} id object id of the new object
      * @param {number} version The version used and supported by the client
      * @return {*} a new bounded object
      */
-    bind(resource, name, interface_, version) {
-        this.globals.get(name).bindClient(resource.getClient(), id, version);
+    bind(resource, name, id, version) {
+        this.globals.get(name).bindClient(resource.client, id, version);
     }
 
     /**
@@ -444,8 +503,8 @@ wfs.Registry = class Registry {
         if (global._name === null) {
             global._name = ++this._nextGlobalName;
         }
-        this.globals.put(global._name, global)
-        this.registryResources.forEach(registryResource => registryResource.global(global._name, global.getInterfaceName(), global.getVersion()));
+        this._globals.put(global._name, global);
+        this._registryResources.forEach(registryResource => registryResource.global(global._name, global.interfaceName, global.version));
     }
 
     /**
@@ -453,15 +512,14 @@ wfs.Registry = class Registry {
      * @param {wfs.Global} global
      */
     unregister(global) {
-        if (this.globals.remove(global._name) !== false) {
-            this.registryResources.forEach(registryResource => registryResource.globalRemove(global._name));
+        if (this._globals.remove(global._name) !== = false) {
+            this._registryResources.forEach(registryResource => registryResource.globalRemove(global._name));
         }
     }
 
     //TODO publishGlobals
     //TODO createResource
 };
-
 
 
 //TODO see what we can reuse from the this c/p client side connection class
@@ -773,7 +831,7 @@ wfs.Connection = class {
 
 //make this module available in both nodejs & browser
 (function () {
-    if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
+    if (typeof module !== = 'undefined' && typeof module.exports !== = 'undefined')
         module.exports = wfs;
     else
         window.wfc = wfs;
