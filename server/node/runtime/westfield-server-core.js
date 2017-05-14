@@ -57,8 +57,7 @@ wfs._uint = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Uint32Array(wireMsg, wireMsg.offset, 1)[0];
-            buf[0] = this.value;
+            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = this.value;
             wireMsg.offset += this.size;
         }
     };
@@ -82,8 +81,7 @@ wfs._uintOptional = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Uint32Array(wireMsg, wireMsg.offset, 1);
-            buf[0] = arg === null ? 0 : this.value;
+            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = (arg === null ? 0 : this.value);
             wireMsg.offset += this.size;
         }
     }
@@ -107,8 +105,7 @@ wfs._int = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Int32Array(wireMsg, wireMsg.offset, 1);
-            buf[0] = this.value;
+            new Int32Array(wireMsg, wireMsg.offset, 1)[0] = this.value;
             wireMsg.offset += this.size;
         }
     };
@@ -132,8 +129,7 @@ wfs._intOptional = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Int32Array(wireMsg, wireMsg.offset, 1);
-            buf[0] = arg === null ? 0 : this.value;
+            new Int32Array(wireMsg, wireMsg.offset, 1)[0] = (arg === null ? 0 : this.value);
             wireMsg.offset += this.size;
         }
     }
@@ -156,8 +152,7 @@ wfs._fixed = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Int32Array(wireMsg, wireMsg.offset, 1);
-            buf[0] = this.value._raw;
+            new Int32Array(wireMsg, wireMsg.offset, 1)[0] = this.value._raw;
             wireMsg.offset += this.size;
         }
     };
@@ -180,8 +175,7 @@ wfs._fixedOptional = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Int32Array(wireMsg, wireMsg.offset, 1);
-            buf[0] = arg === null ? 0 : this.value._raw;
+            new Int32Array(wireMsg, wireMsg.offset, 1)[0] = (arg === null ? 0 : this.value._raw);
             wireMsg.offset += this.size;
         }
     }
@@ -205,8 +199,7 @@ wfs._object = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Uint32Array(wireMsg, wireMsg.offset, 1);
-            buf[0] = this.value._id;
+            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = this.value._id;
             wireMsg.offset += this.size;
         }
     };
@@ -231,8 +224,7 @@ wfs._objectOptional = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Uint32Array(wireMsg, wireMsg.offset, 1);
-            buf[0] = arg === null ? 0 : this.value._id;
+            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = (arg === null ? 0 : this.value._id);
             wireMsg.offset += this.size;
         }
     };
@@ -255,8 +247,7 @@ wfs._newObject = function () {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Uint32Array(wireMsg, wireMsg.offset, 1);
-            buf[0] = this.value._id;
+            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = this.value._id;
             wireMsg.offset += this.size;
         }
     };
@@ -283,8 +274,7 @@ wfs._string = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf32 = new Uint32Array(wireMsg, wireMsg.offset, 1);
-            buf32[0] = this.value.length;
+            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = this.value.length;
 
             const strLen = this.value.length;
             const buf8 = new Uint8Array(wireMsg, wireMsg.offset + 4, strLen);
@@ -321,11 +311,10 @@ wfs._stringOptional = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf32 = new Uint32Array(wireMsg, wireMsg.offset, 1);
             if (this.value === null) {
-                buf32[0] = 0;
+                new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = 0;
             } else {
-                buf32[0] = this.value.length;
+                new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = this.value.length;
 
                 const strLen = this.value.length;
                 const buf8 = new Uint8Array(wireMsg, wireMsg.offset + 4, strLen);
@@ -359,8 +348,7 @@ wfs._array = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf32 = new Uint32Array(wireMsg, wireMsg.offset, 1);
-            buf32[0] = this.value.byteLength;
+            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = this.value.byteLength;
 
             const byteLength = this.value.byteLength;
             new Uint8Array(wireMsg, wireMsg.offset + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength));
@@ -390,11 +378,10 @@ wfs._arrayOptional = function (arg) {
         })(),
         optional: true,
         _marshallArg: function (wireMsg) {
-            const buf32 = new Uint32Array(wireMsg, wireMsg.offset, 1);
             if (this.value === null) {
-                buf32[0] = 0;
+                new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = 0;
             } else {
-                buf32[0] = this.value.byteLength;
+                new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = this.value.byteLength;
 
                 const byteLength = this.value.byteLength;
                 new Uint8Array(wireMsg, wireMsg.offset + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength));
@@ -404,7 +391,6 @@ wfs._arrayOptional = function (arg) {
     };
 };
 
-//TODO model objects
 //TODO unit tests
 
 wfs.Global = class Global {
@@ -421,7 +407,7 @@ wfs.Global = class Global {
 
     /**
      *
-     * Invoked when a client binds to this global. Subclasses implement this method so they instantiate a
+     * Invoked when a client binds to this global. Subclasses implement this method so they can instantiate a
      * corresponding wfs.Resource subtype.
      *
      * @param {wfs.Client} client
@@ -551,6 +537,7 @@ wfs.Registry = class Registry {
 
 //TODO implement websocket server connection hooks
 /**
+ * Represents a client websocket connection.
  *
  * @param {String} socketUrl
  * @constructor
@@ -701,27 +688,22 @@ wfs.Client = class {
         buffer.offset = 8;
 
         const obj = this._objects.get(id);
-        obj[opcode](buffer, this._objects);
+        obj[opcode](buffer);
     }
 
     /**
+     * Sends the given wireMessage to the client over a websocket connection
      *
-     * @param {ArrayBuffer} event
-     * @private
+     * @param {ArrayBuffer} wireMsg
      */
-    _onOpen(event) {
-
+    doSend(wireMsg) {
     }
 
-    _onClose(event) {
-
-    }
-
-    _onError(event) {
-
-    }
-
-    _onSocketMessage(event) {
+    /**
+     * Handle a received message from a client websocket connection
+     * @param {ArrayBuffer} event
+     */
+    onReceive(event) {
         this._unmarshall(event);
     }
 
@@ -740,7 +722,7 @@ wfs.Client = class {
             arg._marshallArg(wireMsg); //write actual argument value to buffer
         });
 
-        this._socket.send(wireMsg);
+        this.doSend(wireMsg);
     }
 
     /**
