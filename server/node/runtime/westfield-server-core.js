@@ -1,6 +1,6 @@
 "use strict";
 
-//westfield client namespace
+//westfield server namespace
 const wfs = {};
 
 
@@ -426,11 +426,11 @@ wfs.Resource = class Resource {
         this.id = id;
         this.implementation = implementation;
 
-        client._registerObject(this);
+        client._registerResource(this);
     }
 
     destroy() {
-        client._unregisterObject(this);
+        client._unregisterResource(this);
     }
 };
 
@@ -539,10 +539,8 @@ wfs.Registry = class Registry {
 /**
  * Represents a client websocket connection.
  *
- * @param {String} socketUrl
- * @constructor
  */
-wfs.Client = class {
+wfs.Client = class Client {
 
     /**
      *
@@ -671,7 +669,6 @@ wfs.Client = class {
         return args;
     }
 
-
     /**
      *
      * @param {ArrayBuffer} message
@@ -692,7 +689,7 @@ wfs.Client = class {
     }
 
     /**
-     * Sends the given wireMessage to the client over a websocket connection
+     * Sends the given wireMessage to the client over a websocket connection.
      *
      * @param {ArrayBuffer} wireMsg
      */
@@ -707,6 +704,43 @@ wfs.Client = class {
         this._unmarshall(event);
     }
 
+    onClose() {
+        const index = this._server.clients.indexOf(this);
+        if (index > -1) {
+            this._server.clients.splice(this._server.clients.indexOf(this), 1);
+        }
+    }
+
+    onConnect() {
+        this._server.registry._publishGlobals(this._server.registry._createResource(this));
+    }
+
+    /**
+     *
+     * @param {wfs.Resource} resource
+     * @private
+     */
+    _registerResource(resource) {
+        this._objects.set(resource.id, resource);
+    }
+
+    /**
+     *
+     * @param {wfs.Resource} resource
+     * @private
+     */
+    _unregisterResource(resource) {
+        this._objects.delete(resource.id);
+    }
+
+    /**
+     *
+     * @param {Number} id
+     * @param {Number} opcode
+     * @param {Number} size
+     * @param {Array} argsArray
+     * @private
+     */
     __marshallMsg(id, opcode, size, argsArray) {
         const wireMsg = new ArrayBuffer(size);
 
@@ -741,7 +775,38 @@ wfs.Client = class {
 
         this.__marshallMsg(id, opcode, size, argsArray);
     };
+
+    /**
+     *
+     * @param {wfs.Server} server
+     */
+    constructor(server) {
+        this._objects = new Map();
+        this._server = server;
+    }
 };
+
+wfs.Server = class Server {
+    constructor() {
+        this.registry = new wfs.Registry();
+        this.clients = [];
+        /*
+         * IDs allocated by the client are in the range [1, 0xfeffffff] while IDs allocated by the server are
+         * in the range [0xff000000, 0xffffffff]. The 0 ID is reserved to represent a null or non-existant object
+         */
+        this.nextId = 0xff000000;
+    }
+
+    getNextId() {
+        return ++this.nextId;
+    }
+
+    createClient() {
+        const client = new wfs.Client(this);
+        this.clients.push(client);
+        return client;
+    }
+}
 
 //make this module available in both nodejs & browser
 (function () {
