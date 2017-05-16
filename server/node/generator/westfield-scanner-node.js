@@ -125,7 +125,7 @@ wfg.ProtocolParser = class {
         out.write(util.format("\t[%d](message){\n", opcode));
         const evSig = this._parseRequestSignature(ev);
         out.write(util.format("\t\tconst args = this.connection._unmarshallArgs(message,\"%s\");\n", evSig));
-        out.write(util.format("\t\tthis.implementation.%s.call(this.implementation", evName));
+        out.write(util.format("\t\tthis.implementation.%s.call(this.implementation, this", evName));
 
         if (ev.hasOwnProperty("arg")) {
             const evArgs = ev.arg;
@@ -265,9 +265,9 @@ wfg.ProtocolParser = class {
         argArray += "]";
 
         if (itfName) {
-            out.write(util.format("\t\treturn this.connection._marshallConstructor(this._id, %d, \"%s\", %s);\n", opcode, itfName, argArray));
+            out.write(util.format("\t\treturn this.client._marshallConstructor(this._id, %d, \"%s\", %s);\n", opcode, itfName, argArray));
         } else {
-            out.write(util.format("\t\tthis.connection._marshall(this._id, %d, %s);\n", opcode, argArray));
+            out.write(util.format("\t\tthis.client._marshall(this._id, %d, %s);\n", opcode, argArray));
         }
 
         out.write("\t}\n");
@@ -320,8 +320,8 @@ wfg.ProtocolParser = class {
             }
 
             //constructor
-            out.write("\n\tconstructor(connection) {\n");
-            out.write("\t\tsuper(connection, {\n");
+            out.write("\n\tconstructor(client) {\n");
+            out.write("\t\tsuper(client, {\n");
             out.write(util.format("\t\t\tname: \"%s\",\n", itfName));
             out.write(util.format("\t\t\tversion: %d,\n", i));
             //requests
