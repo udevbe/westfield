@@ -30,7 +30,7 @@ wfc.example_global = class example_global extends wfc.WObject {
 	 *
 	 */
 	create_example_clock() {
-		return this._connection._marshallConstructor(this._id, 1, "example_clock", [wfc._newObject()]);
+		return this.connection._marshallConstructor(this._id, 1, "example_clock", [wfc._newObject()]);
 	}
 
 	constructor(connection) {
@@ -60,7 +60,7 @@ wfc.example_clock = class example_clock extends wfc.WObject {
 	}
 
 	[1](message){
-		const args = this._connection._unmarshallArgs(message,"u");
+		const args = this.connection._unmarshallArgs(message,"u");
 		this.listener.time_update.call(this.listener, args[0]);
 	}
 

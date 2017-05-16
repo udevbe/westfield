@@ -124,7 +124,7 @@ wfg.ProtocolParser = class {
 
         out.write(util.format("\t[%d](message){\n", opcode));
         const evSig = this._parseEventSignature(ev);
-        out.write(util.format("\t\tconst args = this._connection._unmarshallArgs(message,\"%s\");\n", evSig));
+        out.write(util.format("\t\tconst args = this.connection._unmarshallArgs(message,\"%s\");\n", evSig));
         out.write(util.format("\t\tthis.listener.%s.call(this.listener", evName));
 
         if (ev.hasOwnProperty("arg")) {
@@ -265,9 +265,9 @@ wfg.ProtocolParser = class {
         argArray += "]";
 
         if (itfName) {
-            out.write(util.format("\t\treturn this._connection._marshallConstructor(this._id, %d, \"%s\", %s);\n", opcode, itfName, argArray));
+            out.write(util.format("\t\treturn this.connection._marshallConstructor(this._id, %d, \"%s\", %s);\n", opcode, itfName, argArray));
         } else {
-            out.write(util.format("\t\tthis._connection._marshall(this._id, %d, %s);\n", opcode, argArray));
+            out.write(util.format("\t\tthis.connection._marshall(this._id, %d, %s);\n", opcode, argArray));
         }
 
         out.write("\t}\n");

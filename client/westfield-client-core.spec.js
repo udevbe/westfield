@@ -1072,7 +1072,7 @@ describe("westfield-client-core", function () {
                 mock: jasmine.createSpy('mock object function')
             });
             targetObject[opcode] = function (wireMsg) {
-                const args = this._connection._unmarshallArgs(wireMsg, "uifonsa");
+                const args = this.connection._unmarshallArgs(wireMsg, "uifonsa");
                 this.listener.mock.call(
                     this.listener,
                     args[0], //u

@@ -409,7 +409,7 @@ wfc.WObject = class {
      * @param {*} listener
      */
     constructor(connection, listener) {
-        this._connection = connection;
+        this.connection = connection;
         this.listener = listener;
     }
 };
@@ -426,7 +426,7 @@ wfc.Registry = class Registry extends wfc.WObject {
      * @return {*} a new bounded object
      */
     bind(name, interface_, version) {
-        return this._connection._marshallConstructor(this._id, 1, interface_, [wfc._uint(name), wfc._newObject(), wfc._uint(version)]);
+        return this.connection._marshallConstructor(this._id, 1, interface_, [wfc._uint(name), wfc._newObject(), wfc._uint(version)]);
     }
 
     constructor(connection) {
@@ -470,12 +470,12 @@ wfc.Registry = class Registry extends wfc.WObject {
     }
 
     [1](message) {
-    	const args = this._connection._unmarshallArgs(message,"isu");
+    	const args = this.connection._unmarshallArgs(message,"isu");
     	this.listener.global.call(this.listener, args[0], args[1], args[2]);
     }
 
     [2](message) {
-        const args = this._connection._unmarshallArgs(message,"i");
+        const args = this.connection._unmarshallArgs(message,"i");
         this.listener.globalRemove.call(this.listener, args[0]);
     }
 };
