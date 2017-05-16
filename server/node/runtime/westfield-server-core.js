@@ -443,12 +443,13 @@ wfs.RegistryResource = class RegistryResource extends wfs.Resource {
              *
              * Binds a new, client-created object to the server using the specified name as the identifier.
              *
+             * @param {wfs.RegistryResource} resource
              * @param {Number} name unique numeric name of the object
              * @param {string} interface_ interface implemented by the new object
              * @param {number} version The version used and supported by the client
              * @return {*} a new bounded object
              */
-            bind(name, interface_, version) {
+            bind(resource, name, interface_, version) {
             }
         });
     }
@@ -476,7 +477,8 @@ wfs.RegistryResource = class RegistryResource extends wfs.Resource {
      * @param {ArrayBuffer} message
      */
     [1](message) {
-        this.implementation.bind(this, this.client["u"](message), this.client["u"](message), this.client["u"](message))
+        const args = this.connection._unmarshallArgs(message, "uuu");
+        this.implementation.bind.call(this.implementation, this, args[0], args[1], args[2])
     }
 };
 
