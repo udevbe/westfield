@@ -420,10 +420,10 @@ wfs.Global = class Global {
 
 wfs.Resource = class Resource {
 
-    constructor(client, version, id, implementation) {
+    constructor(client, id, version, implementation) {
         this.client = client;
-        this.version = version;
         this.id = id;
+        this.version = version;
         this.implementation = implementation;
 
         client._registerResource(this);
@@ -436,8 +436,21 @@ wfs.Resource = class Resource {
 
 wfs.RegistryResource = class RegistryResource extends wfs.Resource {
 
-    constructor(client, id, implementation) {
-        super(client, 1, id, implementation);
+    constructor(client, id, version) {
+        super(client, id, version, {
+            /**
+             * Bind an object to the connection.
+             *
+             * Binds a new, client-created object to the server using the specified name as the identifier.
+             *
+             * @param {Number} name unique numeric name of the object
+             * @param {string} interface_ interface implemented by the new object
+             * @param {number} version The version used and supported by the client
+             * @return {*} a new bounded object
+             */
+            bind(name, interface_, version) {
+            }
+        });
     }
 
     /**
@@ -461,7 +474,6 @@ wfs.RegistryResource = class RegistryResource extends wfs.Resource {
      * opcode 1 -> bind
      *
      * @param {ArrayBuffer} message
-     * @param {Client} client
      */
     [1](message) {
         this.implementation.bind(this, this.client["u"](message), this.client["u"](message), this.client["u"](message))
@@ -492,6 +504,7 @@ wfs.Registry = class Registry {
     }
 
     /**
+     * Register a global to make it available to clients.
      *
      * @param {wfs.Global} global
      */
@@ -504,6 +517,7 @@ wfs.Registry = class Registry {
     }
 
     /**
+     * Unregister a global and revoke it from clients.
      *
      * @param {wfs.Global} global
      */
@@ -528,14 +542,13 @@ wfs.Registry = class Registry {
      * @private
      */
     _createResource(client) {
-        const registryResource = new wfs.RegistryResource(client, 1, this);
+        const registryResource = new wfs.RegistryResource(client, 1, 1);
+        registryResource.implementation = this;
         this._registryResources.push(registryResource);
         return registryResource;
     }
 };
 
-
-//TODO implement websocket server connection hooks
 /**
  * Represents a client websocket connection.
  *
@@ -712,6 +725,8 @@ wfs.Client = class Client {
     }
 
     onConnect() {
+        //Connection established with client.
+        //Create a new registry resource for this client and publish any pending globals.
         this._server.registry._publishGlobals(this._server.registry._createResource(this));
     }
 
@@ -806,12 +821,6 @@ wfs.Server = class Server {
         this.clients.push(client);
         return client;
     }
-}
+};
 
-//make this module available in both nodejs & browser
-(function () {
-    if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
-        module.exports = wfs;
-    else
-        window.wfc = wfs;
-})();
+module.exports = wfs;
