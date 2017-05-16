@@ -301,7 +301,7 @@ wfg.ProtocolParser = class {
 
             //class
             if (i === 1) {
-                out.write(util.format("wfc.%s = class %s extends wfc.WObject {\n", itfName, itfName));
+                out.write(util.format("wfc.%s = class %s extends wfc.Resource {\n", itfName, itfName));
             } else {
                 const className = util.format("%sV%d", itfName, i);
                 if (i === 2) {
