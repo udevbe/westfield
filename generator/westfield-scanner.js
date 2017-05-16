@@ -405,7 +405,7 @@ wfg.ProtocolParser = class {
 const cli = meow(`Usage:
         westfield-scanner.js FILE... [options]
 
-    Generates a javascript protocol file based on the given FILE argument.
+    Generates a javascript client-side protocol file based on the given FILE argument.
     The FILE argument is a relative or absolute path to a Westfield compatible Wayland XML.
     The generated javascript protocol file is named "westfield-client-FILE.js".
 
