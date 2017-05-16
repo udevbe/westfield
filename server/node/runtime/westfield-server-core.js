@@ -477,7 +477,7 @@ wfs.RegistryResource = class RegistryResource extends wfs.Resource {
      * @param {ArrayBuffer} message
      */
     [1](message) {
-        const args = this.connection._unmarshallArgs(message, "uuu");
+        const args = this.client._unmarshallArgs(message, "uuu");
         this.implementation.bind.call(this.implementation, this, args[0], args[1], args[2])
     }
 };
