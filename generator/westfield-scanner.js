@@ -66,7 +66,7 @@ wfg.ProtocolParser = class {
         };
     }
 
-    _generateRequestArgs(out, req) {
+    static _generateRequestArgs(out, req) {
         if (req.hasOwnProperty("arg")) {
             const evArgs = req.arg;
             let processedFirstArg = false;
@@ -86,7 +86,7 @@ wfg.ProtocolParser = class {
         }
     }
 
-    _generateEventArgs(out, ev) {
+    static _generateEventArgs(out, ev) {
         if (ev.hasOwnProperty("arg")) {
             const evArgs = ev.arg;
             for (let i = 0; i < evArgs.length; i++) {
@@ -180,7 +180,7 @@ wfg.ProtocolParser = class {
 
         //function
         out.write(util.format("\t\t\t%s(", evName));
-        this._generateEventArgs(out, itfEvent);
+        ProtocolParser._generateEventArgs(out, itfEvent);
         out.write(") {},\n");
     }
 
@@ -234,7 +234,7 @@ wfg.ProtocolParser = class {
 
         //function
         out.write(util.format("\t%s(", reqName));
-        this._generateRequestArgs(out, itfRequest);
+        ProtocolParser._generateRequestArgs(out, itfRequest);
         out.write(") {\n");
 
 
