@@ -14,7 +14,7 @@ wfg.ProtocolParser = class {
         return {
             signature: optional ? "?u" : "u",
             jsType: optional ? "?Number" : "Number",
-            marshallGen: optional ? util.format("wfc._uintOptional(%s)", argName) : util.format("wfc._uint(%s)", argName)
+            marshallGen: optional ? util.format("wfs._uintOptional(%s)", argName) : util.format("wfs._uint(%s)", argName)
         };
     }
 
@@ -22,7 +22,7 @@ wfg.ProtocolParser = class {
         return {
             signature: optional ? "?i" : "i",
             jsType: optional ? "?Number" : "Number",
-            marshallGen: optional ? util.format("wfc._intOptional(%s)", argName) : util.format("wfc._int(%s)", argName)
+            marshallGen: optional ? util.format("wfs._intOptional(%s)", argName) : util.format("wfs._int(%s)", argName)
         };
     }
 
@@ -30,7 +30,7 @@ wfg.ProtocolParser = class {
         return {
             signature: optional ? "?f" : "f",
             jsType: optional ? "?Fixed" : "Fixed",
-            marshallGen: optional ? util.format("wfc._fixedOptional(%s)", argName) : util.format("wfc._fixed(%s)", argName)
+            marshallGen: optional ? util.format("wfs._fixedOptional(%s)", argName) : util.format("wfs._fixed(%s)", argName)
         };
     }
 
@@ -38,7 +38,7 @@ wfg.ProtocolParser = class {
         return {
             signature: optional ? "?o" : "o",
             jsType: optional ? "?*" : "*",
-            marshallGen: optional ? util.format("wfc._objectOptional(%s)", argName) : util.format("wfc._object(%s)", argName)
+            marshallGen: optional ? util.format("wfs._objectOptional(%s)", argName) : util.format("wfs._object(%s)", argName)
         };
     }
 
@@ -46,7 +46,7 @@ wfg.ProtocolParser = class {
         return {
             signature: optional ? "?n" : "n",
             jsType: "*",
-            marshallGen: "wfc._newObject()"
+            marshallGen: "wfs._newObject()"
         };
     }
 
@@ -54,7 +54,7 @@ wfg.ProtocolParser = class {
         return {
             signature: optional ? "?s" : "s",
             jsType: optional ? "?string" : "string",
-            marshallGen: optional ? util.format("wfc._stringOptional(%s)", argName) : util.format("wfc._string(%s)", argName)
+            marshallGen: optional ? util.format("wfs._stringOptional(%s)", argName) : util.format("wfs._string(%s)", argName)
         };
     }
 
@@ -62,7 +62,7 @@ wfg.ProtocolParser = class {
         return {
             signature: optional ? "?a" : "a",
             jsType: optional ? "?ArrayBuffer" : "ArrayBuffer",
-            marshallGen: optional ? util.format("wfc._arrayOptional(%s)", argName) : util.format("wfc._array(%s)", argName)
+            marshallGen: optional ? util.format("wfs._arrayOptional(%s)", argName) : util.format("wfs._array(%s)", argName)
         };
     }
 
@@ -301,13 +301,13 @@ wfg.ProtocolParser = class {
 
             //class
             if (i === 1) {
-                out.write(util.format("wfc.%s = class %s extends wfc.Resource {\n", itfName, itfName));
+                out.write(util.format("wfs.%s = class %s extends wfs.Resource {\n", itfName, itfName));
             } else {
                 const className = util.format("%sV%d", itfName, i);
                 if (i === 2) {
-                    out.write(util.format("wfc.%s = class %s extends wfc.%s {\n", className, className, itfName));
+                    out.write(util.format("wfs.%s = class %s extends wfs.%s {\n", className, className, itfName));
                 } else {
-                    out.write(util.format("wfc.%s = class %s extends wfc.%sV%d {\n", className, className, itfName, i - 1));
+                    out.write(util.format("wfs.%s = class %s extends wfs.%sV%d {\n", className, className, itfName, i - 1));
                 }
             }
 
