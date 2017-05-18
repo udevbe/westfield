@@ -344,8 +344,8 @@ wfg.ProtocolParser = class {
             out.write("\t}\n\n");
 
             //glue event functions
-            if (protocolItf.hasOwnProperty("event")) {
-                const itfRequests = protocolItf.event;
+            if (protocolItf.hasOwnProperty("request")) {
+                const itfRequests = protocolItf.request;
                 for (let j = 0; j < itfRequests.length; j++) {
                     const itfRequest = itfRequests[j];
                     let since = "1";
