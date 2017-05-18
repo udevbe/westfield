@@ -4,8 +4,8 @@
   "description": "Wayland HTML5 protocol generator for Node.js",
   "main": "index.js",
   "scripts": {
-    "start": "node generator/westfield-scanner-node.js",
-    "test": "node ./../../node_modules/jasmine/bin/jasmine.js"
+    "start": "node westfield-scanner-node.js",
+    "test": "node ./../../../node_modules/jasmine/bin/jasmine.js"
   },
   "dependencies": {
     "xml2js": "0.4.17",
