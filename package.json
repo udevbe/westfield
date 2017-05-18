@@ -1,8 +1,7 @@
 {
-  "name": "westfield",
+  "name": "westfield-scanner-client",
   "version": "0.0.1",
-  "description": "Wayland HTML5 protocol generator",
-  "main": "index.js",
+  "description": "Wayland HTML5 protocol generator for the browser",
   "scripts": {
     "start": "node generator/westfield-scanner.js",
     "test": "node ./node_modules/jasmine/bin/jasmine.js"
