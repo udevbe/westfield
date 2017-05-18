@@ -180,7 +180,7 @@ wfg.ProtocolParser = class {
 
         //function
         out.write(util.format("\t\t\t%s(", evName));
-        ProtocolParser._generateRequestArgs(out, itfRequest);
+        wfg.ProtocolParser._generateRequestArgs(out, itfRequest);
         out.write(") {},\n");
     }
 
@@ -234,7 +234,7 @@ wfg.ProtocolParser = class {
 
         //function
         out.write(util.format("\t%s(", reqName));
-        ProtocolParser._generateEventArgs(out, itfEvent);
+        wfg.ProtocolParser._generateEventArgs(out, itfEvent);
         out.write(") {\n");
 
 
@@ -327,7 +327,7 @@ wfg.ProtocolParser = class {
             //requests
             if (protocolItf.hasOwnProperty("request")) {
 
-                const itfRequests = protocolItf.event;
+                const itfRequests = protocolItf.request;
                 for (let j = 0; j < itfRequests.length; j++) {
                     const itfRequest = itfRequests[j];
                     let since = "1";
@@ -365,7 +365,7 @@ wfg.ProtocolParser = class {
 
     _parseProtocol(jsonProtocol) {
         const protocolName = jsonProtocol.protocol.$.name;
-        const out = fs.createWriteStream(util.format("westfield-client-%s.js", protocolName));
+        const out = fs.createWriteStream(util.format("westfield-server-%s.js", protocolName));
         out.on('open', (fd) => {
             out.write("/*\n");
             jsonProtocol.protocol.copyright.forEach((val) => {

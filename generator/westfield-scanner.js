@@ -180,7 +180,7 @@ wfg.ProtocolParser = class {
 
         //function
         out.write(util.format("\t\t\t%s(", evName));
-        ProtocolParser._generateEventArgs(out, itfEvent);
+        wfg.ProtocolParser._generateEventArgs(out, itfEvent);
         out.write(") {},\n");
     }
 
@@ -234,7 +234,7 @@ wfg.ProtocolParser = class {
 
         //function
         out.write(util.format("\t%s(", reqName));
-        ProtocolParser._generateRequestArgs(out, itfRequest);
+        wfg.ProtocolParser._generateRequestArgs(out, itfRequest);
         out.write(") {\n");
 
 
