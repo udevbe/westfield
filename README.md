@@ -15,13 +15,13 @@ Inside the Westfield directory:
 $ npm install
 $ npm start -- --help
 
-> node generator/westfield-scanner.js "--help"
+> node generator/westfield-scanner-client.js "--help"
 
 
   Wayland HTML5 protocol generator
 
   Usage:
-          westfield-scanner.js FILE... [options]
+          westfield-scanner-client.js FILE... [options]
 
       Generates a javascript protocol file based on the given FILE argument.
       The FILE argument is a relative or absolute path to a Westfield compatible Wayland XML.
@@ -76,12 +76,12 @@ $ npm start -- example.xml
 ```
 or
 ```
-$ node generator/westfield-scanner.js example.xml
+$ node generator/westfield-scanner-client.js example.xml
 ```
 or
 ```
-$ cd generator && chmod +x westfield-scanner.js
-$ ./westfield-scanner.js example.xml
+$ cd generator && chmod +x westfield-scanner-client.js
+$ ./westfield-scanner-client.js example.xml
 ```
 
 This will generate the file `westfield-client-example.js`:

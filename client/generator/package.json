@@ -3,9 +3,10 @@
   "version": "0.0.1",
   "description": "Wayland HTML5 protocol generator for the browser",
   "scripts": {
-    "start": "node generator/westfield-scanner.js",
+    "start": "node westfield-scanner-client.js",
     "test": "node ./node_modules/jasmine/bin/jasmine.js"
   },
+  "bin": "westfield-scanner-client.js",
   "dependencies": {
     "xml2js": "0.4.17",
     "meow": "3.7.0"
