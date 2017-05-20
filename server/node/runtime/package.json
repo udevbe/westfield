@@ -2,6 +2,9 @@
   "name": "westfield-runtime",
   "version": "0.0.1",
   "main": "westfield-server-core.js",
+  "scripts": {
+    "test": "node ./node_modules/jasmine/bin/jasmine.js"
+  },
   "description": "Wayland HTML5 runtime for Node.js",
   "repository": {
     "type": "git",
