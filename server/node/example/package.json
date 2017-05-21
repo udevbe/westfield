@@ -3,7 +3,9 @@
   "version": "0.0.1",
   "description": "Wayland HTML5 runtime for Node.js",
   "scripts": {
-    "generate": "node ./node_modules/westfield-scanner-server/westfield-scanner-node.js",
+    "prepare:server": "westfield-scanner-server example.xml",
+    "prepare:client": "westfield-scanner-client example.xml",
+    "prepare": "npm run prepare:server && npm run prepare:client",
     "start": "node index.js",
     "test": "node ./node_modules/jasmine/bin/jasmine.js"
   },
@@ -26,9 +28,11 @@
     "url": "https://github.com/udevbe/westfield/issues"
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
+  "dependencies": {
+    "westfield-runtime-server": "file:../runtime/"
+  },
   "devDependencies": {
-    "westfield-scanner-server": "0.0.1",
-    "jasmine": "2.5.2",
-    "jasmine-core": "2.5.2"
+    "westfield-scanner-server": "file:../generator/",
+    "westfield-scanner-client": "file:../../../client/generator"
   }
 }
