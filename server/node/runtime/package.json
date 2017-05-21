@@ -1,5 +1,5 @@
 {
-  "name": "westfield-runtime",
+  "name": "westfield-runtime-server",
   "version": "0.0.1",
   "main": "westfield-server-core.js",
   "scripts": {

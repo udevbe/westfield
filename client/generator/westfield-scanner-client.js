@@ -384,7 +384,15 @@ wfg.ProtocolParser = class {
     }
 
     parse() {
-        fs.readFile(this.protocolFile, (err, data) => {
+
+        var appRoot;
+        if (this.protocolFile.substring(0, 1) === "/") {
+            appRoot = "";
+        } else {
+            appRoot = process.env.PWD;
+        }
+
+        fs.readFile(appRoot + "/" + this.protocolFile, (err, data) => {
             if (err) throw err;
             new xml2js.Parser().parseString(data, (err, result) => {
                 if (err) throw err;
