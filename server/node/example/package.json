@@ -31,6 +31,7 @@
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
   "dependencies": {
+    "express": "4.15.3",
     "westfield-runtime-server": "file:../runtime/",
     "ws": "3.0.0"
   },
