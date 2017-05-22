@@ -3,12 +3,14 @@
   "version": "0.0.1",
   "description": "Wayland HTML5 runtime for Node.js",
   "scripts": {
-    "prepare:server": "westfield-scanner-server example.xml",
-    "prepare:client": "westfield-scanner-client example.xml",
-    "prepare": "npm run prepare:server && npm run prepare:client",
-    "start": "node index.js",
+    "prepare:server:generate": "westfield-scanner-server example.xml",
+    "prepare:client:generate": "westfield-scanner-client example.xml -o public.src/westfield-client-example.js",
+    "prepare:client:webpack": "webpack --config webpack.config.js",
+    "prepare": "npm run prepare:server:generate && npm run prepare:client:generate && npm run prepare:client:webpack",
+    "start": "node compositor-server.js",
     "test": "node ./node_modules/jasmine/bin/jasmine.js"
   },
+  "main": "compositor-server.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/udevbe/westfield.git"
@@ -29,9 +31,11 @@
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
   "dependencies": {
-    "westfield-runtime-server": "file:../runtime/"
+    "westfield-runtime-server": "file:../runtime/",
+    "ws": "3.0.0"
   },
   "devDependencies": {
+    "webpack": "2.5.1",
     "westfield-scanner-server": "file:../generator/",
     "westfield-scanner-client": "file:../../../client/generator"
   }
