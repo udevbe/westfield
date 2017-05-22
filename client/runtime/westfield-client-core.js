@@ -778,10 +778,4 @@ wfc.Connection = class {
     }
 };
 
-//make this module available in both nodejs & browser
-(function () {
-    if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
-        module.exports = wfc;
-    else
-        window.wfc = wfc;
-})();
+module.exports = wfc;
