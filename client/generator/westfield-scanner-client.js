@@ -386,6 +386,8 @@ wfg.ProtocolParser = class {
                 this._parseInterface(out, itf);
             });
 
+            out.write("module.exports = wfc;");
+
             console.log('Done');
         });
     }
