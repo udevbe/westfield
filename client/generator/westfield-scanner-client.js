@@ -363,9 +363,14 @@ wfg.ProtocolParser = class {
         }
     }
 
-    _parseProtocol(jsonProtocol) {
+    _parseProtocol(jsonProtocol, outFile) {
         const protocolName = jsonProtocol.protocol.$.name;
-        const out = fs.createWriteStream(util.format("westfield-client-%s.js", protocolName));
+
+        if (outFile === undefined) {
+            outFile = util.format("westfield-client-%s.js", protocolName)
+        }
+
+        const out = fs.createWriteStream(outFile);
         out.on('open', (fd) => {
             out.write("/*\n");
             jsonProtocol.protocol.copyright.forEach((val) => {
@@ -383,9 +388,9 @@ wfg.ProtocolParser = class {
         });
     }
 
-    parse() {
+    parse(outFile) {
 
-        var appRoot;
+        let appRoot;
         if (this.protocolFile.substring(0, 1) === "/") {
             appRoot = "";
         } else {
@@ -400,7 +405,7 @@ wfg.ProtocolParser = class {
                 //uncomment to see the protocol as json output
                 //console.log(util.inspect(result, false, null));
 
-                this._parseProtocol(result);
+                this._parseProtocol(result, outFile);
             });
         });
     }
@@ -418,11 +423,21 @@ const cli = meow(`Usage:
     The generated javascript protocol file is named "westfield-client-FILE.js".
 
     Options:
+        -o, --out          output file
         -h, --help         print usage information
         -v, --version      show version info and exit
         
-`, {});
+`, {
+    alias: {
+        o: 'out'
+    }
+});
 
+if (cli.input.length === 0) {
+    cli.showHelp();
+}
+
+let outFile = cli.flags.o;
 cli.input.forEach((protocol) => {
-    new wfg.ProtocolParser(protocol).parse();
+    new wfg.ProtocolParser(protocol).parse(outFile);
 });
