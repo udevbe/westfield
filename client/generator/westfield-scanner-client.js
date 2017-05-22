@@ -380,6 +380,8 @@ wfg.ProtocolParser = class {
             });
             out.write(" */\n");
 
+            out.write("const wfc = require('westfield-runtime-client');");
+
             jsonProtocol.protocol.interface.forEach((itf) => {
                 this._parseInterface(out, itf);
             });
