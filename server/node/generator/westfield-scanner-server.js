@@ -87,6 +87,7 @@ wfg.ProtocolParser = class {
     }
 
     static _generateRequestArgs(out, ev) {
+        out.write("resource, ");
         if (ev.hasOwnProperty("arg")) {
             const evArgs = ev.arg;
             for (let i = 0; i < evArgs.length; i++) {
@@ -132,12 +133,7 @@ wfg.ProtocolParser = class {
             for (let i = 0; i < evArgs.length; i++) {
                 out.write(", ");
                 const arg = evArgs[i];
-                const argType = arg.$.type;
                 out.write(util.format("args[%d]", i));
-                if (argType === "new_id") {
-                    const argItf = arg.$["interface"];
-                    out.write(util.format("(\"%s\")", argItf));
-                }
             }
         }
 
@@ -145,7 +141,7 @@ wfg.ProtocolParser = class {
         out.write("\t}\n\n");
     }
 
-    _parseItfRequest(out, itfRequest) {
+    _parseItfRequest(out, itfName, itfRequest) {
         const sinceVersion = itfRequest.$.hasOwnProperty("since") ? parseInt(itfRequest.$.since) : 1;
         const evName = itfRequest.$.name;
 
@@ -159,9 +155,10 @@ wfg.ProtocolParser = class {
                 });
             }
 
+            out.write("\t\t\t *\n");
+            out.write(util.format("\t\t\t * @param {%s} resource \n", itfName));
             if (itfRequest.hasOwnProperty("arg")) {
                 const evArgs = itfRequest.arg;
-                out.write("\t\t\t *\n");
                 evArgs.forEach((arg) => {
                     const argDescription = arg.$.summary;
                     const argName = arg.$.name;
@@ -170,9 +167,9 @@ wfg.ProtocolParser = class {
 
                     out.write(util.format("\t\t\t * @param {%s} %s %s \n", this[argType](argName, optional).jsType, argName, argDescription));
                 });
-                out.write("\t\t\t *\n");
 
             }
+            out.write("\t\t\t *\n");
             out.write(util.format("\t\t\t * @since %d\n", sinceVersion));
             out.write("\t\t\t *\n");
             out.write("\t\t\t */\n");
@@ -336,7 +333,7 @@ wfg.ProtocolParser = class {
                     }
 
                     if (parseInt(since) <= i) {
-                        this._parseItfRequest(out, itfRequest);
+                        this._parseItfRequest(out, itfName, itfRequest);
                     }
                 }
             }

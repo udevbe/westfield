@@ -19,11 +19,11 @@ exampleGlobal.bindClient = function (client, id, version) {
 };
 
 //implement factory method
-function createExampleClock(id) {
-    const clockResource = new wfs.example_clock(this.client, id, 1);
+function createExampleClock(resource, id) {
+    const clockResource = new wfs.example_clock(resource.client, id, 1);
 
     setInterval(function () {
-        clockResource.implementation.time_update(new Date().getTime());
+        clockResource.time_update(new Date().getTime());
     }, 1);
 }
 
