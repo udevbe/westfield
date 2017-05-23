@@ -585,13 +585,7 @@ wfs.Client = class Client {
     ["n"](wireMsg) {
         const arg = new Uint32Array(wireMsg, wireMsg.offset, 1)[0];
         wireMsg.offset += 4;
-        const connection = this;
-        return function (type) {
-            const newObject = new wfs[type](this);
-            newObject._id = arg;
-            connection._objects.set(newObject._id, newObject);
-            return newObject;
-        }
+        return arg;
     }
 
     /**
