@@ -437,30 +437,16 @@ wfs.Resource = class Resource {
 wfs.RegistryResource = class RegistryResource extends wfs.Resource {
 
     constructor(client, id, version) {
-        super(client, id, version, {
-            /**
-             * Bind an object to the connection.
-             *
-             * Binds a new, client-created object to the server using the specified name as the identifier.
-             *
-             * @param {wfs.RegistryResource} resource
-             * @param {Number} name unique numeric name of the object
-             * @param {string} interface_ interface implemented by the new object
-             * @param {number} version The version used and supported by the client
-             * @return {*} a new bounded object
-             */
-            bind(resource, name, interface_, version) {
-            }
-        });
+        super(client, id, version, {});
     }
 
     /**
      * @param {Number} name
-     * @param {Number} interface_
+     * @param {String} interface_
      * @param {Number} version
      */
     global(name, interface_, version) {
-        this.client._marshall(this.id, 1, [wfs._uint(name), wfs._uint(interface_), wfs._uint(version)])
+        this.client._marshall(this.id, 1, [wfs._uint(name), wfs._string(interface_), wfs._uint(version)])
     }
 
     /**
@@ -478,7 +464,7 @@ wfs.RegistryResource = class RegistryResource extends wfs.Resource {
      */
     [1](message) {
         const args = this.client._unmarshallArgs(message, "uuu");
-        this.implementation.bind.call(this.implementation, this, args[0], args[1], args[2])
+        this.implementation._globals.get(args[0]).bindClient(this.client, args[1], args[2]);
     }
 };
 
@@ -491,27 +477,12 @@ wfs.Registry = class Registry {
     }
 
     /**
-     * Bind an object to the connection.
-     *
-     * Binds a new, client-created object to the server using the specified name as the identifier.
-     *
-     * @param {wfs.RegistryResource} resource registry resource mapping a specific client
-     * @param {Number} name unique numeric name of the object
-     * @param {Number} id object id of the new object
-     * @param {number} version The version used and supported by the client
-     * @return {*} a new bounded object
-     */
-    bind(resource, name, id, version) {
-        this.globals.get(name).bindClient(resource.client, id, version);
-    }
-
-    /**
      * Register a global to make it available to clients.
      *
      * @param {wfs.Global} global
      */
     register(global) {
-        if (global._name === null) {
+        if (!("_name" in global)) {
             global._name = ++this._nextGlobalName;
         }
         this._globals.set(global._name, global);
@@ -559,7 +530,7 @@ wfs.Client = class Client {
 
     /**
      *
-     * @param {DataView} wireMsg
+     * @param {ArrayBuffer} wireMsg
      * @returns {Number}
      */
     ["u"](wireMsg) {//unsigned integer {Number}
@@ -570,7 +541,7 @@ wfs.Client = class Client {
 
     /**
      *
-     * @param {DataView} wireMsg
+     * @param {ArrayBuffer} wireMsg
      * @returns {Number}
      */
     ["i"](wireMsg) {//integer {Number}
@@ -581,7 +552,7 @@ wfs.Client = class Client {
 
     /**
      *
-     * @param {DataView} wireMsg
+     * @param {ArrayBuffer} wireMsg
      * @returns {Number}
      */
     ["f"](wireMsg) {//float {Number}
@@ -592,7 +563,7 @@ wfs.Client = class Client {
 
     /**
      *
-     * @param {DataView} wireMsg
+     * @param {ArrayBuffer} wireMsg
      * @param {Boolean} optional
      * @returns {WObject}
      */
@@ -608,7 +579,7 @@ wfs.Client = class Client {
 
     /**
      *
-     * @param {DataView} wireMsg
+     * @param {ArrayBuffer} wireMsg
      * @returns {function}
      */
     ["n"](wireMsg) {
@@ -625,7 +596,7 @@ wfs.Client = class Client {
 
     /**
      *
-     * @param {DataView} wireMsg
+     * @param {ArrayBuffer} wireMsg
      * @param {Boolean} optional
      * @returns {String}
      */
@@ -644,7 +615,7 @@ wfs.Client = class Client {
 
     /**
      *
-     * @param {DataView} wireMsg
+     * @param {ArrayBuffer} wireMsg
      * @param {Boolean} optional
      * @returns {ArrayBuffer}
      */
@@ -686,11 +657,10 @@ wfs.Client = class Client {
 
     /**
      *
-     * @param {ArrayBuffer} message
+     * @param {ArrayBuffer} b
      * @private
      */
-    _unmarshall(message) {
-        const buffer = message.data;
+    _unmarshall(buffer) {
         const bufu32 = new Uint32Array(buffer);
         const bufu16 = new Uint16Array(buffer);
 
