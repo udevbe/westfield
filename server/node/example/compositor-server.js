@@ -29,8 +29,8 @@ function createExampleClock(id) {
 
 wfsServer.registry.register(exampleGlobal);
 
-
 //setup connection logic
+const app = express();
 app.use(express.static('public'));
 
 const server = http.createServer();
@@ -63,7 +63,7 @@ wss.on('connection', function connection(ws) {
 
     ws.on('message', function incoming(message) {
         try {
-            client.onReceive(message);
+            client.onReceive(message.buffer.slice(message.offset, message.length + message.offset));
         } catch (error) {
             console.error(error);
             client.onClose();
