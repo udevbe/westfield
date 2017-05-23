@@ -514,7 +514,7 @@ wfs.Registry = class Registry {
         if (global._name === null) {
             global._name = ++this._nextGlobalName;
         }
-        this._globals.put(global._name, global);
+        this._globals.set(global._name, global);
         this._registryResources.forEach(registryResource => registryResource.global(global._name, global.interfaceName, global.version));
     }
 
@@ -535,7 +535,7 @@ wfs.Registry = class Registry {
      * @private
      */
     _publishGlobals(registryResource) {
-        this._globals.forEach((name, global) => registryResource.global(name, global.interfaceName, global.version));
+        this._globals.forEach((global, name) => registryResource.global(name, global.interfaceName, global.version));
     }
 
     /**
