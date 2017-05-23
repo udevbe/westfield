@@ -199,7 +199,7 @@ wfs._object = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = this.value._id;
+            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = this.value.id;
             wireMsg.offset += this.size;
         }
     };
@@ -224,7 +224,7 @@ wfs._objectOptional = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = (arg === null ? 0 : this.value._id);
+            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = (arg === null ? 0 : this.value.id);
             wireMsg.offset += this.size;
         }
     };
@@ -247,7 +247,7 @@ wfs._newObject = function () {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = this.value._id;
+            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = this.value.id;
             wireMsg.offset += this.size;
         }
     };

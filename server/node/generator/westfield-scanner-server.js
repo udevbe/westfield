@@ -262,9 +262,9 @@ wfg.ProtocolParser = class {
         argArray += "]";
 
         if (itfName) {
-            out.write(util.format("\t\treturn this.client._marshallConstructor(this._id, %d, \"%s\", %s);\n", opcode, itfName, argArray));
+            out.write(util.format("\t\treturn this.client._marshallConstructor(this.id, %d, \"%s\", %s);\n", opcode, itfName, argArray));
         } else {
-            out.write(util.format("\t\tthis.client._marshall(this._id, %d, %s);\n", opcode, argArray));
+            out.write(util.format("\t\tthis.client._marshall(this.id, %d, %s);\n", opcode, argArray));
         }
 
         out.write("\t}\n");
