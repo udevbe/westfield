@@ -416,12 +416,12 @@ wfc.WObject = class {
 
 wfc.Registry = class Registry extends wfc.WObject {
     /**
-     * Bind an object to the connection.
+     * Bind a new object to the global.
      *
      * Binds a new, client-created object to the server using the specified name as the identifier.
      *
-     * @param {Number} name unique numeric name of the object
-     * @param {string} interface_ interface implemented by the new object
+     * @param {Number} name unique numeric name of the global
+     * @param {String} interface_ interface implemented by the new object
      * @param {number} version The version used and supported by the client
      * @return {*} a new bounded object
      */
@@ -442,7 +442,7 @@ wfc.Registry = class Registry extends wfc.WObject {
              * the given name is now available, and it implements the
              * given version of the given interface.
              *
-             * @param {Number} name numeric name of the global object
+             * @param {Number} name unique numeric name of the global object
              * @param {string} interface_ interface implemented by the global
              * @param {Number} version maximum supported interface version of the global
              */
