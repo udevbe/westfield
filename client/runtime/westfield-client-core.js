@@ -3,7 +3,7 @@
 //westfield client namespace
 const wfc = {};
 
-wfc.Fixed = class Fixed {
+wfc.Fixed = class {
 
     /**
      * Represent fixed as a signed 24-bit integer.
@@ -414,7 +414,7 @@ wfc.WObject = class {
     }
 };
 
-wfc.Registry = class Registry extends wfc.WObject {
+wfc.Registry = class extends wfc.WObject {
     /**
      * Bind a new object to the global.
      *
@@ -640,26 +640,20 @@ wfc.Connection = class {
      * @private
      */
     _onSocketOpen(event) {
-        //TODO send back-end minimal required browser info (we start with screen size)
-        //TODO the first request shall be a json informing the host of our properties.
-        //all subsequent message will be in the binary wire format.
-//        this._socket.send(JSON.stringify({
-//            id: "client1"
-//        }));
         this._socket.binaryType = "arraybuffer";
     }
 
-    _onSocketClose(event) {
-
+    _onSocketClose(code, reason, wasClean) {
+        if(wasClean!==false){
+            console.error(code+ " Connection closed unexpectedly: "+reason);
+        }
     }
 
     _onSocketError(event) {
-
+        console.error(event);
     }
 
     _onSocketMessage(event) {
-        //TODO the first response shall be a json informing us of the host's properties.
-        //all subsequent message will be in the binary wire format.
         this._unmarshall(event);
     }
 
@@ -763,8 +757,7 @@ wfc.Connection = class {
          */
         this._objects = new Map();
 
-        //FIXME separate out to an 'open' function
-        this._socket = new WebSocket(socketUrl, "westfield");
+        this._socket = new WebSocket(socketUrl);
         const connection = this;
         this._socket.onopen = (event) => { connection._onSocketOpen(event); };
         this._socket.onclose = (event) => { connection._onSocketClose(event); };
@@ -774,7 +767,6 @@ wfc.Connection = class {
         this.registry = new wfc.Registry(this);
         this.nextId = 1;
         this._registerObject(this.registry);
-        Object.freeze(this.registry);
     }
 };
 

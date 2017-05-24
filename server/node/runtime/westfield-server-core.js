@@ -5,7 +5,7 @@ const wfs = {};
 
 
 //TODO wire args are copied from westfield-client-core.js we might want to put them in a shared file...
-wfs.Fixed = class Fixed {
+wfs.Fixed = class {
 
     /**
      * Represent fixed as a signed 24-bit integer.
@@ -393,7 +393,7 @@ wfs._arrayOptional = function (arg) {
 
 //TODO unit tests
 
-wfs.Global = class Global {
+wfs.Global = class {
 
     /**
      *
@@ -418,7 +418,7 @@ wfs.Global = class Global {
     }
 };
 
-wfs.Resource = class Resource {
+wfs.Resource = class {
 
     constructor(client, id, version, implementation) {
         this.client = client;
@@ -434,7 +434,7 @@ wfs.Resource = class Resource {
     }
 };
 
-wfs.RegistryResource = class RegistryResource extends wfs.Resource {
+wfs.RegistryResource = class extends wfs.Resource {
 
     constructor(client, id, version) {
         super(client, id, version, {});
@@ -468,7 +468,7 @@ wfs.RegistryResource = class RegistryResource extends wfs.Resource {
     }
 };
 
-wfs.Registry = class Registry {
+wfs.Registry = class {
 
     constructor() {
         this._registryResources = [];
@@ -526,7 +526,7 @@ wfs.Registry = class Registry {
  * Represents a client websocket connection.
  *
  */
-wfs.Client = class Client {
+wfs.Client = class {
 
     /**
      *
@@ -769,7 +769,7 @@ wfs.Client = class Client {
     }
 };
 
-wfs.Server = class Server {
+wfs.Server = class {
     constructor() {
         this.registry = new wfs.Registry();
         this.clients = [];
