@@ -8,7 +8,7 @@ describe("westfield-client-core", function () {
                 compare: function (buf1, buf2) {
                     return {
                         pass: (function () {
-                            if (buf1.byteLength != buf2.byteLength) {
+                            if (buf1.byteLength !== buf2.byteLength) {
                                 return false;
                             }
 
@@ -16,7 +16,7 @@ describe("westfield-client-core", function () {
                             const dv2 = new Uint8Array(buf2);
 
                             for (let i = 0; i < buf1.byteLength; i++) {
-                                if (dv1[i] != dv2[i]) {
+                                if (dv1[i] !== dv2[i]) {
                                     //console.error("buf1[" + i + "] === " + dv1[i] + " != buf2[" + i + "] === " + dv2[i] + "\n");
                                     return false;
                                 }
