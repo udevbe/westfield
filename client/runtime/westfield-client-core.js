@@ -55,9 +55,9 @@ wfc._uint = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Uint32Array(wireMsg, wireMsg.offset, 1);
+            const buf = new Uint32Array(wireMsg, wireMsg.readIndex, 1);
             buf[0] = this.value;
-            wireMsg.offset += this.size;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -80,9 +80,9 @@ wfc._uintOptional = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Uint32Array(wireMsg, wireMsg.offset, 1);
+            const buf = new Uint32Array(wireMsg, wireMsg.readIndex, 1);
             buf[0] = arg === null ? 0 : this.value;
-            wireMsg.offset += this.size;
+            wireMsg.readIndex += this.size;
         }
     }
 };
@@ -105,9 +105,9 @@ wfc._int = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Int32Array(wireMsg, wireMsg.offset, 1);
+            const buf = new Int32Array(wireMsg, wireMsg.readIndex, 1);
             buf[0] = this.value;
-            wireMsg.offset += this.size;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -130,9 +130,9 @@ wfc._intOptional = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Int32Array(wireMsg, wireMsg.offset, 1);
+            const buf = new Int32Array(wireMsg, wireMsg.readIndex, 1);
             buf[0] = arg === null ? 0 : this.value;
-            wireMsg.offset += this.size;
+            wireMsg.readIndex += this.size;
         }
     }
 };
@@ -154,9 +154,9 @@ wfc._fixed = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Int32Array(wireMsg, wireMsg.offset, 1);
+            const buf = new Int32Array(wireMsg, wireMsg.readIndex, 1);
             buf[0] = this.value._raw;
-            wireMsg.offset += this.size;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -178,9 +178,9 @@ wfc._fixedOptional = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Int32Array(wireMsg, wireMsg.offset, 1);
+            const buf = new Int32Array(wireMsg, wireMsg.readIndex, 1);
             buf[0] = arg === null ? 0 : this.value._raw;
-            wireMsg.offset += this.size;
+            wireMsg.readIndex += this.size;
         }
     }
 };
@@ -203,9 +203,9 @@ wfc._object = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Uint32Array(wireMsg, wireMsg.offset, 1);
+            const buf = new Uint32Array(wireMsg, wireMsg.readIndex, 1);
             buf[0] = this.value._id;
-            wireMsg.offset += this.size;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -228,9 +228,9 @@ wfc._objectOptional = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Uint32Array(wireMsg, wireMsg.offset, 1);
+            const buf = new Uint32Array(wireMsg, wireMsg.readIndex, 1);
             buf[0] = arg === null ? 0 : this.value._id;
-            wireMsg.offset += this.size;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -252,9 +252,9 @@ wfc._newObject = function () {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf = new Uint32Array(wireMsg, wireMsg.offset, 1);
+            const buf = new Uint32Array(wireMsg, wireMsg.readIndex, 1);
             buf[0] = this.value._id;
-            wireMsg.offset += this.size;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -279,15 +279,15 @@ wfc._string = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf32 = new Uint32Array(wireMsg, wireMsg.offset, 1);
+            const buf32 = new Uint32Array(wireMsg, wireMsg.readIndex, 1);
             buf32[0] = this.value.length;
 
             const strLen = this.value.length;
-            const buf8 = new Uint8Array(wireMsg, wireMsg.offset + 4, strLen);
+            const buf8 = new Uint8Array(wireMsg, wireMsg.readIndex + 4, strLen);
             for (let i = 0; i < strLen; i++) {
                 buf8[i] = this.value[i].codePointAt(0);
             }
-            wireMsg.offset += this.size;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -316,19 +316,19 @@ wfc._stringOptional = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf32 = new Uint32Array(wireMsg, wireMsg.offset, 1);
+            const buf32 = new Uint32Array(wireMsg, wireMsg.readIndex, 1);
             if (this.value === null) {
                 buf32[0] = 0;
             } else {
                 buf32[0] = this.value.length;
 
                 const strLen = this.value.length;
-                const buf8 = new Uint8Array(wireMsg, wireMsg.offset + 4, strLen);
+                const buf8 = new Uint8Array(wireMsg, wireMsg.readIndex + 4, strLen);
                 for (let i = 0; i < strLen; i++) {
                     buf8[i] = this.value[i].codePointAt(0);
                 }
             }
-            wireMsg.offset += this.size;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -353,13 +353,13 @@ wfc._array = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            const buf32 = new Uint32Array(wireMsg, wireMsg.offset, 1);
+            const buf32 = new Uint32Array(wireMsg, wireMsg.readIndex, 1);
             buf32[0] = this.value.byteLength;
 
             const byteLength = this.value.byteLength;
-            new Uint8Array(wireMsg, wireMsg.offset + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength));
+            new Uint8Array(wireMsg, wireMsg.readIndex + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength));
 
-            wireMsg.offset += this.size;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -383,16 +383,16 @@ wfc._arrayOptional = function (arg) {
         })(),
         optional: true,
         _marshallArg: function (wireMsg) {
-            const buf32 = new Uint32Array(wireMsg, wireMsg.offset, 1);
+            const buf32 = new Uint32Array(wireMsg, wireMsg.readIndex, 1);
             if (this.value === null) {
                 buf32[0] = 0;
             } else {
                 buf32[0] = this.value.byteLength;
 
                 const byteLength = this.value.byteLength;
-                new Uint8Array(wireMsg, wireMsg.offset + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength));
+                new Uint8Array(wireMsg, wireMsg.readIndex + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength));
             }
-            wireMsg.offset += this.size;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -493,8 +493,8 @@ wfc.Connection = class {
      * @returns {Number}
      */
     ["u"](wireMsg) {//unsigned integer {Number}
-        const arg = new Uint32Array(wireMsg, wireMsg.offset, 1)[0];
-        wireMsg.offset += 4;
+        const arg = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0];
+        wireMsg.readIndex += 4;
         return arg;
     }
 
@@ -504,8 +504,8 @@ wfc.Connection = class {
      * @returns {Number}
      */
     ["i"](wireMsg) {//integer {Number}
-        const arg = new Int32Array(wireMsg, wireMsg.offset, 1)[0];
-        wireMsg.offset += 4;
+        const arg = new Int32Array(wireMsg, wireMsg.readIndex, 1)[0];
+        wireMsg.readIndex += 4;
         return arg;
     }
 
@@ -515,8 +515,8 @@ wfc.Connection = class {
      * @returns {Number}
      */
     ["f"](wireMsg) {//float {Number}
-        const arg = new Int32Array(wireMsg, wireMsg.offset, 1)[0];
-        wireMsg.offset += 4;
+        const arg = new Int32Array(wireMsg, wireMsg.readIndex, 1)[0];
+        wireMsg.readIndex += 4;
         return new wfc.Fixed(arg >> 0);
     }
 
@@ -527,8 +527,8 @@ wfc.Connection = class {
      * @returns {WObject}
      */
     ["o"](wireMsg, optional) {
-        const arg = new Uint32Array(wireMsg, wireMsg.offset, 1)[0];
-        wireMsg.offset += 4;
+        const arg = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0];
+        wireMsg.readIndex += 4;
         if (optional && arg === 0) {
             return null;
         } else {
@@ -542,8 +542,8 @@ wfc.Connection = class {
      * @returns {function}
      */
     ["n"](wireMsg) {
-        const arg = new Uint32Array(wireMsg, wireMsg.offset, 1)[0];
-        wireMsg.offset += 4;
+        const arg = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0];
+        wireMsg.readIndex += 4;
         const connection = this;
         return function (type) {
             const newObject = new wfc[type](this);
@@ -560,14 +560,14 @@ wfc.Connection = class {
      * @returns {String}
      */
     ["s"](wireMsg, optional) {//{String}
-        const stringSize = new Uint32Array(wireMsg, wireMsg.offset, 1)[0];
-        wireMsg.offset += 4;
+        const stringSize = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0];
+        wireMsg.readIndex += 4;
         if (optional && stringSize === 0) {
             return null;
         }
         else {
-            const byteArray = new Uint8Array(wireMsg, wireMsg.offset, stringSize);
-            wireMsg.offset += (stringSize + (4 - (stringSize % 4)));
+            const byteArray = new Uint8Array(wireMsg, wireMsg.readIndex, stringSize);
+            wireMsg.readIndex += (stringSize + (4 - (stringSize % 4)));
             return String.fromCharCode.apply(null, byteArray);
         }
     }
@@ -579,13 +579,13 @@ wfc.Connection = class {
      * @returns {ArrayBuffer}
      */
     ["a"](wireMsg, optional) {
-        const arraySize = new Uint32Array(wireMsg, wireMsg.offset, 1)[0];
-        wireMsg.offset += 4;
+        const arraySize = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0];
+        wireMsg.readIndex += 4;
         if (optional && arraySize === 0) {
             return null;
         } else {
-            const arg = wireMsg.slice(wireMsg.offset, wireMsg.offset + arraySize);
-            wireMsg.offset += (arraySize + (4 - (arraySize % 4)));
+            const arg = wireMsg.slice(wireMsg.readIndex, wireMsg.readIndex + arraySize);
+            wireMsg.readIndex += (arraySize + (4 - (arraySize % 4)));
             return arg;
         }
     }
@@ -628,7 +628,7 @@ wfc.Connection = class {
         const id = bufu32[0];
         //const size = bufu16[2];//not used.
         const opcode = bufu16[3];
-        buffer.offset = 8;
+        buffer.readIndex = 8;
 
         const obj = this._objects.get(id);
         obj[opcode](buffer);
@@ -672,7 +672,7 @@ wfc.Connection = class {
         bufu32[0] = id;
         bufu16[2] = size;
         bufu16[3] = opcode;
-        wireMsg.offset = 8;
+        wireMsg.readIndex = 8;
 
         argsArray.forEach(function (arg) {
             arg._marshallArg(wireMsg); //write actual argument value to buffer

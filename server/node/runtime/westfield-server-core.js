@@ -57,8 +57,8 @@ wfs._uint = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = this.value;
-            wireMsg.offset += this.size;
+            new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -81,8 +81,8 @@ wfs._uintOptional = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = (arg === null ? 0 : this.value);
-            wireMsg.offset += this.size;
+            new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = (arg === null ? 0 : this.value);
+            wireMsg.readIndex += this.size;
         }
     }
 };
@@ -105,8 +105,8 @@ wfs._int = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            new Int32Array(wireMsg, wireMsg.offset, 1)[0] = this.value;
-            wireMsg.offset += this.size;
+            new Int32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -129,8 +129,8 @@ wfs._intOptional = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            new Int32Array(wireMsg, wireMsg.offset, 1)[0] = (arg === null ? 0 : this.value);
-            wireMsg.offset += this.size;
+            new Int32Array(wireMsg, wireMsg.readIndex, 1)[0] = (arg === null ? 0 : this.value);
+            wireMsg.readIndex += this.size;
         }
     }
 };
@@ -152,8 +152,8 @@ wfs._fixed = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            new Int32Array(wireMsg, wireMsg.offset, 1)[0] = this.value._raw;
-            wireMsg.offset += this.size;
+            new Int32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value._raw;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -175,8 +175,8 @@ wfs._fixedOptional = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            new Int32Array(wireMsg, wireMsg.offset, 1)[0] = (arg === null ? 0 : this.value._raw);
-            wireMsg.offset += this.size;
+            new Int32Array(wireMsg, wireMsg.readIndex, 1)[0] = (arg === null ? 0 : this.value._raw);
+            wireMsg.readIndex += this.size;
         }
     }
 };
@@ -199,8 +199,8 @@ wfs._object = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = this.value.id;
-            wireMsg.offset += this.size;
+            new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value.id;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -224,8 +224,8 @@ wfs._objectOptional = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = (arg === null ? 0 : this.value.id);
-            wireMsg.offset += this.size;
+            new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = (arg === null ? 0 : this.value.id);
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -247,8 +247,8 @@ wfs._newObject = function () {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = this.value.id;
-            wireMsg.offset += this.size;
+            new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value.id;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -274,14 +274,14 @@ wfs._string = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = this.value.length;
+            new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value.length;
 
             const strLen = this.value.length;
-            const buf8 = new Uint8Array(wireMsg, wireMsg.offset + 4, strLen);
+            const buf8 = new Uint8Array(wireMsg, wireMsg.readIndex + 4, strLen);
             for (let i = 0; i < strLen; i++) {
                 buf8[i] = this.value[i].codePointAt(0);
             }
-            wireMsg.offset += this.size;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -312,17 +312,17 @@ wfs._stringOptional = function (arg) {
          */
         _marshallArg: function (wireMsg) {
             if (this.value === null) {
-                new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = 0;
+                new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = 0;
             } else {
-                new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = this.value.length;
+                new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value.length;
 
                 const strLen = this.value.length;
-                const buf8 = new Uint8Array(wireMsg, wireMsg.offset + 4, strLen);
+                const buf8 = new Uint8Array(wireMsg, wireMsg.readIndex + 4, strLen);
                 for (let i = 0; i < strLen; i++) {
                     buf8[i] = this.value[i].codePointAt(0);
                 }
             }
-            wireMsg.offset += this.size;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -348,12 +348,12 @@ wfs._array = function (arg) {
          * @private
          */
         _marshallArg: function (wireMsg) {
-            new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = this.value.byteLength;
+            new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value.byteLength;
 
             const byteLength = this.value.byteLength;
-            new Uint8Array(wireMsg, wireMsg.offset + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength));
+            new Uint8Array(wireMsg, wireMsg.readIndex + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength));
 
-            wireMsg.offset += this.size;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -379,14 +379,14 @@ wfs._arrayOptional = function (arg) {
         optional: true,
         _marshallArg: function (wireMsg) {
             if (this.value === null) {
-                new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = 0;
+                new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = 0;
             } else {
-                new Uint32Array(wireMsg, wireMsg.offset, 1)[0] = this.value.byteLength;
+                new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value.byteLength;
 
                 const byteLength = this.value.byteLength;
-                new Uint8Array(wireMsg, wireMsg.offset + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength));
+                new Uint8Array(wireMsg, wireMsg.readIndex + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength));
             }
-            wireMsg.offset += this.size;
+            wireMsg.readIndex += this.size;
         }
     };
 };
@@ -534,8 +534,8 @@ wfs.Client = class Client {
      * @returns {Number}
      */
     ["u"](wireMsg) {//unsigned integer {Number}
-        const arg = new Uint32Array(wireMsg, wireMsg.offset, 1)[0];
-        wireMsg.offset += 4;
+        const arg = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0];
+        wireMsg.readIndex += 4;
         return arg;
     }
 
@@ -545,8 +545,8 @@ wfs.Client = class Client {
      * @returns {Number}
      */
     ["i"](wireMsg) {//integer {Number}
-        const arg = new Int32Array(wireMsg, wireMsg.offset, 1)[0];
-        wireMsg.offset += 4;
+        const arg = new Int32Array(wireMsg, wireMsg.readIndex, 1)[0];
+        wireMsg.readIndex += 4;
         return arg;
     }
 
@@ -556,8 +556,8 @@ wfs.Client = class Client {
      * @returns {Number}
      */
     ["f"](wireMsg) {//float {Number}
-        const arg = new Int32Array(wireMsg, wireMsg.offset, 1)[0];
-        wireMsg.offset += 4;
+        const arg = new Int32Array(wireMsg, wireMsg.readIndex, 1)[0];
+        wireMsg.readIndex += 4;
         return new wfs.Fixed(arg >> 0);
     }
 
@@ -568,8 +568,8 @@ wfs.Client = class Client {
      * @returns {WObject}
      */
     ["o"](wireMsg, optional) {
-        const arg = new Uint32Array(wireMsg, wireMsg.offset, 1)[0];
-        wireMsg.offset += 4;
+        const arg = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0];
+        wireMsg.readIndex += 4;
         if (optional && arg === 0) {
             return null;
         } else {
@@ -583,8 +583,8 @@ wfs.Client = class Client {
      * @returns {function}
      */
     ["n"](wireMsg) {
-        const arg = new Uint32Array(wireMsg, wireMsg.offset, 1)[0];
-        wireMsg.offset += 4;
+        const arg = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0];
+        wireMsg.readIndex += 4;
         return arg;
     }
 
@@ -595,14 +595,14 @@ wfs.Client = class Client {
      * @returns {String}
      */
     ["s"](wireMsg, optional) {//{String}
-        const stringSize = new Uint32Array(wireMsg, wireMsg.offset, 1)[0];
-        wireMsg.offset += 4;
+        const stringSize = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0];
+        wireMsg.readIndex += 4;
         if (optional && stringSize === 0) {
             return null;
         }
         else {
-            const byteArray = new Uint8Array(wireMsg, wireMsg.offset, stringSize);
-            wireMsg.offset += (stringSize + (4 - (stringSize % 4)));
+            const byteArray = new Uint8Array(wireMsg, wireMsg.readIndex, stringSize);
+            wireMsg.readIndex += (stringSize + (4 - (stringSize % 4)));
             return String.fromCharCode.apply(null, byteArray);
         }
     }
@@ -614,13 +614,13 @@ wfs.Client = class Client {
      * @returns {ArrayBuffer}
      */
     ["a"](wireMsg, optional) {
-        const arraySize = new Uint32Array(wireMsg, wireMsg.offset, 1)[0];
-        wireMsg.offset += 4;
+        const arraySize = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0];
+        wireMsg.readIndex += 4;
         if (optional && arraySize === 0) {
             return null;
         } else {
-            const arg = wireMsg.slice(wireMsg.offset, wireMsg.offset + arraySize);
-            wireMsg.offset += (arraySize + (4 - (arraySize % 4)));
+            const arg = wireMsg.slice(wireMsg.readIndex, wireMsg.readIndex + arraySize);
+            wireMsg.readIndex += (arraySize + (4 - (arraySize % 4)));
             return arg;
         }
     }
@@ -651,7 +651,7 @@ wfs.Client = class Client {
 
     /**
      *
-     * @param {ArrayBuffer} b
+     * @param {ArrayBuffer} event
      * @private
      */
     _unmarshall(buffer) {
@@ -661,7 +661,7 @@ wfs.Client = class Client {
         const id = bufu32[0];
         //const size = bufu16[2];//not used.
         const opcode = bufu16[3];
-        buffer.offset = 8;
+        buffer.readIndex = 8;
 
         const obj = this._objects.get(id);
         obj[opcode](buffer);
@@ -672,25 +672,27 @@ wfs.Client = class Client {
      *
      * @param {ArrayBuffer} wireMsg
      */
-    doSend(wireMsg) {
+    onSend(wireMsg) {
     }
 
     /**
      * Handle a received message from a client websocket connection
-     * @param {ArrayBuffer} event
+     * @param {ArrayBuffer} buffer
      */
-    onReceive(event) {
-        this._unmarshall(event);
+    message(buffer) {
+        this._unmarshall(buffer);
     }
 
-    onClose() {
+    close() {
         const index = this._server.clients.indexOf(this);
         if (index > -1) {
+            this._objects.clear();
             this._server.clients.splice(this._server.clients.indexOf(this), 1);
+            this._server = null;
         }
     }
 
-    onConnect() {
+    open() {
         //Connection established with client.
         //Create a new registry resource for this client and publish any pending globals.
         this._server.registry._publishGlobals(this._server.registry._createResource(this));
@@ -731,13 +733,13 @@ wfs.Client = class Client {
         bufu32[0] = id;
         bufu16[2] = size;
         bufu16[3] = opcode;
-        wireMsg.offset = 8;
+        wireMsg.readIndex = 8;
 
         argsArray.forEach(function (arg) {
             arg._marshallArg(wireMsg); //write actual argument value to buffer
         });
 
-        this.doSend(wireMsg);
+        this.onSend(wireMsg);
     }
 
     /**
