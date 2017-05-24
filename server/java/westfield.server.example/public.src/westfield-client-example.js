@@ -17,7 +17,7 @@
  *        along with this program. If not, see >http://www.gnu.org/licenses/<.
  *    
  */
-
+const wfc = require('westfield-runtime-client');
 /**
  */
 wfc.example_global = class example_global extends wfc.WObject {
@@ -41,6 +41,9 @@ wfc.example_global = class example_global extends wfc.WObject {
 	}
 
 };
+
+/**
+ */
 wfc.example_clock = class example_clock extends wfc.WObject {
 
 	constructor(connection) {
@@ -65,3 +68,4 @@ wfc.example_clock = class example_clock extends wfc.WObject {
 	}
 
 };
+module.exports = wfc;

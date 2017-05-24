@@ -1,4 +1,6 @@
 "use strict";
+const wfc = require("./westfield-client-example.js");
+
 const connection = new wfc.Connection("ws://127.0.0.1:8080/westfield");//connect to the server
 connection.registry.listener.global = (name, interface_, version) => {//register a listener to will be notified if a new global appears
     if (interface_ === "example_global") {//check if we support the global
