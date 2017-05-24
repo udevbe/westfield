@@ -5,7 +5,7 @@
   "scripts": {
     "prepare:client:generate": "westfield-scanner-client example.xml -o public.src/westfield-client-example.js",
     "prepare:client:webpack": "webpack --config webpack.config.js",
-    "prepare": "npm npm run prepare:client:generate && npm run prepare:client:webpack"
+    "prepare": "npm run prepare:client:generate && npm run prepare:client:webpack"
   },
   "repository": {
     "type": "git",
