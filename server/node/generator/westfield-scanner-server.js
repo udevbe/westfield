@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 'use strict';
 
+//TODO This file shares a lot of code with the client side generator. We could merge both files and allow to client/server
+//output based on a runtime flag.
+
 const fs = require('fs');
 const util = require('util');
 const xml2js = require('xml2js');
