@@ -230,7 +230,8 @@ Which can then be included in your `index.html`.
 </html>
 ```
 
-#Server usage
+# Server usage
 
 Check out the Java and Node.js example projects in the `server` directory. They implement the server side part of the client example mentioned above.
+They also provide a good starting point to setup client side protocol generation in your build.
 
