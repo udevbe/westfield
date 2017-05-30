@@ -85,7 +85,7 @@ describe("westfield-client-core", function () {
         it("marshalls a number to a non optional 32bit unsgined integer", function () {
             //given
             const wireMsg = new ArrayBuffer(8);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
             const argValue = 0x87654321;
             const arg = wf._uint(argValue);
 
@@ -93,7 +93,7 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(8);
+            expect(wireMsg.readIndex).toBe(8);
             expect(new Uint32Array(wireMsg, 4)[0]).toBe(argValue);
         });
 
@@ -101,7 +101,7 @@ describe("westfield-client-core", function () {
             //given
             //given
             const wireMsg = new ArrayBuffer(8);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
             const argValue = 0x87654321;
             const arg = wf._uintOptional(argValue);
 
@@ -109,14 +109,14 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(8);
+            expect(wireMsg.readIndex).toBe(8);
             expect(new Uint32Array(wireMsg, 4)[0]).toBe(argValue);
         });
 
         it("marshalls a null number to an optional 32bit unsigned integer", function () {
             //given
             const wireMsg = new ArrayBuffer(8);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
             const argValue = null;
             const arg = wf._uintOptional(argValue);
 
@@ -124,7 +124,7 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(8);
+            expect(wireMsg.readIndex).toBe(8);
             expect(new Uint32Array(wireMsg, 4)[0]).toBe(0);
         });
 
@@ -133,7 +133,7 @@ describe("westfield-client-core", function () {
         it("marshalls a number to a non optional 32bit integer", function () {
             //given
             const wireMsg = new ArrayBuffer(8);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
             const argValue = -123456789;
             const arg = wf._int(argValue);
 
@@ -141,14 +141,14 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(8);
+            expect(wireMsg.readIndex).toBe(8);
             expect(new Int32Array(wireMsg, 4)[0]).toBe(argValue);
         });
 
         it("marshalls a number to an optional 32bit integer", function () {
             //given
             const wireMsg = new ArrayBuffer(8);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
             const argValue = -123456789;
             const arg = wf._intOptional(argValue);
 
@@ -156,14 +156,14 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(8);
+            expect(wireMsg.readIndex).toBe(8);
             expect(new Int32Array(wireMsg, 4)[0]).toBe(argValue);
         });
 
         it("marshalls a null number to an optional 32bit integer", function () {
             //given
             const wireMsg = new ArrayBuffer(8);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
             const argValue = null;
             const arg = wf._int(argValue);
 
@@ -171,7 +171,7 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(8);
+            expect(wireMsg.readIndex).toBe(8);
             expect(new Int32Array(wireMsg, 4)[0]).toBe(0);
         });
 
@@ -180,7 +180,7 @@ describe("westfield-client-core", function () {
         it("marshalls a number to a non optional fixed", function () {
             //given
             const wireMsg = new ArrayBuffer(8);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
             const argValue = 1234.567;
             const arg = wf._fixed(wf.parseFixed(argValue));
 
@@ -188,14 +188,14 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(8);
+            expect(wireMsg.readIndex).toBe(8);
             expect(new wf.Fixed(new Int32Array(wireMsg, 4)[0]).asDouble().toFixed(2)).toBe(argValue.toFixed(2));
         });
 
         it("marshalls a number to an optional 32bit fixed", function () {
             //given
             const wireMsg = new ArrayBuffer(8);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
             const argValue = 1234.567;
             const arg = wf._fixedOptional(wf.parseFixed(argValue));
 
@@ -203,14 +203,14 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(8);
+            expect(wireMsg.readIndex).toBe(8);
             expect(new wf.Fixed(new Int32Array(wireMsg, 4)[0]).asDouble().toFixed(2)).toBe(argValue.toFixed(2));
         });
 
         it("marshalls a null number to an optional 32bit fixed", function () {
             //given
             const wireMsg = new ArrayBuffer(8);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
             const argValue = null;
             const arg = wf._fixedOptional(wf.parseFixed(argValue));
 
@@ -218,7 +218,7 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(8);
+            expect(wireMsg.readIndex).toBe(8);
             expect(new wf.Fixed(new Int32Array(wireMsg, 4)[0]).asDouble()).toBe(0);
         });
 
@@ -227,7 +227,7 @@ describe("westfield-client-core", function () {
         it("marshalls a westfield object to a non optional 32bit integer", function () {
             //given
             const wireMsg = new ArrayBuffer(8);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
             const objectId = 0xfffe1234;
             const argValue = {_id: objectId};
             const arg = wf._object(argValue);
@@ -236,14 +236,14 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(8);
+            expect(wireMsg.readIndex).toBe(8);
             expect(new Uint32Array(wireMsg, 4)[0]).toBe(objectId);
         });
 
         it("marshalls a westfield object to a an optional 32bit integer", function () {
             //given
             const wireMsg = new ArrayBuffer(8);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
             const objectId = 0xfffe1234;
             const argValue = {_id: objectId};
             const arg = wf._objectOptional(argValue);
@@ -252,14 +252,14 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(8);
+            expect(wireMsg.readIndex).toBe(8);
             expect(new Uint32Array(wireMsg, 4)[0]).toBe(objectId);
         });
 
         it("marshalls a null westfield object to an optional 32bit integer", function () {
             //given
             const wireMsg = new ArrayBuffer(8);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
             const argValue = null;
             const arg = wf._objectOptional(argValue);
 
@@ -267,7 +267,7 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(8);
+            expect(wireMsg.readIndex).toBe(8);
             expect(new Uint32Array(wireMsg, 4)[0]).toBe(0);
         });
 
@@ -276,7 +276,7 @@ describe("westfield-client-core", function () {
         it("marshalls a new westfield object to a non optional 32bit integer", function () {
             //given
             const wireMsg = new ArrayBuffer(8);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
             const objectId = 0xfffe1234;
             const argValue = {_id: objectId};
             const arg = wf._newObject();
@@ -286,7 +286,7 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(8);
+            expect(wireMsg.readIndex).toBe(8);
             expect(new Uint32Array(wireMsg, 4)[0]).toBe(objectId);
         });
 
@@ -295,7 +295,7 @@ describe("westfield-client-core", function () {
         it("marshalls a string to an array of 8bit unsigned integers", function () {
             //given
             const wireMsg = new ArrayBuffer(20);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
             const argValue = "lorem ipsum";
             const arg = wf._string(argValue);
 
@@ -303,7 +303,7 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(20);//4+4+11+1
+            expect(wireMsg.readIndex).toBe(20);//4+4+11+1
             expect(new Uint32Array(wireMsg, 4)[0]).toBe(argValue.length);
             const buf8 = new Uint8Array(wireMsg, 8);
             expect(buf8[0]).toBe(argValue[0].codePointAt(0));//l
@@ -322,7 +322,7 @@ describe("westfield-client-core", function () {
         it("marshalls an optional string to an array of 8bit unsigned integers", function () {
             //given
             const wireMsg = new ArrayBuffer(20);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
             const argValue = "lorem ipsum";
             const arg = wf._stringOptional(argValue);
 
@@ -330,7 +330,7 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(20);//4+4+11+1
+            expect(wireMsg.readIndex).toBe(20);//4+4+11+1
             expect(new Uint32Array(wireMsg, 4)[0]).toBe(argValue.length);
             const buf8 = new Uint8Array(wireMsg, 8);
             expect(buf8[0]).toBe(argValue[0].codePointAt(0));//l
@@ -349,7 +349,7 @@ describe("westfield-client-core", function () {
         it("marshalls an optional null string to an array of 8bit unsigned integers", function () {
             //given
             const wireMsg = new ArrayBuffer(20);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
             const argValue = null;
             const arg = wf._stringOptional(argValue);
 
@@ -357,7 +357,7 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(8);//4+4
+            expect(wireMsg.readIndex).toBe(8);//4+4
             expect(new Uint32Array(wireMsg, 4)[0]).toBe(0);
         });
 
@@ -366,7 +366,7 @@ describe("westfield-client-core", function () {
         it("marshalls a typed array to an array of 8bit unsigned integers", function () {
             //given
             const wireMsg = new ArrayBuffer(16);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
             const argValue = new Uint32Array(new ArrayBuffer(8));
             argValue[0] = 0xF1234567;
             argValue[1] = 0x1234567F;
@@ -377,7 +377,7 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(16);//4+4+8
+            expect(wireMsg.readIndex).toBe(16);//4+4+8
             expect(new Uint32Array(wireMsg, 4)[0]).toBe(argValue.buffer.byteLength);
             let intArray = new Uint32Array(wireMsg.slice(8, 16), 0, 2);
             expect(intArray[0]).toBe(0xF1234567);//0xF1234567
@@ -387,7 +387,7 @@ describe("westfield-client-core", function () {
         it("marshalls an optional typed array to an array of 8bit unsigned integers", function () {
             //given
             const wireMsg = new ArrayBuffer(16);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
             const argValue = new Uint32Array(new ArrayBuffer(8));
             argValue[0] = 0xF1234567;
             argValue[1] = 0x1234567F;
@@ -398,7 +398,7 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(16);//4+4+8
+            expect(wireMsg.readIndex).toBe(16);//4+4+8
             expect(new Uint32Array(wireMsg, 4)[0]).toBe(argValue.buffer.byteLength);
             let intArray = new Uint32Array(wireMsg.slice(8, 16), 0, 2);
             expect(intArray[0]).toBe(0xF1234567);//0xF1234567
@@ -408,7 +408,7 @@ describe("westfield-client-core", function () {
         it("marshalls an optional null typed array to an array of 8bit unsigned integers", function () {
             //given
             const wireMsg = new ArrayBuffer(16);
-            wireMsg.offset = 4;
+            wireMsg.readIndex = 4;
 
             const arg = wf._arrayOptional(null);
 
@@ -416,7 +416,7 @@ describe("westfield-client-core", function () {
             arg._marshallArg(wireMsg);
 
             //then
-            expect(wireMsg.offset).toBe(8);//4+4
+            expect(wireMsg.readIndex).toBe(8);//4+4
             expect(new Uint32Array(wireMsg, 4)[0]).toBe(0);
         });
     });
@@ -435,7 +435,7 @@ describe("westfield-client-core", function () {
             const connection = new wf.Connection("dummyURL");
 
             const wireMsg = new ArrayBuffer(4);
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const argValue = 6553699;
             const buf32 = new Uint32Array(wireMsg);
             buf32[0] = argValue;
@@ -444,7 +444,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "u");
 
             //then
-            expect(wireMsg.offset).toBe(4);
+            expect(wireMsg.readIndex).toBe(4);
             expect(args[0]).toBe(argValue);
         });
 
@@ -457,7 +457,7 @@ describe("westfield-client-core", function () {
             const connection = new wf.Connection("dummyURL");
 
             const wireMsg = new ArrayBuffer(4);
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const argValue = 6553699;
             const buf32 = new Uint32Array(wireMsg);
             buf32[0] = argValue;
@@ -466,7 +466,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "?u");
 
             //then
-            expect(wireMsg.offset).toBe(4);
+            expect(wireMsg.readIndex).toBe(4);
             expect(args[0]).toBe(argValue);
         });
 
@@ -479,7 +479,7 @@ describe("westfield-client-core", function () {
             const connection = new wf.Connection("dummyURL");
 
             const wireMsg = new ArrayBuffer(4);
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const argValue = 0;
             const buf32 = new Uint32Array(wireMsg);
             buf32[0] = argValue;
@@ -488,7 +488,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "?u");
 
             //then
-            expect(wireMsg.offset).toBe(4);
+            expect(wireMsg.readIndex).toBe(4);
             expect(args[0]).toBe(argValue);
         });
 
@@ -503,7 +503,7 @@ describe("westfield-client-core", function () {
             const connection = new wf.Connection("dummyURL");
 
             const wireMsg = new ArrayBuffer(4);
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const argValue = -6553699;
             const buf32 = new Uint32Array(wireMsg);
             buf32[0] = argValue;
@@ -512,7 +512,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "i");
 
             //then
-            expect(wireMsg.offset).toBe(4);
+            expect(wireMsg.readIndex).toBe(4);
             expect(args[0]).toBe(argValue);
         });
 
@@ -525,7 +525,7 @@ describe("westfield-client-core", function () {
             const connection = new wf.Connection("dummyURL");
 
             const wireMsg = new ArrayBuffer(4);
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const argValue = -6553699;
             const buf32 = new Uint32Array(wireMsg);
             buf32[0] = argValue;
@@ -534,7 +534,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "?i");
 
             //then
-            expect(wireMsg.offset).toBe(4);
+            expect(wireMsg.readIndex).toBe(4);
             expect(args[0]).toBe(argValue);
         });
 
@@ -547,7 +547,7 @@ describe("westfield-client-core", function () {
             const connection = new wf.Connection("dummyURL");
 
             const wireMsg = new ArrayBuffer(4);
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const argValue = 0;
             const buf32 = new Uint32Array(wireMsg);
             buf32[0] = argValue;
@@ -556,7 +556,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "?i");
 
             //then
-            expect(wireMsg.offset).toBe(4);
+            expect(wireMsg.readIndex).toBe(4);
             expect(args[0]).toBe(argValue);
         });
 
@@ -571,7 +571,7 @@ describe("westfield-client-core", function () {
             const connection = new wf.Connection("dummyURL");
 
             const wireMsg = new ArrayBuffer(4);
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const argValue = 1234.567;
             const buf32 = new Int32Array(wireMsg);
             buf32[0] = wf.parseFixed(argValue)._raw;
@@ -580,7 +580,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "f");
 
             //then
-            expect(wireMsg.offset).toBe(4);
+            expect(wireMsg.readIndex).toBe(4);
             expect(args[0].asDouble().toFixed(2)).toBe(argValue.toFixed(2));
         });
 
@@ -593,7 +593,7 @@ describe("westfield-client-core", function () {
             const connection = new wf.Connection("dummyURL");
 
             const wireMsg = new ArrayBuffer(4);
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const argValue = 1234.567;
             const buf32 = new Int32Array(wireMsg);
             buf32[0] = wf.parseFixed(argValue)._raw;
@@ -602,7 +602,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "?f");
 
             //then
-            expect(wireMsg.offset).toBe(4);
+            expect(wireMsg.readIndex).toBe(4);
             expect(args[0].asDouble().toFixed(2)).toBe(argValue.toFixed(2));
         });
 
@@ -615,7 +615,7 @@ describe("westfield-client-core", function () {
             const connection = new wf.Connection("dummyURL");
 
             const wireMsg = new ArrayBuffer(4);
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const argValue = 0;
             const buf32 = new Int32Array(wireMsg);
             buf32[0] = wf.parseFixed(argValue)._raw;
@@ -624,7 +624,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "?f");
 
             //then
-            expect(wireMsg.offset).toBe(4);
+            expect(wireMsg.readIndex).toBe(4);
             expect(args[0].asDouble().toFixed(2)).toBe(argValue.toFixed(2));
         });
 
@@ -643,7 +643,7 @@ describe("westfield-client-core", function () {
             connection._objects.set(objectId, {_id: objectId});
 
             const wireMsg = new ArrayBuffer(4);
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const buf32 = new Uint32Array(wireMsg);
             buf32[0] = objectId;
 
@@ -651,7 +651,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "o");
 
             //then
-            expect(wireMsg.offset).toBe(4);
+            expect(wireMsg.readIndex).toBe(4);
             expect(args[0]._id).toBe(objectId);
         });
 
@@ -668,7 +668,7 @@ describe("westfield-client-core", function () {
             connection._objects.set(objectId, {_id: objectId});
 
             const wireMsg = new ArrayBuffer(4);
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const buf32 = new Uint32Array(wireMsg);
             buf32[0] = objectId;
 
@@ -676,7 +676,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "?o");
 
             //then
-            expect(wireMsg.offset).toBe(4);
+            expect(wireMsg.readIndex).toBe(4);
             expect(args[0]._id).toBe(objectId);
         });
 
@@ -690,7 +690,7 @@ describe("westfield-client-core", function () {
             const connection = new wf.Connection("dummyURL");
 
             const wireMsg = new ArrayBuffer(4);
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const buf32 = new Uint32Array(wireMsg);
             buf32[0] = 0;
 
@@ -698,7 +698,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "?o");
 
             //then
-            expect(wireMsg.offset).toBe(4);
+            expect(wireMsg.readIndex).toBe(4);
             expect(args[0]).toBe(null);
         });
 
@@ -719,7 +719,7 @@ describe("westfield-client-core", function () {
             };
 
             const wireMsg = new ArrayBuffer(4);
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const buf32 = new Uint32Array(wireMsg);
             buf32[0] = objectId;
 
@@ -727,7 +727,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "n");
 
             //then
-            expect(wireMsg.offset).toBe(4);
+            expect(wireMsg.readIndex).toBe(4);
             expect(args[0](objectType)._id).toBe(objectId);
         });
 
@@ -744,7 +744,7 @@ describe("westfield-client-core", function () {
 
             const argValue = "lorem ipsum";
             const wireMsg = new ArrayBuffer(16);//4+12
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const buf32 = new Uint32Array(wireMsg);
             buf32[0] = argValue.length;
             const buf8 = new Uint8Array(wireMsg);
@@ -764,7 +764,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "s");
 
             //then
-            expect(wireMsg.offset).toBe(16);
+            expect(wireMsg.readIndex).toBe(16);
             expect(args[0]).toBe(argValue);
         });
 
@@ -779,7 +779,7 @@ describe("westfield-client-core", function () {
 
             const argValue = "lorem ipsum";
             const wireMsg = new ArrayBuffer(16);//4+12
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const buf32 = new Uint32Array(wireMsg);
             buf32[0] = argValue.length;
             const buf8 = new Uint8Array(wireMsg);
@@ -799,7 +799,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "?s");
 
             //then
-            expect(wireMsg.offset).toBe(16);
+            expect(wireMsg.readIndex).toBe(16);
             expect(args[0]).toBe(argValue);
         });
 
@@ -814,7 +814,7 @@ describe("westfield-client-core", function () {
 
             const argValue = "lorem ipsum";
             const wireMsg = new ArrayBuffer(16);//4
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const buf32 = new Uint32Array(wireMsg);
             buf32[0] = 0;
 
@@ -822,7 +822,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "?s");
 
             //then
-            expect(wireMsg.offset).toBe(4);
+            expect(wireMsg.readIndex).toBe(4);
             expect(args[0]).toBe(null);
         });
 
@@ -838,7 +838,7 @@ describe("westfield-client-core", function () {
             const connection = new wf.Connection("dummyURL");
 
             const wireMsg = new ArrayBuffer(16);//4+12
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const buf32 = new Uint32Array(wireMsg);
 
             const buffer = new ArrayBuffer(8);
@@ -864,7 +864,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "a");
 
             //then
-            expect(wireMsg.offset).toBe(16);
+            expect(wireMsg.readIndex).toBe(16);
             const arr = new Uint32Array(args[0]);
             expect(arr[0]).toBe(argValue[0]);
             expect(arr[1]).toBe(argValue[1]);
@@ -880,7 +880,7 @@ describe("westfield-client-core", function () {
             const connection = new wf.Connection("dummyURL");
 
             const wireMsg = new ArrayBuffer(16);//4+12
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const buf32 = new Uint32Array(wireMsg);
 
             const buffer = new ArrayBuffer(8);
@@ -906,7 +906,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "?a");
 
             //then
-            expect(wireMsg.offset).toBe(16);
+            expect(wireMsg.readIndex).toBe(16);
             const arr = new Uint32Array(args[0]);
             expect(arr[0]).toBe(argValue[0]);
             expect(arr[1]).toBe(argValue[1]);
@@ -922,7 +922,7 @@ describe("westfield-client-core", function () {
             const connection = new wf.Connection("dummyURL");
 
             const wireMsg = new ArrayBuffer(16);//4+12
-            wireMsg.offset = 0;
+            wireMsg.readIndex = 0;
             const buf32 = new Uint32Array(wireMsg);
             buf32[0] = 0;
 
@@ -930,7 +930,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "?a");
 
             //then
-            expect(wireMsg.offset).toBe(4);
+            expect(wireMsg.readIndex).toBe(4);
             expect(args[0]).toBe(null);
         });
     });
@@ -1017,13 +1017,13 @@ describe("westfield-client-core", function () {
                 bufu8[(8 * 4) + i] = stringArg[i].codePointAt(0);
             }
 
-            let offset = 8 + ((stringArg.length + 3) & ~3) / 4;
-            bufu32[offset] = bufferLength;
-            offset++;
+            let readIndex = 8 + ((stringArg.length + 3) & ~3) / 4;
+            bufu32[readIndex] = bufferLength;
+            readIndex++;
 
             const bufferBlob = new Uint8Array(buffer);
             for (let i = 0; i < bufferLength; i++) {
-                bufu8[(offset * 4) + i] = bufferBlob[i];
+                bufu8[(readIndex * 4) + i] = bufferBlob[i];
             }
 
             expect(connection._socket.send).toHaveBeenCalled();
@@ -1120,13 +1120,13 @@ describe("westfield-client-core", function () {
                 bufu8[(8 * 4) + i] = stringArg[i].codePointAt(0);
             }
 
-            let offset = 8 + ((stringArg.length + 3) & ~3) / 4;
-            bufu32[offset] = bufferLength;
-            offset++;
+            let readIndex = 8 + ((stringArg.length + 3) & ~3) / 4;
+            bufu32[readIndex] = bufferLength;
+            readIndex++;
 
             const bufferBlob = new Uint8Array(buffer);
             for (let i = 0; i < bufferLength; i++) {
-                bufu8[(offset * 4) + i] = bufferBlob[i];
+                bufu8[(readIndex * 4) + i] = bufferBlob[i];
             }
 
             //when
