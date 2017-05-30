@@ -17,7 +17,7 @@ Westfield accepts xml files in the Wayland protocol format. All arguments are su
 $ npm install
 $ node generator/westfield-scanner-client.js -- --help
 ```
-or install it globally so you can use it in your build. (Make sure your global node path is added to your PATH env!)
+or install it globally so you can use it in your build. (Make sure your global node path is added to your PATH env.)
 ```angular2html
 $ npm install -g
 $ westfield-scanner-client --help
@@ -41,7 +41,7 @@ $ westfield-scanner-client --help
 
 ```
 
-We also need to build the runtime library as it will be needed by the generated protocol objets.
+We also need to build the runtime library as it will be needed by the generated protocol file.
 
 `client/runtime`
 ```
@@ -233,5 +233,5 @@ Which can then be included in your `index.html`.
 # Server usage
 
 Check out the Java and Node.js example projects in the `server` directory. They implement the server side part of the client example mentioned above.
-They also provide a good starting point to setup client side protocol generation in your build.
+They also provide a good starting point to setup server and client side protocol generation in your build.
 
