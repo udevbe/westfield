@@ -1,0 +1,45 @@
+{
+  "name": "westfield-server-example",
+  "version": "0.0.2",
+  "description": "Wayland HTML5 runtime for Node.js",
+  "scripts": {
+    "prepare:server:generate": "westfield-scanner-server streams.xml",
+    "prepare:client:generate": "westfield-scanner-client streams.xml -o public.src/westfield-client-streams.js",
+    "prepare:client:webpack": "webpack --config webpack.config.js",
+    "prepare": "npm run prepare:server:generate && npm run prepare:client:generate && npm run prepare:client:webpack",
+    "start": "node compositor-server.js",
+    "test": "node ./node_modules/jasmine/bin/jasmine.js"
+  },
+  "main": "compositor-server.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/udevbe/westfield.git"
+  },
+  "keywords": [
+    "wayland",
+    "html5",
+    "weboscket",
+    "compositor",
+    "browser",
+    "javascript",
+    "ipc"
+  ],
+  "author": "Erik De Rijcke",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/udevbe/westfield/issues"
+  },
+  "homepage": "https://github.com/udevbe/westfield#readme",
+  "dependencies": {
+    "express": "4.15.3",
+    "ws": "3.0.0",
+    "mediasoup": "1.2.1",
+    "westfield-runtime-server": "file:../runtime/",
+    "westfield-runtime-client": "file:../../../client/runtime"
+  },
+  "devDependencies": {
+    "webpack": "2.5.1",
+    "westfield-scanner-server": "file:../generator/",
+    "westfield-scanner-client": "file:../../../client/generator"
+  }
+}

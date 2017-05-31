@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<protocol name="streams" version="1">
+    <copyright>
+        Example HTML5 Protocol
+        Copyright (C) 2017 Erik De Rijcke
+
+        This program is free software: you can redistribute it and/or modify
+        it under the terms of the GNU Affero General Public License as
+        published by the Free Software Foundation, either version 3 of the
+        License, or (at your option) any later version.
+
+        This program is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+        GNU Affero General Public License for more details.
+
+        You should have received a copy of the GNU Affero General Public License
+        along with this program. If not, see &gt;http://www.gnu.org/licenses/&lt;.
+    </copyright>
+
+    <interface name="stream_source" version="1">
+        <description>
+            An global singleton. Functions as a factory for streams as well as a subscription mechanism to listen for
+            new streams.
+        </description>
+
+        <request name="client_stream_description" since="1">
+            <description>
+
+            </description>
+            <arg name="description" type="string" summary=""/>
+        </request>
+
+        <event name="server_stream_description" since="1">
+            <description>
+
+            </description>
+            <arg name="description" type="string" summary=""/>
+        </event>
+
+        <request name="stream_handle" since="1">
+            <description>
+
+            </description>
+            <arg name="stream_handle" type="new_id" interface="stream_handle" summary="A new stream."/>
+            <arg name="stream_token" type="string" summary="A token which identifies the stream."/>
+        </request>
+    </interface>
+
+    <interface name="stream_handle" version="1">
+        <description>
+
+        </description>
+
+        <request name="ack_frame" since="1">
+            <description>
+
+            </description>
+            <arg name="frame_id" type="uint" summary=""/>
+        </request>
+    </interface>
+</protocol>
