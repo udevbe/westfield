@@ -5,25 +5,93 @@ const wfs = require('./westfield-server-streams.js');
 const WebSocket = require('ws');
 const express = require('express');
 const http = require('http');
+const webrtc = require('webrtc-native');
+
+const dataChannelSettings = {
+    'reliable': {
+        ordered: false,
+        maxRetransmits: 0
+    }
+};
 
 const streamSource = new wfs.Global("stream_source", 1);
 streamSource.bindClient = function (client, id, version) {
 
-    const resource = new wfs.stream_source(client, id, version);
+    const streamSource = new wfs.stream_source(client, id, version);
 
-    resource.implementation.client_stream_description = clientStreamDescription;
-    resource.implementation.stream_handle = streamHandle;
+    streamSource.implementation.peerConnection = new webrtc.RTCPeerConnection(
+        {iceServers: [{url: 'stun:stun.l.google.com:19302'}], audioDeviceModule: 'fake'},
+        {'optional': [{DtlsSrtpKeyAgreement: false}]}
+    );
+
+    streamSource.implementation.client_stream_description = clientStreamDescription;
+    streamSource.implementation.stream_handle = streamHandle;
+
+    setupChannel(streamSource);
 };
 
-function clientStreamDescription(resource, description) {
+/**
+ * @param {wfs.stream_source} streamSource
+ */
+function setupChannel(streamSource) {
 
+    streamSource.implementation.peerConnection.createOffer({
+        offerToReceiveAudio: 0,
+        offerToReceiveVideo: 0
+    }).then((desc) => {
+        return streamSource.implementation.peerConnection.setLocalDescription(desc);
+    }).then(() => {
+        streamSource.server_stream_description(JSON.stringify({"sdp": streamSource.implementation.peerConnection.localDescription}));
+    }).catch((error) => {
+        //TODO close & exit
+        console.error(error);
+    });
+
+    streamSource.implementation.datachannel = streamSource.implementation.peerConnection.createDataChannel(streamSource.id, dataChannelSettings);
+
+    streamSource.implementation.datachannel.onopen = function (event) {
+        channel.send('Hi!');
+    };
+
+    streamSource.implementation.datachannel.onmessage = function (event) {
+        console.log(event.data);
+    }
 }
 
-function streamHandle(resource, stream_handle, stream_token) {
+/**
+ * @param {wfs.stream_source} streamSource
+ * @param {string} description
+ */
+function clientStreamDescription(streamSource, description) {
+
+    const signal = JSON.parse(description);
+
+    if (signal.sdp) {
+        streamSource.implementation.peerConnection.setRemoteDescription(new webrtc.RTCSessionDescription(signal.sdp));
+    } else {
+        streamSource.implementation.peerConnection.addIceCandidate(new webrtc.RTCIceCandidate(signal.candidate)).then(_ => {
+            //we don't really need to to anything here
+        }).catch(error => {
+            console.log("Error: Failure during addIceCandidate()", error);
+            connection.close();
+        });
+    }
+}
+
+/**
+ * @param {wfs.stream_source}streamSource
+ * @param {wfs.stream_handle}stream_handle
+ * @param {Number} stream_token
+ */
+function streamHandle(streamSource, stream_handle, stream_token) {
     stream_handle.implementation.ack_frame = ackFrame;
 }
 
-function ackFrame(resource, frame_id) {
+/**
+ * @param {wfs.stream} stream
+ * @param {Number} frame_id
+ */
+function ackFrame(stream, frame_id) {
 
 }
 

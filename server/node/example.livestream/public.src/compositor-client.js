@@ -16,7 +16,7 @@ function setupDataChannels(streamSource) {
         streamSource.client_stream_description(JSON.stringify({"candidate": evt.candidate}));
     };
 
-    streamSource.server_stream_description = (description) => {
+    streamSource.listener.server_stream_description = (description) => {
 
         const signal = JSON.parse(description);
 
@@ -24,16 +24,23 @@ function setupDataChannels(streamSource) {
             peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp));
 
             peerConnection.createAnswer().then((answer) => {
-                peerConnection.setLocalDescription(answer);
+                return peerConnection.setLocalDescription(answer);
             }).then(() => {
                 streamSource.client_stream_description(JSON.stringify({"sdp": peerConnection.localDescription}));
             }).catch((error) => {
-                console.log(error);
+                console.log("Error: Failure during createAnswer()", error);
                 connection.close();
             });
 
         } else {
-            peerConnection.addIceCandidate(new RTCIceCandidate(signal.candidate));
+
+            peerConnection.addIceCandidate(new RTCIceCandidate(signal.candidate)).then(_ => {
+                //we don't really need to to anything here
+            }).catch(error => {
+                console.log("Error: Failure during addIceCandidate()", error);
+                connection.close();
+            });
+
         }
     };
 
