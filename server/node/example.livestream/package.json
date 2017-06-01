@@ -33,7 +33,7 @@
   "dependencies": {
     "express": "4.15.3",
     "ws": "3.0.0",
-    "mediasoup": "1.2.1",
+    "webrtc-native": "1.4.0",
     "westfield-runtime-server": "file:../runtime/",
     "westfield-runtime-client": "file:../../../client/runtime"
   },
