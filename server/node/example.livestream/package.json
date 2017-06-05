@@ -33,7 +33,7 @@
   "dependencies": {
     "express": "4.15.3",
     "ws": "3.0.0",
-    "webrtc-native": "1.4.0",
+    "electron-webrtc": "0.3.0",
     "westfield-runtime-server": "file:../runtime/",
     "westfield-runtime-client": "file:../../../client/runtime"
   },

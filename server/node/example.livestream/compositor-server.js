@@ -5,7 +5,7 @@ const wfs = require('./westfield-server-streams.js');
 const WebSocket = require('ws');
 const express = require('express');
 const http = require('http');
-const webrtc = require('webrtc-native');
+const webrtc = require('electron-webrtc')();
 
 const dataChannelSettings = {
     'reliable': {
@@ -19,10 +19,14 @@ streamSource.bindClient = function (client, id, version) {
 
     const streamSource = new wfs.stream_source(client, id, version);
 
-    streamSource.implementation.peerConnection = new webrtc.RTCPeerConnection(
-        {iceServers: [{url: 'stun:stun.l.google.com:19302'}], audioDeviceModule: 'fake'},
-        {'optional': [{DtlsSrtpKeyAgreement: false}]}
-    );
+    const peerConnectionConfig = {
+        'iceServers': [
+            {'urls': 'stun:stun.services.mozilla.com'},
+            {'urls': 'stun:stun.l.google.com:19302'},
+        ]
+    };
+
+    streamSource.implementation.peerConnection = new webrtc.RTCPeerConnection(peerConnectionConfig);
 
     streamSource.implementation.client_stream_description = clientStreamDescription;
     streamSource.implementation.stream_handle = streamHandle;
@@ -35,17 +39,24 @@ streamSource.bindClient = function (client, id, version) {
  */
 function setupChannel(streamSource) {
 
-    streamSource.implementation.peerConnection.createOffer({
-        offerToReceiveAudio: 0,
-        offerToReceiveVideo: 0
-    }).then((desc) => {
-        return streamSource.implementation.peerConnection.setLocalDescription(desc);
-    }).then(() => {
-        streamSource.server_stream_description(JSON.stringify({"sdp": streamSource.implementation.peerConnection.localDescription}));
-    }).catch((error) => {
-        //TODO close & exit
-        console.error(error);
-    });
+    streamSource.implementation.peerConnection.onicecandidate = (evt) => {
+        if (evt.candidate !== null) {
+            streamSource.server_stream_description(JSON.stringify({"candidate": evt.candidate}));
+        }
+    };
+
+    streamSource.implementation.peerConnection.createOffer((desc) => {
+            streamSource.implementation.peerConnection.setLocalDescription(desc, _ => {
+                streamSource.server_stream_description(JSON.stringify({"sdp": streamSource.implementation.peerConnection.localDescription}));
+            }, error => {
+                console.error(error);
+                streamSource.client.close();
+            });
+        },
+        (error) => {
+            console.error(error);
+            streamSource.client.close();
+        }, {'OfferToReceiveAudio': false, 'OfferToReceiveVideo': false});
 
     streamSource.implementation.datachannel = streamSource.implementation.peerConnection.createDataChannel(streamSource.id, dataChannelSettings);
 
@@ -68,12 +79,12 @@ function clientStreamDescription(streamSource, description) {
 
     if (signal.sdp) {
         streamSource.implementation.peerConnection.setRemoteDescription(new webrtc.RTCSessionDescription(signal.sdp));
-    } else {
-        streamSource.implementation.peerConnection.addIceCandidate(new webrtc.RTCIceCandidate(signal.candidate)).then(_ => {
+    } else if (signal.candidate) {
+        streamSource.implementation.peerConnection.addIceCandidate(new webrtc.RTCIceCandidate(signal.candidate), _ => {
             //we don't really need to to anything here
-        }).catch(error => {
+        }, (error) => {
             console.log("Error: Failure during addIceCandidate()", error);
-            connection.close();
+            streamSource.client.close();
         });
     }
 }

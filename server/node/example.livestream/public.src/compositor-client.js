@@ -10,10 +10,20 @@ connection.registry.listener.global = (name, interface_, version) => {
 };
 
 function setupDataChannels(streamSource) {
-    const peerConnection = new RTCPeerConnection();
+
+    const peerConnectionConfig = {
+        'iceServers': [
+            {'urls': 'stun:stun.services.mozilla.com'},
+            {'urls': 'stun:stun.l.google.com:19302'},
+        ]
+    };
+
+    const peerConnection = new RTCPeerConnection(peerConnectionConfig);
 
     peerConnection.onicecandidate = (evt) => {
-        streamSource.client_stream_description(JSON.stringify({"candidate": evt.candidate}));
+        if (evt.candidate !== null) {
+            streamSource.client_stream_description(JSON.stringify({"candidate": evt.candidate}));
+        }
     };
 
     streamSource.listener.server_stream_description = (description) => {
@@ -21,9 +31,9 @@ function setupDataChannels(streamSource) {
         const signal = JSON.parse(description);
 
         if (signal.sdp) {
-            peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp));
-
-            peerConnection.createAnswer().then((answer) => {
+            peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp)).then(() => {
+                return peerConnection.createAnswer();
+            }).then((answer) => {
                 return peerConnection.setLocalDescription(answer);
             }).then(() => {
                 streamSource.client_stream_description(JSON.stringify({"sdp": peerConnection.localDescription}));
@@ -31,16 +41,11 @@ function setupDataChannels(streamSource) {
                 console.log("Error: Failure during createAnswer()", error);
                 connection.close();
             });
-
-        } else {
-
-            peerConnection.addIceCandidate(new RTCIceCandidate(signal.candidate)).then(_ => {
-                //we don't really need to to anything here
-            }).catch(error => {
+        } else if (signal.candidate) {
+            peerConnection.addIceCandidate(new RTCIceCandidate(signal.candidate)).catch(error => {
                 console.log("Error: Failure during addIceCandidate()", error);
                 connection.close();
             });
-
         }
     };
 
