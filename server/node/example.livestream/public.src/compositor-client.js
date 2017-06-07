@@ -31,14 +31,8 @@ function setupDataChannels(streamSource) {
         const signal = JSON.parse(description);
 
         if (signal.sdp) {
-            peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp)).then(() => {
-                return peerConnection.createAnswer();
-            }).then((answer) => {
-                return peerConnection.setLocalDescription(answer);
-            }).then(() => {
-                streamSource.client_stream_description(JSON.stringify({"sdp": peerConnection.localDescription}));
-            }).catch((error) => {
-                console.log("Error: Failure during createAnswer()", error);
+            peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp)).catch((error) => {
+                console.log("Error: Failure during setRemoteDescription()", error);
                 connection.close();
             });
         } else if (signal.candidate) {
@@ -50,8 +44,19 @@ function setupDataChannels(streamSource) {
     };
 
     peerConnection.ondatachannel = (event) => {
-        newStreamChannel(event.channel)
+        newStreamChannel(event.channel);
     };
+
+    peerConnection.createDataChannel(streamSource.id, dataChannelSettings);
+
+    peerConnection.createOffer().then((desc) => {
+        return peerConnection.setLocalDescription(desc);
+    }).then(() => {
+        streamSource.client_stream_description(JSON.stringify({"sdp": peerConnection.localDescription}));
+    }).catch((error) => {
+        console.error(error);
+        streamSource.client.close();
+    });
 }
 
 function newStreamChannel(receiveChannel) {

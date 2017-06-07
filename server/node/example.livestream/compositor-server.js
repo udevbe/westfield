@@ -5,7 +5,7 @@ const wfs = require('./westfield-server-streams.js');
 const WebSocket = require('ws');
 const express = require('express');
 const http = require('http');
-const webrtc = require('electron-webrtc')();
+const webrtc = require('wrtc');
 
 const dataChannelSettings = {
     'reliable': {
@@ -45,28 +45,13 @@ function setupChannel(streamSource) {
         }
     };
 
-    streamSource.implementation.peerConnection.createOffer((desc) => {
-            streamSource.implementation.peerConnection.setLocalDescription(desc, _ => {
-                streamSource.server_stream_description(JSON.stringify({"sdp": streamSource.implementation.peerConnection.localDescription}));
-            }, error => {
-                console.error(error);
-                streamSource.client.close();
-            });
-        },
-        (error) => {
-            console.error(error);
-            streamSource.client.close();
-        }, {'OfferToReceiveAudio': false, 'OfferToReceiveVideo': false});
-
-    streamSource.implementation.datachannel = streamSource.implementation.peerConnection.createDataChannel(streamSource.id, dataChannelSettings);
-
-    streamSource.implementation.datachannel.onopen = function (event) {
-        channel.send('Hi!');
-    };
-
-    streamSource.implementation.datachannel.onmessage = function (event) {
-        console.log(event.data);
-    }
+    // streamSource.implementation.datachannel.onopen = function (event) {
+    //     channel.send('Hi!');
+    // };
+    //
+    // streamSource.implementation.datachannel.onmessage = function (event) {
+    //     console.log(event.data);
+    // }
 }
 
 /**
@@ -78,11 +63,20 @@ function clientStreamDescription(streamSource, description) {
     const signal = JSON.parse(description);
 
     if (signal.sdp) {
-        streamSource.implementation.peerConnection.setRemoteDescription(new webrtc.RTCSessionDescription(signal.sdp));
+
+        streamSource.implementation.peerConnection.setRemoteDescription(new webrtc.RTCSessionDescription(signal.sdp)).then(() => {
+            return streamSource.implementation.peerConnection.createAnswer();
+        }).then((desc) => {
+            return streamSource.implementation.peerConnection.setLocalDescription(desc);
+        }).then(() => {
+            streamSource.server_stream_description(JSON.stringify({"sdp": streamSource.implementation.peerConnection.localDescription}));
+        }).catch((error) => {
+            console.log(error);
+            streamSource.client.close();
+        });
+
     } else if (signal.candidate) {
-        streamSource.implementation.peerConnection.addIceCandidate(new webrtc.RTCIceCandidate(signal.candidate), _ => {
-            //we don't really need to to anything here
-        }, (error) => {
+        streamSource.implementation.peerConnection.addIceCandidate(new webrtc.RTCIceCandidate(signal.candidate)).catch((error) => {
             console.log("Error: Failure during addIceCandidate()", error);
             streamSource.client.close();
         });
