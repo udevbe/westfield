@@ -45,13 +45,17 @@ function setupChannel(streamSource) {
         }
     };
 
-    // streamSource.implementation.datachannel.onopen = function (event) {
-    //     channel.send('Hi!');
-    // };
-    //
-    // streamSource.implementation.datachannel.onmessage = function (event) {
-    //     console.log(event.data);
-    // }
+    streamSource.implementation.peerConnection.ondatachannel = (event) => {
+        const datachannel = event.channel;
+
+        datachannel.onopen = function (event) {
+            datachannel.send('Hi from server!');
+        };
+
+        datachannel.onmessage = function (event) {
+            console.log(event.data);
+        }
+    };
 }
 
 /**

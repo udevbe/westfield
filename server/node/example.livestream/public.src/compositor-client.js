@@ -43,11 +43,8 @@ function setupDataChannels(streamSource) {
         }
     };
 
-    peerConnection.ondatachannel = (event) => {
-        newStreamChannel(event.channel);
-    };
-
-    peerConnection.createDataChannel(streamSource.id, dataChannelSettings);
+    const channel = peerConnection.createDataChannel(streamSource.id, {ordered: false, maxRetransmits: 0});
+    newStreamChannel(channel);
 
     peerConnection.createOffer().then((desc) => {
         return peerConnection.setLocalDescription(desc);
@@ -65,7 +62,7 @@ function newStreamChannel(receiveChannel) {
 
     receiveChannel.onmessage = function (event) {
         //TODO add blob to video source buffer
-        console.log(event);
+        console.log(event.data);
     };
 }
 
