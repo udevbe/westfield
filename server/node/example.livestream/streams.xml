@@ -37,26 +37,5 @@
             </description>
             <arg name="description" type="string" summary=""/>
         </event>
-
-        <request name="stream_handle" since="1">
-            <description>
-
-            </description>
-            <arg name="stream_handle" type="new_id" interface="stream_handle" summary="A new stream."/>
-            <arg name="stream_token" type="string" summary="A token which identifies the stream."/>
-        </request>
-    </interface>
-
-    <interface name="stream_handle" version="1">
-        <description>
-
-        </description>
-
-        <request name="ack_frame" since="1">
-            <description>
-
-            </description>
-            <arg name="frame_id" type="uint" summary=""/>
-        </request>
     </interface>
 </protocol>
