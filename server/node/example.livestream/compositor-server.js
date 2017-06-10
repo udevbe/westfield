@@ -7,26 +7,19 @@ const express = require('express');
 const http = require('http');
 const webrtc = require('wrtc');
 
-const dataChannelSettings = {
-    'reliable': {
-        ordered: false,
-        maxRetransmits: 0
-    }
-};
+const spawn = require('child_process').spawn;
 
 const streamSource = new wfs.Global("stream_source", 1);
 streamSource.bindClient = function (client, id, version) {
 
     const streamSource = new wfs.stream_source(client, id, version);
 
-    const peerConnectionConfig = {
+    streamSource.implementation.peerConnection = new webrtc.RTCPeerConnection({
         'iceServers': [
             {'urls': 'stun:stun.services.mozilla.com'},
             {'urls': 'stun:stun.l.google.com:19302'},
         ]
-    };
-
-    streamSource.implementation.peerConnection = new webrtc.RTCPeerConnection(peerConnectionConfig);
+    });
 
     streamSource.implementation.client_stream_description = clientStreamDescription;
     streamSource.implementation.stream_handle = streamHandle;
@@ -49,12 +42,91 @@ function setupChannel(streamSource) {
         const datachannel = event.channel;
 
         datachannel.onopen = function (event) {
-            datachannel.send('Hi from server!');
+            pushFrames(datachannel);
         };
 
         datachannel.onmessage = function (event) {
             console.log(event.data);
         }
+    };
+}
+
+class RtpFrameReader {
+    constructor(rtpStream) {
+        this.frameBytesRemaining = 0;
+        this.rtpFrame = null;
+
+        //in case of partial header
+        this.busyReadingHeader = false;
+
+        rtpStream.on('data', (chunk) => {
+            this.parseChunk(chunk);
+        });
+    }
+
+    parseChunk(chunk) {
+        chunk.bytesRemaining = chunk.length;
+
+        //loop until there is no more data to process
+        while (chunk.bytesRemaining > 0) {
+
+            //Check if we've only read the first byte of the header
+            if (this.busyReadingHeader) {
+                //we've already read the first part, so OR  the new part with what we've already got.
+                this.frameBytesRemaining &= chunk.readUInt8(0);
+                chunk.bytesRemaining -= 1;
+                this.busyReadingHeader = false;
+
+                //allocate new rtp buffer based on the size the header gave us.
+                this.rtpFrame = Buffer.allocUnsafe(this.frameBytesRemaining);
+
+            } else
+            //We're not busy reading the header, and have not read any header at all in fact.
+            if (this.frameBytesRemaining === 0) {
+                //Check if we can read at least 2 bytes to make sure we can read the entire header
+                if (chunk.bytesRemaining >= 2) {
+                    this.frameBytesRemaining = chunk.readInt16BE(0, true);
+                    chunk.bytesRemaining -= 2;
+
+                    //allocate new rtp buffer based on the size the header gave us.
+                    this.rtpFrame = Buffer.allocUnsafe(this.frameBytesRemaining);
+                } else {
+                    //we can only read the header partially
+                    this.busyReadingHeader = true;
+                    this.frameBytesRemaining = chunk.readUInt8(0);
+                    chunk.bytesRemaining -= 1;
+                    this.frameBytesRemaining = this.frameBytesRemaining << 8;
+                }
+            }
+
+            if (chunk.bytesRemaining > 0) {
+                //read the rest of the rtp frame
+
+                //copy as much data as possible from the chunk into the rtp frame.
+                const maxBytesToCopy = chunk.bytesRemaining >= this.frameBytesRemaining ? this.frameBytesRemaining : chunk.bytesRemaining;
+                const bytesCopied = chunk.copy(this.rtpFrame, this.rtpFrame.length - this.frameBytesRemaining, chunk.length - chunk.bytesRemaining, maxBytesToCopy);
+                this.frameBytesRemaining -= bytesCopied;
+                chunk.bytesRemaining -= bytesCopied;
+            }
+
+            if (this.frameBytesRemaining === 0) {
+                this.frameBytesRemaining = 0;
+                this.onRtpFrame(this.rtpFrame);
+                this.rtpFrame = null;
+            }
+        }
+    }
+
+    onRtpFrame(rtpFrame) {
+
+    }
+}
+
+function pushFrames(dataChannel) {
+    const rtpStream = spawn("gst-launch-1.0", ["videotestsrc", "!", "videoconvert", "!", "video/x-raw,format=RGB,width=320", "!", "videoconvert", "!", "video/x-raw,format=I420,width=320", "!", "x264enc", "!", "rtph264pay", "!", "rtpstreampay", "!", "fdsink"]).stdout;
+
+    new RtpFrameReader(rtpStream).onRtpFrame = (rtpFrame) => {
+        dataChannel.send(rtpFrame);
     };
 }
 
@@ -85,23 +157,6 @@ function clientStreamDescription(streamSource, description) {
             streamSource.client.close();
         });
     }
-}
-
-/**
- * @param {wfs.stream_source}streamSource
- * @param {wfs.stream_handle}stream_handle
- * @param {Number} stream_token
- */
-function streamHandle(streamSource, stream_handle, stream_token) {
-    stream_handle.implementation.ack_frame = ackFrame;
-}
-
-/**
- * @param {wfs.stream} stream
- * @param {Number} frame_id
- */
-function ackFrame(stream, frame_id) {
-
 }
 
 //Create westfield server. Required to expose global singleton protocol objects to clients.

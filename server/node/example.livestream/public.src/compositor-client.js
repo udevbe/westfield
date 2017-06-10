@@ -11,14 +11,12 @@ connection.registry.listener.global = (name, interface_, version) => {
 
 function setupDataChannels(streamSource) {
 
-    const peerConnectionConfig = {
+    const peerConnection = new RTCPeerConnection({
         'iceServers': [
             {'urls': 'stun:stun.services.mozilla.com'},
             {'urls': 'stun:stun.l.google.com:19302'},
         ]
-    };
-
-    const peerConnection = new RTCPeerConnection(peerConnectionConfig);
+    });
 
     peerConnection.onicecandidate = (evt) => {
         if (evt.candidate !== null) {
