@@ -4,10 +4,11 @@
 const wfs = require('./westfield-server-streams.js');
 const WebSocket = require('ws');
 const express = require('express');
-const http = require('http');
+const http = require("http");
 const webrtc = require('wrtc');
+const fs = require("fs");
 
-const spawn = require('child_process').spawn;
+const child_process = require("child_process");
 
 const streamSource = new wfs.Global("stream_source", 1);
 streamSource.bindClient = function (client, id, version) {
@@ -22,7 +23,6 @@ streamSource.bindClient = function (client, id, version) {
     });
 
     streamSource.implementation.client_stream_description = clientStreamDescription;
-    streamSource.implementation.stream_handle = streamHandle;
 
     setupChannel(streamSource);
 };
@@ -42,12 +42,8 @@ function setupChannel(streamSource) {
         const datachannel = event.channel;
 
         datachannel.onopen = function (event) {
-            pushFrames(datachannel);
+            pushFrames(streamSource, datachannel);
         };
-
-        datachannel.onmessage = function (event) {
-            console.log(event.data);
-        }
     };
 }
 
@@ -73,7 +69,7 @@ class RtpFrameReader {
             //Check if we've only read the first byte of the header
             if (this.busyReadingHeader) {
                 //we've already read the first part, so OR  the new part with what we've already got.
-                this.frameBytesRemaining &= chunk.readUInt8(0);
+                this.frameBytesRemaining &= chunk.readUInt8(chunk.length - chunk.bytesRemaining);
                 chunk.bytesRemaining -= 1;
                 this.busyReadingHeader = false;
 
@@ -85,7 +81,7 @@ class RtpFrameReader {
             if (this.frameBytesRemaining === 0) {
                 //Check if we can read at least 2 bytes to make sure we can read the entire header
                 if (chunk.bytesRemaining >= 2) {
-                    this.frameBytesRemaining = chunk.readInt16BE(0, true);
+                    this.frameBytesRemaining = chunk.readUInt16BE(chunk.length - chunk.bytesRemaining, true);
                     chunk.bytesRemaining -= 2;
 
                     //allocate new rtp buffer based on the size the header gave us.
@@ -104,13 +100,17 @@ class RtpFrameReader {
 
                 //copy as much data as possible from the chunk into the rtp frame.
                 const maxBytesToCopy = chunk.bytesRemaining >= this.frameBytesRemaining ? this.frameBytesRemaining : chunk.bytesRemaining;
-                const bytesCopied = chunk.copy(this.rtpFrame, this.rtpFrame.length - this.frameBytesRemaining, chunk.length - chunk.bytesRemaining, maxBytesToCopy);
+                const bytesCopied = chunk.copy(this.rtpFrame, this.rtpFrame.length - this.frameBytesRemaining, chunk.length - chunk.bytesRemaining, (chunk.length - chunk.bytesRemaining) + maxBytesToCopy);//target, target start, source start, source end
                 this.frameBytesRemaining -= bytesCopied;
                 chunk.bytesRemaining -= bytesCopied;
             }
 
             if (this.frameBytesRemaining === 0) {
                 this.frameBytesRemaining = 0;
+                const rtpVersion = (this.rtpFrame.readUInt8(0) >>> 6);
+                if (rtpVersion !== 2) {
+                    console.warn("Malformed rtp packet. Expected version 2, got: " + rtpVersion)
+                }
                 this.onRtpFrame(this.rtpFrame);
                 this.rtpFrame = null;
             }
@@ -122,12 +122,30 @@ class RtpFrameReader {
     }
 }
 
-function pushFrames(dataChannel) {
-    const rtpStream = spawn("gst-launch-1.0", ["videotestsrc", "!", "videoconvert", "!", "video/x-raw,format=RGB,width=320", "!", "videoconvert", "!", "video/x-raw,format=I420,width=320", "!", "x264enc", "!", "rtph264pay", "!", "rtpstreampay", "!", "fdsink"]).stdout;
+function pushFrames(streamSource, dataChannel) {
+    //crate named pipe and get fd to it:
+    const fifoPath = "/tmp/tmp.fifo";
 
-    new RtpFrameReader(rtpStream).onRtpFrame = (rtpFrame) => {
-        dataChannel.send(rtpFrame);
-    };
+    child_process.execSync("mkfifo " + fifoPath);
+
+    fs.open(fifoPath, "r", (err, fd) => {
+        if (err) {
+            console.error("Error: Failure during addIceCandidate()", error);
+            streamSource.client.close();
+        } else {
+            const rtpStream = fs.createReadStream(null, {
+                fd: fd
+            });
+
+            new RtpFrameReader(rtpStream).onRtpFrame = (rtpFrame) => {
+                dataChannel.send(rtpFrame);
+            };
+        }
+    });
+    const rtpStreamProcess = child_process.spawn("gst-launch-1.0", ["videotestsrc", "!", "videoconvert", "!", "video/x-raw,format=RGB,width=320", "!", "videoconvert", "!", "video/x-raw,format=I420,width=320", "!", "x264enc", "!", "rtph264pay", "!", "rtpstreampay", "!", "filesink", "location=" + fifoPath, "append=true", "buffer-mode=unbuffered"]);
+
+    // //immediately unlink the file, the resulting file descriptor won't be cleaned up until the child process is terminated.
+    // fs.unlinkSync(fifoPath);
 }
 
 /**
@@ -147,13 +165,13 @@ function clientStreamDescription(streamSource, description) {
         }).then(() => {
             streamSource.server_stream_description(JSON.stringify({"sdp": streamSource.implementation.peerConnection.localDescription}));
         }).catch((error) => {
-            console.log(error);
+            console.error(error);
             streamSource.client.close();
         });
 
     } else if (signal.candidate) {
         streamSource.implementation.peerConnection.addIceCandidate(new webrtc.RTCIceCandidate(signal.candidate)).catch((error) => {
-            console.log("Error: Failure during addIceCandidate()", error);
+            console.error("Error: Failure during addIceCandidate()", error);
             streamSource.client.close();
         });
     }
