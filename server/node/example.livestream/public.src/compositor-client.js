@@ -1,6 +1,6 @@
 "use strict";
 const wfc = require("./westfield-client-streams");
-const rtpparser = require("rtp-parser");
+const rtpparser = require("./rtp-parser");
 
 const connection = new wfc.Connection("ws://127.0.0.1:8080/westfield");
 connection.registry.listener.global = (name, interface_, version) => {
@@ -59,9 +59,10 @@ function newStreamChannel(receiveChannel) {
 
     //TODO create video & MSE
 
+    receiveChannel.binaryType = "arraybuffer";
     receiveChannel.onmessage = function (event) {
-        //TODO add blob to video source buffer
-        console.log(event.data);
+        const parsed = rtpparser.parseRtpPacket(event.data);
+        console.log(parsed);
     };
 }
 
