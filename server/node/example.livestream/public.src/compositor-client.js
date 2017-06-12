@@ -1,5 +1,6 @@
 "use strict";
 const wfc = require("./westfield-client-streams");
+const rtpparser = require("rtp-parser");
 
 const connection = new wfc.Connection("ws://127.0.0.1:8080/westfield");
 connection.registry.listener.global = (name, interface_, version) => {

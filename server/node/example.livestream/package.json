@@ -35,7 +35,8 @@
     "ws": "3.0.0",
     "wrtc": "0.0.62",
     "westfield-runtime-server": "file:../runtime/",
-    "westfield-runtime-client": "file:../../../client/runtime"
+    "westfield-runtime-client": "file:../../../client/runtime",
+    "rtp-parser": "file:./rtp-parser"
   },
   "devDependencies": {
     "webpack": "2.5.1",
