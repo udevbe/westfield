@@ -1,0 +1,30 @@
+{
+  "name": "rtp-parser",
+  "version": "1.0.0",
+  "description": "RTP packets parser",
+  "author": "Aleksey Timchenko <flegmatik.bel@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fleg/rtp-parser.git"
+  },
+  "main": "index.js",
+  "files": [
+    "index.js"
+  ],
+  "scripts": {
+    "test": "mocha test/ --reporter spec",
+    "coverage": "istanbul cover _mocha -- --reporter spec --timeout 10000"
+  },
+  "keywords": [
+    "rtp",
+    "parser"
+  ],
+  "devDependencies": {
+    "coveralls": "2.11.6",
+    "expect.js": "0.3.1",
+    "istanbul": "0.4.2",
+    "mocha": "2.4.5",
+    "underscore": "1.8.3"
+  }
+}
