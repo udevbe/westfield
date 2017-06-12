@@ -74,7 +74,7 @@ class RtpFrameReader {
                 this.busyReadingHeader = false;
 
                 //allocate new rtp buffer based on the size the header gave us.
-                this.rtpFrame = Buffer.allocUnsafe(this.frameBytesRemaining);
+                this.rtpFrame = Buffer.alloc(this.frameBytesRemaining);
 
             } else
             //We're not busy reading the header, and have not read any header at all in fact.
@@ -85,7 +85,7 @@ class RtpFrameReader {
                     chunk.bytesRemaining -= 2;
 
                     //allocate new rtp buffer based on the size the header gave us.
-                    this.rtpFrame = Buffer.allocUnsafe(this.frameBytesRemaining);
+                    this.rtpFrame = Buffer.alloc(this.frameBytesRemaining);
                 } else {
                     //we can only read the header partially
                     this.busyReadingHeader = true;
@@ -112,13 +112,11 @@ class RtpFrameReader {
                     console.warn("Malformed rtp packet. Expected version 2, got: " + rtpVersion)
                 }
                 this.onRtpFrame(this.rtpFrame);
-                this.rtpFrame = null;
             }
         }
     }
 
     onRtpFrame(rtpFrame) {
-
     }
 }
 
@@ -145,7 +143,8 @@ function pushFrames(streamSource, dataChannel) {
     const rtpStreamProcess = child_process.spawn("gst-launch-1.0", ["videotestsrc", "!", "videoconvert", "!", "video/x-raw,format=RGB,width=320", "!", "videoconvert", "!", "video/x-raw,format=I420,width=320", "!", "x264enc", "!", "rtph264pay", "!", "rtpstreampay", "!", "filesink", "location=" + fifoPath, "append=true", "buffer-mode=unbuffered"]);
 
     // //immediately unlink the file, the resulting file descriptor won't be cleaned up until the child process is terminated.
-    // fs.unlinkSync(fifoPath);
+    //fs.unlinkSync(fifoPath);
+
 }
 
 /**
