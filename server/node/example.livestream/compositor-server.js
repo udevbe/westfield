@@ -55,9 +55,13 @@ class RtpFrameReader {
         //in case of partial header
         this.busyReadingHeader = false;
 
-        rtpStream.on('data', (chunk) => {
+        rtpStream.on("data", (chunk) => {
             this.parseChunk(chunk);
         });
+        rtpStream.on("error", (error) => {
+            console.log("Got rtp stream error: " + error);
+        });
+        rtpStream.resume();
     }
 
     parseChunk(chunk) {
@@ -124,27 +128,30 @@ function pushFrames(streamSource, dataChannel) {
     //crate named pipe and get fd to it:
     const fifoPath = "/tmp/tmp.fifo";
 
-    child_process.execSync("mkfifo " + fifoPath);
+    fs.unlink(fifoPath, (error) => {
+        child_process.execSync("mkfifo " + fifoPath);
 
-    fs.open(fifoPath, "r", (err, fd) => {
-        if (err) {
-            console.error("Error: Failure during addIceCandidate()", error);
-            streamSource.client.close();
-        } else {
-            const rtpStream = fs.createReadStream(null, {
-                fd: fd
-            });
+        fs.open(fifoPath, "r", (err, fd) => {
+            if (err) {
+                console.error("Error: Failure during addIceCandidate()", error);
+                streamSource.client.close();
+            } else {
+                const rtpStream = fs.createReadStream(null, {
+                    fd: fd
+                });
 
-            new RtpFrameReader(rtpStream).onRtpFrame = (rtpFrame) => {
-                dataChannel.send(rtpFrame);
-            };
-        }
+                new RtpFrameReader(rtpStream).onRtpFrame = (rtpFrame) => {
+                    dataChannel.send(rtpFrame);
+                };
+            }
+        });
+        const rtpStreamProcess = child_process.spawn("gst-launch-1.0", ["videotestsrc", "num-buffers=10", "!", "videoconvert", "!", "video/x-raw,format=RGB,width=320", "!", "videoconvert", "!", "video/x-raw,format=I420,width=320", "!", "x264enc", "!", "rtph264pay", "!", "rtpstreampay", "!", "filesink", "location=" + fifoPath, "append=true", "buffer-mode=unbuffered"]);
+        //immediately unlink the file, the resulting file descriptor won't be cleaned up until the child process is terminated.
+
+        rtpStreamProcess.on("exit", (exit) => {
+            console.log("gst-launch exited: " + exit);
+        });
     });
-    const rtpStreamProcess = child_process.spawn("gst-launch-1.0", ["videotestsrc", "!", "videoconvert", "!", "video/x-raw,format=RGB,width=320", "!", "videoconvert", "!", "video/x-raw,format=I420,width=320", "!", "x264enc", "!", "rtph264pay", "!", "rtpstreampay", "!", "filesink", "location=" + fifoPath, "append=true", "buffer-mode=unbuffered"]);
-
-    // //immediately unlink the file, the resulting file descriptor won't be cleaned up until the child process is terminated.
-    //fs.unlinkSync(fifoPath);
-
 }
 
 /**

@@ -1,6 +1,8 @@
 "use strict";
 const wfc = require("./westfield-client-streams");
-const rtpparser = require("./rtp-parser");
+import RTPFactory from './rtp/factory.js';
+import {SDPParser} from  "./parsers/sdp.js";
+import {RTPPayloadParser} from "./rtp/payload/parser.js";
 
 const connection = new wfc.Connection("ws://127.0.0.1:8080/westfield");
 connection.registry.listener.global = (name, interface_, version) => {
@@ -42,8 +44,20 @@ function setupDataChannels(streamSource) {
         }
     };
 
-    const channel = peerConnection.createDataChannel(streamSource.id, {ordered: false, maxRetransmits: 0});
-    newStreamChannel(channel);
+    const sdpParser = new SDPParser();
+    sdpParser.parse(
+        "v=0\n" +
+        "m=video 5004 RTP/AVP 96\n" +
+        "a=rtpmap:96 H264/90000\n").then(() => {
+        const channel = peerConnection.createDataChannel(streamSource.id, {ordered: false, maxRetransmits: 0});
+        const rtpFactory = new RTPFactory(sdpParser);
+        const rtpPayloadParser = new RTPPayloadParser();
+
+        newStreamChannel(channel, rtpFactory, sdpParser, rtpPayloadParser);
+    }).catch((error) => {
+        console.error(error);
+        throw new Error("Failed to parse SDP");
+    });
 
     peerConnection.createOffer().then((desc) => {
         return peerConnection.setLocalDescription(desc);
@@ -55,14 +69,17 @@ function setupDataChannels(streamSource) {
     });
 }
 
-function newStreamChannel(receiveChannel) {
-
-    //TODO create video & MSE
-
+function newStreamChannel(receiveChannel,
+                          rtpFactory,
+                          sdpParser,
+                          rtpPayloadParser) {
     receiveChannel.binaryType = "arraybuffer";
     receiveChannel.onmessage = function (event) {
-        const parsed = rtpparser.parseRtpPacket(event.data);
-        console.log(parsed);
+
+        const rtpPacket = rtpFactory.build(new Uint8Array(event.data), sdpParser);
+        const nal = rtpPayloadParser.parse(rtpPacket);
+
+        console.log(nal);
     };
 }
 
