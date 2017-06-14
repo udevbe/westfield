@@ -49,11 +49,13 @@ function setupDataChannels(streamSource) {
         "v=0\n" +
         "m=video 5004 RTP/AVP 96\n" +
         "a=rtpmap:96 H264/90000\n").then(() => {
-        const channel = peerConnection.createDataChannel(streamSource.id, {ordered: false, maxRetransmits: 0});
+
         const rtpFactory = new RTPFactory(sdpParser);
         const rtpPayloadParser = new RTPPayloadParser();
 
-        newStreamChannel(channel, rtpFactory, sdpParser, rtpPayloadParser);
+
+        const channel = peerConnection.createDataChannel(streamSource.id, {ordered: false, maxRetransmits: 0});
+        setupStreamChannel(channel, rtpFactory, sdpParser, rtpPayloadParser);
     }).catch((error) => {
         console.error(error);
         throw new Error("Failed to parse SDP");
@@ -69,7 +71,7 @@ function setupDataChannels(streamSource) {
     });
 }
 
-function newStreamChannel(receiveChannel,
+function setupStreamChannel(receiveChannel,
                           rtpFactory,
                           sdpParser,
                           rtpPayloadParser) {
@@ -78,6 +80,7 @@ function newStreamChannel(receiveChannel,
 
         const rtpPacket = rtpFactory.build(new Uint8Array(event.data), sdpParser);
         const nal = rtpPayloadParser.parse(rtpPacket);
+
 
         console.log(nal);
     };
