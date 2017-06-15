@@ -3,6 +3,7 @@ const wfc = require("./westfield-client-streams");
 import RTPFactory from './rtp/factory.js';
 import {SDPParser} from  "./parsers/sdp.js";
 import {RTPPayloadParser} from "./rtp/payload/parser.js";
+import {Remuxer} from "./remuxer/remuxer.js";
 
 const connection = new wfc.Connection("ws://127.0.0.1:8080/westfield");
 connection.registry.listener.global = (name, interface_, version) => {
@@ -51,11 +52,10 @@ function setupDataChannels(streamSource) {
         "a=rtpmap:96 H264/90000\n").then(() => {
 
         const rtpFactory = new RTPFactory(sdpParser);
-        const rtpPayloadParser = new RTPPayloadParser();
-
+        const track = sdpParser.getMediaBlock("video");
 
         const channel = peerConnection.createDataChannel(streamSource.id, {ordered: false, maxRetransmits: 0});
-        setupStreamChannel(channel, rtpFactory, sdpParser, rtpPayloadParser);
+        setupStreamChannel(channel, rtpFactory, sdpParser, track);
     }).catch((error) => {
         console.error(error);
         throw new Error("Failed to parse SDP");
@@ -72,15 +72,20 @@ function setupDataChannels(streamSource) {
 }
 
 function setupStreamChannel(receiveChannel,
-                          rtpFactory,
-                          sdpParser,
-                          rtpPayloadParser) {
+                            rtpFactory,
+                            sdpParser,
+                            track) {
+
+    const rtpPayloadParser = new RTPPayloadParser();
+    const remuxer = new Remuxer(Window.getElementById("surface.123"));
+    remuxer.onTrack(track);
+    remuxer.init();
+
     receiveChannel.binaryType = "arraybuffer";
     receiveChannel.onmessage = function (event) {
 
         const rtpPacket = rtpFactory.build(new Uint8Array(event.data), sdpParser);
         const nal = rtpPayloadParser.parse(rtpPacket);
-
 
         console.log(nal);
     };

@@ -4,33 +4,24 @@ import {MSE} from '../presentation/mse.js';
 
 export class Remuxer {
 
-    constructor(mediaElement) {
-        this.mse = new MSE([mediaElement]);
-        this.eventSource = new EventEmitter();
-
+    constructor(videoElement) {
+        this.mse = new MSE(videoElement);
         this.reset();
-
-        this.eventSource.addEventListener('ready', this.init.bind(this));
     }
 
     reset() {
         this.trackConverter = {};
         this.initialized = false;
-        this.initSegment = {};
-        this.streams = {};
         this.enabled = false;
         this.mse.clear();
     }
 
     destroy() {
-        this.mseEventSource.destroy();
         this.mse.destroy();
         this.mse = null;
-        this.eventSource.destroy();
     }
 
     onTrack(track) {
-        // store available track types
         this.trackConverter = new H264Remuxer(90000, 1, track.params);
         if (track.offset) {
             this.trackConverter.timeOffset = track.offset;
@@ -52,7 +43,6 @@ export class Remuxer {
     }
 
     init() {
-        let initmse = [];
         let initPts = Infinity;
         let initDts = Infinity;
 
@@ -60,24 +50,21 @@ export class Remuxer {
             throw new Error(`${this.trackConverter.mp4track.type} codec ${track.mp4track.codec} is not supported`);
         }
         this.trackConverter.init(initPts, initDts/*, false*/);
-        // initPts = Math.min(track.initPTS, initPts);
-        // initDts = Math.min(track.initDTS, initDts);
 
-        //track.init(initPts, initDts);
-        this.initSegment = MP4.initSegment([this.trackConverter.mp4track], this.trackConverter.duration * this.trackConverter.timescale, this.trackConverter.timescale);
-        initmse.push(this.initMSE());
+        const initSegment = MP4.initSegment([this.trackConverter.mp4track], this.trackConverter.duration * this.trackConverter.timescale, this.trackConverter.timescale);
+        const initmse = this.initMSE(initSegment);
 
         this.initialized = true;
-        Promise.all(initmse).then(() => {
+        initmse.then(() => {
             this.mse.play();
             this.enabled = true;
         });
     }
 
-    initMSE() {
+    initMSE(initSegment) {
         if (MSE.isSupported([this.trackConverter.mp4track.codec])) {
             return this.mse.setCodec(this.trackConverter, `video/mp4; codecs="${this.trackConverter.mp4track.codec}"`).then(() => {
-                this.mse.feed(this.trackConverter, this.initSegment);
+                this.mse.feed(this.trackConverter, initSegment);
             });
         } else {
             throw new Error('Codecs are not supported');

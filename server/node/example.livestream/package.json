@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "webpack": "2.5.1",
-    "westfield-scanner-server": "file:../generator/",
+    "westfield-scanner-server": "file:../generator",
     "westfield-scanner-client": "file:../../../client/generator"
   }
 }

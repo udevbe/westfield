@@ -1,8 +1,6 @@
-import {getTagged} from '../../deps/bp_logger.js';
 import {H264Parser} from '../parsers/h264.js';
 import {BaseRemuxer} from './base.js';
 
-const Log = getTagged("remuxer:h264"); 
 // TODO: asm.js
 export class H264Remuxer extends BaseRemuxer {
 
@@ -100,12 +98,6 @@ export class H264Remuxer extends BaseRemuxer {
         let samples=this.mp4track.samples;
         let mp4Sample, lastDTS, pts, dts;
 
-
-        // Log.debug(this.samples.map((e)=>{
-        //     return Math.round((e.dts - this.initDTS));
-        // }));
-
-        // let minDuration = Number.MAX_SAFE_INTEGER;
         while (this.samples.length) {
             let sample = this.samples.shift();
             if (sample === null) {
@@ -126,7 +118,7 @@ export class H264Remuxer extends BaseRemuxer {
                 let sampleDuration = this.scaled(dts - lastDTS);
                 // Log.debug(`Sample duration: ${sampleDuration}`);
                 if (sampleDuration <= 0) {
-                    Log.log(`invalid AVC sample duration at PTS/DTS: ${pts}/${dts}|lastDTS: ${lastDTS}:${sampleDuration}`);
+                    console.log(`invalid AVC sample duration at PTS/DTS: ${pts}/${dts}|lastDTS: ${lastDTS}:${sampleDuration}`);
                     this.mp4track.len -= unit.getSize();
                     continue;
                 }
@@ -151,7 +143,7 @@ export class H264Remuxer extends BaseRemuxer {
                         }
                     } else {
                         if (delta < 0) {
-                            Log.log(`skip frame from the past at DTS=${dts} with expected DTS=${this.nextDts}`);
+                            console.log(`skip frame from the past at DTS=${dts} with expected DTS=${this.nextDts}`);
                             this.mp4track.len -= unit.getSize();
                             continue;
                         }
