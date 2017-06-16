@@ -84,10 +84,6 @@ export class MSEBuffer {
         return Promise.all(promises);
     }
 
-    setLive(is_live) {
-        this.is_live = is_live;
-    }
-
     feedNext() {
         // console.debug("feed next ", this.sourceBuffer.updating);
         if (!this.sourceBuffer.updating && !this.cleaning && this.queue.length) {
@@ -203,7 +199,7 @@ export class MSE {
         video.onpause = () => {
             this.playing = false;
         };
-        this.playing = !this.payer.paused;
+        this.playing = !this.video.paused;
         this.mediaSource = new MediaSource();
         this.reset();
     }
@@ -218,11 +214,6 @@ export class MSE {
             console.debug(`video: play`);
             this.video.play();
         }
-    }
-
-    setLive(is_live) {
-        this.buffer.setLive(is_live);
-        this.is_live = is_live;
     }
 
     resetBuffer() {
@@ -270,7 +261,10 @@ export class MSE {
 
     reset() {
         this.ready = false;
-        this.buffer.destroy();
+        if (this.buffer) {
+            this.buffer.destroy();
+            delete this.buffer;
+        }
 
         if (this.mediaSource.readyState === 'open') {
             this.mediaSource.duration = 0;
@@ -278,13 +272,11 @@ export class MSE {
         }
         this.updating = false;
         this.resolved = false;
-        this.buffer = {};
     }
 
     setCodec(mimeCodec) {
         return this.mediaReady.then(() => {
             this.buffer = new MSEBuffer(this, mimeCodec);
-            this.buffer.setLive(this.is_live);
         });
     }
 

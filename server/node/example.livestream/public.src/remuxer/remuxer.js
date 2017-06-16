@@ -32,8 +32,6 @@ export class Remuxer {
         } else {
             this.trackConverter.duration = 1;
         }
-
-        this.mse.setLive(!this.client.seekable);
     }
 
     setTimeOffset(timeOffset) {

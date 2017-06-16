@@ -77,7 +77,7 @@ function setupStreamChannel(receiveChannel,
                             track) {
 
     const rtpPayloadParser = new RTPPayloadParser();
-    const remuxer = new Remuxer(Window.getElementById("surface.123"));
+    const remuxer = new Remuxer(document.getElementById("surface.123"));
     remuxer.onTrack(track);
     remuxer.init();
 
