@@ -17,8 +17,7 @@ function setupDataChannels(streamSource) {
 
     const peerConnection = new RTCPeerConnection({
         'iceServers': [
-            {'urls': 'stun:stun.services.mozilla.com'},
-            {'urls': 'stun:stun.l.google.com:19302'},
+            {'urls': 'stun:stun.wtfismyip.com/'},
         ]
     });
 
@@ -56,12 +55,14 @@ function setupDataChannels(streamSource) {
 
         const channel = peerConnection.createDataChannel(streamSource.id, {ordered: false, maxRetransmits: 0});
         setupStreamChannel(channel, rtpFactory, sdpParser, track);
-    }).catch((error) => {
-        console.error(error);
-        throw new Error("Failed to parse SDP");
-    });
-
-    peerConnection.createOffer().then((desc) => {
+    }).then(() => {
+        return peerConnection.createOffer({
+            offerToReceiveAudio: false,
+            offerToReceiveVideo: false,
+            voiceActivityDetection: false,
+            iceRestart: false
+        })
+    }).then((desc) => {
         return peerConnection.setLocalDescription(desc);
     }).then(() => {
         streamSource.client_stream_description(JSON.stringify({"sdp": peerConnection.localDescription}));
