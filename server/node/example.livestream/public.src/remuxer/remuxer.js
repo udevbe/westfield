@@ -74,7 +74,7 @@ export class Remuxer {
         if (!this.initialized) {
             if (this.trackConverter) {
                 if (!this.trackConverter.readyToDecode || !this.trackConverter.samples.length) return;
-                this.eventSource.dispatchEvent('ready');
+                this.init();
             }
         } else {
             let pay = this.trackConverter.getPayload();

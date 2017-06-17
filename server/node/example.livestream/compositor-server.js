@@ -145,7 +145,14 @@ function pushFrames(streamSource, dataChannel) {
                 };
             }
         });
-        const rtpStreamProcess = child_process.spawn("gst-launch-1.0", ["videotestsrc", "num-buffers=10", "!", "videoconvert", "!", "video/x-raw,format=RGB,width=320", "!", "videoconvert", "!", "video/x-raw,format=I420,width=320", "!", "x264enc", "!", "rtph264pay", "!", "rtpstreampay", "!", "filesink", "location=" + fifoPath, "append=true", "buffer-mode=unbuffered"]);
+        const rtpStreamProcess = child_process.spawn("gst-launch-1.0",
+            ["videotestsrc", "num-buffers=10", "!",
+                "videoconvert", "!", "video/x-raw,format=RGB,width=320", "!",
+                "videoconvert", "!", "video/x-raw,format=I420,width=320", "!",
+                "x264enc", "!",
+                "rtph264pay", "config-interval=-1", "!",
+                "rtpstreampay", "!",
+                "filesink", "location=" + fifoPath, "append=true", "buffer-mode=unbuffered"]);
         //immediately unlink the file, the resulting file descriptor won't be cleaned up until the child process is terminated.
 
         rtpStreamProcess.on("exit", (exit) => {
