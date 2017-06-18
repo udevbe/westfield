@@ -14,9 +14,8 @@ export class MSEBuffer {
         console.debug(`Use codec: ${codec}`);
 
         this.sourceBuffer = this.mediaSource.addSourceBuffer(codec);
-        this.eventSource = new EventEmitter(this.sourceBuffer);
 
-        this.eventSource.addEventListener('updateend', (e) => {
+        this.sourceBuffer.addEventListener('updateend', (e) => {
             if (this.cleaning) {
                 console.debug(`${this.codec} cleaning end`);
 
@@ -43,14 +42,14 @@ export class MSEBuffer {
             this.feedNext();
         });
 
-        this.eventSource.addEventListener('error', (e) => {
+        this.sourceBuffer.addEventListener('error', (e) => {
             console.debug(`Source buffer error: ${this.mediaSource.readyState}`);
             if (this.mediaSource.sourceBuffers.length) {
                 this.mediaSource.removeSourceBuffer(this.sourceBuffer);
             }
         });
 
-        this.eventSource.addEventListener('abort', (e) => {
+        this.sourceBuffer.addEventListener('abort', (e) => {
             console.debug(`Source buffer aborted: ${this.mediaSource.readyState}`);
             if (this.mediaSource.sourceBuffers.length) {
                 this.mediaSource.removeSourceBuffer(this.sourceBuffer);
@@ -256,6 +255,11 @@ export class MSE {
                 }
             };
         });
+
+        this.mediaSource.addEventListener('sourceopen', this._sourceOpen);
+        this.mediaSource.addEventListener('sourceended', this._sourceEnded);
+        this.mediaSource.addEventListener('sourceclose', this._sourceClose);
+
         return this.mediaReady;
     }
 

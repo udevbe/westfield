@@ -81,14 +81,21 @@ function setupStreamChannel(receiveChannel,
     const remuxer = new Remuxer(document.getElementById("surface.123"));
     remuxer.onTrack(track);
 
+    const nalQueue = [];
+
     receiveChannel.binaryType = "arraybuffer";
     receiveChannel.onmessage = function (event) {
 
         const rtpPacket = rtpFactory.build(new Uint8Array(event.data), sdpParser);
         const nal = rtpPayloadParser.parse(rtpPacket);
-
-        console.log(nal);
+        if (nal) {
+            nalQueue.push(nal);
+        }
     };
+
+    setInterval(() => {
+        remuxer.flush(nalQueue);
+    }, 100);
 }
 
 

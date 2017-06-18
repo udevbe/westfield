@@ -61,8 +61,8 @@ export class Remuxer {
 
     initMSE(initSegment) {
         if (MSE.isSupported([this.trackConverter.mp4track.codec])) {
-            return this.mse.setCodec(this.trackConverter, `video/mp4; codecs="${this.trackConverter.mp4track.codec}"`).then(() => {
-                this.mse.feed(this.trackConverter, initSegment);
+            return this.mse.setCodec(`video/mp4; codecs="${this.trackConverter.mp4track.codec}"`).then(() => {
+                this.mse.feed(initSegment);
             });
         } else {
             throw new Error('Codecs are not supported');
@@ -79,14 +79,13 @@ export class Remuxer {
         } else {
             let pay = this.trackConverter.getPayload();
             if (pay && pay.byteLength) {
-                this.mse.feed('video', [MP4.moof(this.trackConverter.seq, this.trackConverter.scaled(this.trackConverter.firstDTS), this.trackConverter.mp4track), MP4.mdat(pay)]);
+                this.mse.feed([MP4.moof(this.trackConverter.seq, this.trackConverter.scaled(this.trackConverter.firstDTS), this.trackConverter.mp4track), MP4.mdat(pay)]);
                 this.trackConverter.flush();
             }
         }
     }
 
-    onSamples(nalQueue) {
-        let queue = nalQueue;
+    onSamples(queue) {
         while (queue.length) {
             let units = queue.shift();
             for (let chunk of units) {
