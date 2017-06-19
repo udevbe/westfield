@@ -145,9 +145,10 @@ function pushFrames(streamSource, dataChannel) {
             }
         });
         const rtpStreamProcess = child_process.spawn("gst-launch-1.0",
-            ["videotestsrc", "!",
-                "videoconvert", "!", "video/x-raw,format=RGB,width=320", "!",
-                "videoconvert", "!", "video/x-raw,format=I420,width=320", "!",
+            ["videotestsrc", "is-live=true", "!",
+                "videorate", "!", "video/x-raw,framerate=60/1", "!",
+                "videoconvert", "!",
+                "video/x-raw,format=I420,width=320", "!",
                 "x264enc", "!",
                 "rtph264pay", "config-interval=1", "!",
                 "rtpstreampay", "!",

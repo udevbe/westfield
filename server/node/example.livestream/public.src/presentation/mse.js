@@ -113,7 +113,7 @@ export class MSEBuffer {
             for (let i = 0; i < this.sourceBuffer.buffered.length; ++i) {
                 let removeStart = this.sourceBuffer.buffered.start(i);
                 let removeEnd = this.sourceBuffer.buffered.end(i);
-                if ((this.video[0].currentTime <= removeStart) || (removeBound <= removeStart)) continue;
+                if ((this.video.currentTime <= removeStart) || (removeBound <= removeStart)) continue;
 
                 if ((removeBound <= removeEnd) && (removeBound >= removeStart)) {
                     console.debug(`Clear [${removeStart}, ${removeBound}), leave [${removeBound}, ${removeEnd}]`);
