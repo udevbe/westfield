@@ -95,7 +95,7 @@ function setupStreamChannel(receiveChannel,
 
     setInterval(() => {
         remuxer.flush(nalQueue);
-    }, 33);
+    }, 40);
 }
 
 
