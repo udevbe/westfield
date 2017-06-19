@@ -49,7 +49,7 @@ export class Remuxer {
         }
         this.trackConverter.init(initPts, initDts/*, false*/);
 
-        const initSegment = MP4.initSegment([this.trackConverter.mp4track], this.trackConverter.duration * this.trackConverter.timescale, this.trackConverter.timescale);
+        const initSegment = MP4.initSegment([this.trackConverter.mp4track], Infinity, this.trackConverter.timescale);
         const initmse = this.initMSE(initSegment);
 
         this.initialized = true;

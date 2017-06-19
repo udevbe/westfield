@@ -146,6 +146,9 @@ export class MSEBuffer {
         } else {
             try {
                 this.sourceBuffer.appendBuffer(data);
+                if(this.sourceBuffer.buffered.length > 0) {
+                    this.video.currentTime = this.sourceBuffer.buffered.end(0);
+                }
             } catch (e) {
                 if (e.name === 'QuotaExceededError') {
                     console.debug(`${this.codec} quota fail`);

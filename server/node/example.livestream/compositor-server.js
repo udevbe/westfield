@@ -146,11 +146,11 @@ function pushFrames(streamSource, dataChannel) {
         });
         const rtpStreamProcess = child_process.spawn("gst-launch-1.0",
             ["videotestsrc", "is-live=true", "!",
-                "videorate", "!", "video/x-raw,framerate=60/1", "!",
-                "videoconvert", "!",
-                "video/x-raw,format=I420,width=320", "!",
-                "x264enc", "!",
-                "rtph264pay", "config-interval=1", "!",
+                "clockoverlay", "!",
+                "videorate", "!", "video/x-raw,framerate=30/1", "!",
+                "videoconvert", "!", "video/x-raw,format=I420,width=1024,height=768", "!",
+                "x264enc", "key-int-max=1", "pass=pass1", "tune=zerolatency", "qp-max=20", "qp-min=0", "ip-factor=2", "speed-preset=veryfast", "intra-refresh=true", "!",
+                "rtph264pay", "config-interval=-1", "!",
                 "rtpstreampay", "!",
                 "filesink", "location=" + fifoPath, "append=true", "buffer-mode=unbuffered"]);
         //immediately unlink the file, the resulting file descriptor won't be cleaned up until the child process is terminated.
