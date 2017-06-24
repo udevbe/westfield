@@ -55,9 +55,9 @@ function setupDataChannels(streamSource) {
         const track = sdpParser.getMediaBlock("video");
         const video = document.getElementById("surface.123");
         const remuxer = new Remuxer(track);
-        return remuxer.addVideo(video).then(() => {
+        return remuxer.addVideo(video).then((mse) => {
             const channel = peerConnection.createDataChannel(streamSource.id, {ordered: false, maxRetransmits: 0});
-            setupStreamChannel(channel, rtpFactory, sdpParser, remuxer);
+            setupStreamChannel(channel, rtpFactory, sdpParser, remuxer, mse);
         });
     }).then(() => {
         return peerConnection.createOffer({
@@ -79,7 +79,8 @@ function setupDataChannels(streamSource) {
 function setupStreamChannel(receiveChannel,
                             rtpFactory,
                             sdpParser,
-                            remuxer) {
+                            remuxer,
+                            mse) {
     const nalQueue = [];
 
     const rtpPayloadParser = new RTPPayloadParser();
@@ -87,16 +88,22 @@ function setupStreamChannel(receiveChannel,
     receiveChannel.onmessage = function (event) {
         const rtpPacket = rtpFactory.build(new Uint8Array(event.data), sdpParser);
         const nal = rtpPayloadParser.parse(rtpPacket);
+
         if (nal) {
             nalQueue.push(nal);
         }
+
+        if (mse.buffer === null || (mse.buffer.queue.length === 0)) {
+            remuxer.flush(nalQueue);
+        }
     };
 
-    //TODO let remuxer pull from the nalQueue until it's empty, only kick off a flush if we add a a nal to a
-    //previously empty queue
-    setInterval(() => {
+    mse.onBuffer().then((buffer) => {
         remuxer.flush(nalQueue);
-    }, 10);
+        buffer.flush = () => {
+            remuxer.flush(nalQueue);
+        };
+    });
 }
 
 

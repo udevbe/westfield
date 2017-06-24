@@ -32,10 +32,11 @@ export class Remuxer {
         const mediaSource = new MediaSource();
 
         let onSourceOpen;
+        const muxer = this;
         const mediaReady = new Promise((resolve, reject) => {
             onSourceOpen = () => {
-                this.mse = new MSE(video, mediaSource);
-                resolve(this.mse);
+                muxer.mse = new MSE(video, mediaSource);
+                resolve(muxer.mse);
             }
         });
         video.src = URL.createObjectURL(mediaSource);
@@ -56,10 +57,12 @@ export class Remuxer {
                 this._initMSE(this.mse);
                 this.mse.initialized = true;
             } else {
-                let pay = this.trackConverter.getPayload();
-                if (pay && pay.byteLength) {
-                    this.mse.feed([MP4.moof(this.trackConverter.seq, this.trackConverter.firstDTS, this.trackConverter.mp4track), MP4.mdat(pay)]);
-                    this.trackConverter.flush();
+                if (this.trackConverter.samples.length > 2) {
+                    let pay = this.trackConverter.getPayload();
+                    if (pay && pay.byteLength) {
+                        this.mse.feed([MP4.moof(this.trackConverter.seq, this.trackConverter.firstDTS, this.trackConverter.mp4track), MP4.mdat(pay)]);
+                        this.trackConverter.flush();
+                    }
                 }
             }
         }

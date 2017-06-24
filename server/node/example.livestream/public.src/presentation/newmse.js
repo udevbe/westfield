@@ -2,13 +2,13 @@ export class MSEBuffer {
     constructor(mediaSource, video, sourceBuffer) {
         this._mediaSource = mediaSource;
         this._video = video;
-        this._queue = [];
+        this.queue = [];
         this._sourceBuffer = sourceBuffer;
         this._cleaningNeeded = false;
 
         this._sourceBuffer.onupdateend = () => {
             if (this._cleaningNeeded) {
-                this._cleanBuffer()
+                this._cleanBuffer();
             } else {
                 this._feedNext();
             }
@@ -21,40 +21,48 @@ export class MSEBuffer {
         }
 
         if (this._sourceBuffer.updating) {
-            this._queue.unshift(data);
+            this.queue.unshift(data);
             return;
         } else {
             this._sourceBuffer.appendBuffer(data);
         }
 
-        // if (this._sourceBuffer.buffered.length > 0.045) {
-        //     this._video.currentTime = this._sourceBuffer.buffered.end(0);
-        // }
+        if (this._sourceBuffer.buffered.length) {
+            if ((this._sourceBuffer.buffered.end(0) - this._video.currentTime) > 0.2) {
+                //falling behind, jump forward to latest frame
+                this._video.currentTime = this._sourceBuffer.buffered.end(0);
+            }
 
-        setTimeout(() => {
-            this._cleaningNeeded = true;
-        }, 10000);
+            if ((this._sourceBuffer.buffered.start(0) - this._video.currentTime) > 5) {
+                this._cleaningNeeded = true;
+            }
+        }
     }
 
     _cleanBuffer() {
-        const endTime = (this._video.currentTime - 0.045);
+        const endTime = this._video.currentTime;
         if (this._sourceBuffer.buffered.length < 1) {
             this._feedNext();
-        } else if (!this._sourceBuffer.updating && this._sourceBuffer.buffered.start(0) < endTime) {
-            this._sourceBuffer.remove(this._sourceBuffer.buffered.start(0), endTime);
             this._cleaningNeeded = false;
+        } else if (this._sourceBuffer.buffered.start(0) < endTime) {
+            if (!this._sourceBuffer.updating) {
+                this._sourceBuffer.remove(this._sourceBuffer.buffered.start(0), endTime);
+                this._cleaningNeeded = false;
+            }
         }
     }
 
     _feedNext() {
-        if (this._queue.length) {
-            this._doAppend(this._queue.shift());
+        if (this.queue.length) {
+            this._doAppend(this.queue.shift());
         }
-        //else flush
+        else if (this.flush) {
+            this.flush();
+        }
     }
 
     feed(data) {
-        this._queue = this._queue.concat(data);
+        this.queue = this.queue.concat(data);
         this._feedNext();
     }
 }
@@ -86,21 +94,32 @@ export class MSE {
         this._video = video;
         this._mediaSource = mediaSource;
         this.initialized = false;
+        this._bufferPromise = null;
+        this.buffer = null;
     }
 
     play() {
         this._video.play();
     }
 
-    setCodec(mimeCodec) {
-        const sourceBuffer = this._mediaSource.addSourceBuffer(mimeCodec);
-        sourceBuffer.mode = "segments";
-        this._buffer = new MSEBuffer(this._mediaSource, this._video, sourceBuffer);
+    onBuffer() {
+        if (!this._bufferPromise) {
+            this._bufferPromise = new Promise((resolve, reject) => {
+                this.setCodec = (mimeCodec) => {
+                    const sourceBuffer = this._mediaSource.addSourceBuffer(mimeCodec);
+                    sourceBuffer.mode = "segments";
+                    this.buffer = new MSEBuffer(this._mediaSource, this._video, sourceBuffer);
+                    resolve(this.buffer);
+                };
+            });
+        }
+
+        return this._bufferPromise;
     }
 
     feed(data) {
-        if (this._buffer) {
-            this._buffer.feed(data);
+        if (this.buffer) {
+            this.buffer.feed(data);
         }
     }
 }

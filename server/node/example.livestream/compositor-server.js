@@ -48,7 +48,7 @@ function setupChannel(streamSource) {
 
 class RtpFrameReader {
     constructor(rtpStream) {
-        this.frameBytesRemaining = 0;
+        this.frameBytesRemaining = -1;
         this.rtpFrame = null;
 
         //in case of partial header
@@ -70,7 +70,7 @@ class RtpFrameReader {
         while (chunk.bytesRemaining > 0) {
 
             //Check if we've only read the first byte of the header
-            if (this.busyReadingHeader) {
+            if (this.busyReadingHeader && chunk.bytesRemaining >= 1) {
                 //we've already read the first part, so OR  the new part with what we've already got.
                 this.frameBytesRemaining &= chunk.readUInt8(chunk.length - chunk.bytesRemaining);
                 chunk.bytesRemaining -= 1;
@@ -81,7 +81,7 @@ class RtpFrameReader {
 
             } else
             //We're not busy reading the header, and have not read any header at all in fact.
-            if (this.frameBytesRemaining === 0) {
+            if (this.frameBytesRemaining === -1) {
                 //Check if we can read at least 2 bytes to make sure we can read the entire header
                 if (chunk.bytesRemaining >= 2) {
                     this.frameBytesRemaining = chunk.readUInt16BE(chunk.length - chunk.bytesRemaining, true);
@@ -89,7 +89,7 @@ class RtpFrameReader {
 
                     //allocate new rtp buffer based on the size the header gave us.
                     this.rtpFrame = Buffer.alloc(this.frameBytesRemaining);
-                } else {
+                } else if (chunk.bytesRemaining >= 1) {
                     //we can only read the header partially
                     this.busyReadingHeader = true;
                     this.frameBytesRemaining = chunk.readUInt8(0);
@@ -98,7 +98,7 @@ class RtpFrameReader {
                 }
             }
 
-            if (chunk.bytesRemaining > 0) {
+            if (chunk.bytesRemaining > 0 && !this.busyReadingHeader && this.frameBytesRemaining !== -1) {
                 //read the rest of the rtp frame
 
                 //copy as much data as possible from the chunk into the rtp frame.
@@ -109,12 +109,14 @@ class RtpFrameReader {
             }
 
             if (this.frameBytesRemaining === 0) {
-                this.frameBytesRemaining = 0;
-                const rtpVersion = (this.rtpFrame.readUInt8(0) >>> 6);
-                if (rtpVersion !== 2) {
-                    console.warn("Malformed rtp packet. Expected version 2, got: " + rtpVersion)
+                if (this.rtpFrame.length !== 0) {
+                    const rtpVersion = (this.rtpFrame.readUInt8(0) >>> 6);
+                    if (rtpVersion !== 2) {
+                        console.warn("Malformed rtp packet. Expected version 2, got: " + rtpVersion)
+                    }
+                    this.onRtpFrame(this.rtpFrame);
                 }
-                this.onRtpFrame(this.rtpFrame);
+                this.frameBytesRemaining = -1;
             }
         }
     }
@@ -142,6 +144,9 @@ function pushFrames(streamSource, dataChannel) {
                 new RtpFrameReader(rtpStream).onRtpFrame = (rtpFrame) => {
                     dataChannel.send(rtpFrame);
                 };
+                rtpStream.on('end', () => {
+                    consoler.error('rtp stream closed\n');
+                });
             }
         });
         const rtpStreamProcess = child_process.spawn("gst-launch-1.0",
@@ -149,8 +154,8 @@ function pushFrames(streamSource, dataChannel) {
                 "clockoverlay", "!",
                 "videorate", "!", "video/x-raw,framerate=60/1", "!",
                 "videoconvert", "!", "video/x-raw,format=I420,width=1920,height=1080", "!",
-                //"x264enc", "key-int-max=1", "pass=pass1", "tune=zerolatency", "qp-max=20", "qp-min=0", "ip-factor=2", "speed-preset=veryfast", "intra-refresh=true", "!",
-                "vaapih264enc", "keyframe-period=1", "!",
+                //"x264enc", "key-int-max=0", "pass=pass1", "tune=zerolatency", "qp-max=20", "qp-min=0", "ip-factor=2", "speed-preset=veryfast", "!",
+                "vaapih264enc", "keyframe-period=180", "rate-control=cbr", "bitrate=9000", "!",
                 "video/x-h264,profile=constrained-baseline,framerate=60/1", "!",
                 "rtph264pay", "config-interval=-1", "!",
                 "rtpstreampay", "!",

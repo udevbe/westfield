@@ -132,7 +132,7 @@ export class H264Remuxer extends BaseRemuxer {
                 if (this.nextDts) {
                     let delta = dts - this.nextDts;
                     // if fragment are contiguous, or delta less than 600ms, ensure there is no overlap/hole between fragments
-                    if (/*contiguous ||*/ Math.abs(Math.round(BaseRemuxer.toMS(delta))) < 600) {
+                    if (/*contiguous ||*/ Math.abs(Math.round(BaseRemuxer.toMS(delta))) < 200) {
 
                         if (delta) {
                             // set DTS to next DTS
