@@ -83,17 +83,30 @@ function setupStreamChannel(receiveChannel,
                             mse) {
     const nalQueue = [];
 
+    let newestRtp = 0;
+
     const rtpPayloadParser = new RTPPayloadParser();
+
     receiveChannel.binaryType = "arraybuffer";
     receiveChannel.onmessage = function (event) {
         const rtpPacket = rtpFactory.build(new Uint8Array(event.data), sdpParser);
-        const nal = rtpPayloadParser.parse(rtpPacket);
 
-        if (nal) {
-            nalQueue.push(nal);
+        //TODO filter out packets that are x seconds older than the current time?
+
+        //filter out rtp packets that are older than 41ms compared to the most recent rtp packet.
+        const timestampDelta = newestRtp - rtpPacket.timestamp;
+        if (timestampDelta > (90 * 35)) {
+            return;
+        } else if (timestampDelta < 0) {
+            newestRtp = rtpPacket.timestamp;
         }
 
         if (mse.buffer === null || (mse.buffer.queue.length === 0)) {
+
+            const nal = rtpPayloadParser.parse(rtpPacket);
+            if (nal) {
+                nalQueue.push(nal);
+            }
             remuxer.flush(nalQueue);
         }
     };

@@ -154,10 +154,9 @@ function pushFrames(streamSource, dataChannel) {
                 "clockoverlay", "!",
                 "videorate", "!", "video/x-raw,framerate=60/1", "!",
                 "videoconvert", "!", "video/x-raw,format=I420,width=1920,height=1080", "!",
-                //"x264enc", "key-int-max=0", "pass=pass1", "tune=zerolatency", "qp-max=20", "qp-min=0", "ip-factor=2", "speed-preset=veryfast", "!",
-                "vaapih264enc", "keyframe-period=180", "rate-control=cbr", "bitrate=9000", "!",
+                "vaapih264enc", "keyframe-period=120", "rate-control=cbr", "bitrate=7000", "!",
                 "video/x-h264,profile=constrained-baseline,framerate=60/1", "!",
-                "rtph264pay", "config-interval=-1", "!",
+                "rtph264pay", "config-interval=-1", "mtu=5000", "!",
                 "rtpstreampay", "!",
                 "filesink", "location=" + fifoPath, "append=true", "buffer-mode=unbuffered"]);
         //immediately unlink the file, the resulting file descriptor won't be cleaned up until the child process is terminated.
