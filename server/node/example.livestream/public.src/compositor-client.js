@@ -84,6 +84,7 @@ function setupStreamChannel(receiveChannel,
     const nalQueue = [];
 
     let newestRtp = 0;
+    let newstRtpSequence = 0;
 
     const rtpPayloadParser = new RTPPayloadParser();
 
@@ -91,14 +92,18 @@ function setupStreamChannel(receiveChannel,
     receiveChannel.onmessage = function (event) {
         const rtpPacket = rtpFactory.build(new Uint8Array(event.data), sdpParser);
 
-        //TODO filter out packets that are x seconds older than the current time?
+        //TODO jitter buffer?
 
-        //filter out rtp packets that are older than 41ms compared to the most recent rtp packet.
-        const timestampDelta = newestRtp - rtpPacket.timestamp;
-        if (timestampDelta > (90 * 35)) {
+        //filter out packets that arrive out of order
+        if (rtpPacket.sequence < newstRtpSequence) {
+            console.log("Got rtp package out of order. dropping.");
             return;
-        } else if (timestampDelta < 0) {
-            newestRtp = rtpPacket.timestamp;
+        } else {
+            newstRtpSequence = rtpPacket.sequence;
+            //wrap
+            if (newstRtpSequence === 65535) {
+                newstRtpSequence = 0;
+            }
         }
 
         if (mse.buffer === null || (mse.buffer.queue.length === 0)) {
