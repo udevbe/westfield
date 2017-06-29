@@ -4,10 +4,10 @@ export class MSEBuffer {
         this._video = video;
         this.queue = [];
         this._sourceBuffer = sourceBuffer;
-        this._cleaningNeeded = false;
+        this._cleaningRange = [];
 
         this._sourceBuffer.onupdateend = () => {
-            if (this._cleaningNeeded) {
+            if (this._cleaningRange.length) {
                 this._cleanBuffer();
             } else {
                 this._feedNext();
@@ -28,27 +28,42 @@ export class MSEBuffer {
         }
 
         if (this._sourceBuffer.buffered.length) {
-            if ((this._sourceBuffer.buffered.end(0) - this._video.currentTime) > 0.2) {
-                //falling behind, jump forward to latest frame
-                this._video.currentTime = this._sourceBuffer.buffered.end(0);
+
+            let bufferEnd = 0;
+            let bufferStart = Infinity;
+
+            for (let i = 0; i < this._sourceBuffer.buffered.length; i++) {
+                //find the biggest buffer end
+                const bufferBlockEnd = this._sourceBuffer.buffered.end(i);
+                if (bufferBlockEnd > bufferEnd) {
+                    bufferEnd = bufferBlockEnd;
+                }
+
+                //find the smallest buffer start
+                const bufferBlockStart = this._sourceBuffer.buffered.start(i);
+                if (bufferBlockStart < bufferStart) {
+                    bufferStart = bufferBlockStart;
+                }
             }
 
-            if ((this._sourceBuffer.buffered.start(0) - this._video.currentTime) > 5) {
-                this._cleaningNeeded = true;
+
+            if ((bufferEnd - this._video.currentTime) > 0.2) {
+                //falling behind, jump forward to latest frame
+                this._video.currentTime = bufferEnd;
+            }
+
+            if ((this._video.currentTime - bufferStart) > 10) {
+                this._cleaningRange = [bufferStart, this._video.currentTime];
             }
         }
     }
 
     _cleanBuffer() {
-        const endTime = this._video.currentTime;
-        if (this._sourceBuffer.buffered.length < 1) {
+        if (!this._sourceBuffer.updating) {
+            this._sourceBuffer.remove(this._cleaningRange[0], this._cleaningRange[1] - 1);
+            this._cleaningRange = [];
+        } else {
             this._feedNext();
-            this._cleaningNeeded = false;
-        } else if (this._sourceBuffer.buffered.start(0) < endTime) {
-            if (!this._sourceBuffer.updating) {
-                this._sourceBuffer.remove(this._sourceBuffer.buffered.start(0), endTime);
-                this._cleaningNeeded = false;
-            }
         }
     }
 
