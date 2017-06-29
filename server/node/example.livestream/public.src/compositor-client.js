@@ -81,10 +81,11 @@ function setupStreamChannel(receiveChannel,
                             sdpParser,
                             remuxer,
                             mse) {
-    const nalQueue = [];
 
-    let newestRtp = 0;
-    let newstRtpSequence = 0;
+    let oldestRtp = 0;
+
+    const rtpQueue = [];
+    const nalQueue = [];
 
     const rtpPayloadParser = new RTPPayloadParser();
 
@@ -95,26 +96,38 @@ function setupStreamChannel(receiveChannel,
         //TODO jitter buffer?
 
         //filter out packets that arrive out of order
-        if (rtpPacket.sequence < newstRtpSequence) {
-            console.log("Got rtp package out of order. dropping.");
+        if (rtpPacket.timestamp < oldestRtp) {
+            console.log("Got rtp package too old. dropping.");
             return;
-        } else {
-            newstRtpSequence = rtpPacket.sequence;
-            //wrap
-            if (newstRtpSequence === 65535) {
-                newstRtpSequence = 0;
-            }
+        }
+
+        rtpQueue.push(rtpPacket);
+    };
+
+    setInterval(() => {
+        if (!rtpQueue.length) {
+            return;
         }
 
         if (mse.buffer === null || (mse.buffer.queue.length === 0)) {
 
-            const nal = rtpPayloadParser.parse(rtpPacket);
-            if (nal) {
-                nalQueue.push(nal);
+            rtpQueue.sort((a, b) => {
+                return a.sequence - b.sequence;
+            });
+
+            oldestRtp = rtpQueue[0].timestamp;
+
+            while (rtpQueue.length) {
+                const rtpPacket = rtpQueue.shift();
+                const nal = rtpPayloadParser.parse(rtpPacket);
+                if (nal) {
+                    nalQueue.push(nal);
+                }
             }
+
             remuxer.flush(nalQueue);
         }
-    };
+    }, 50);
 
     mse.onBuffer().then((buffer) => {
         remuxer.flush(nalQueue);
