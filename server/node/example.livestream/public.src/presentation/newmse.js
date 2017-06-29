@@ -47,7 +47,7 @@ export class MSEBuffer {
             }
 
 
-            if ((bufferEnd - this._video.currentTime) > 0.2) {
+            if ((bufferEnd - this._video.currentTime) > 0.5) {
                 //falling behind, jump forward to latest frame
                 this._video.currentTime = bufferEnd;
             }
