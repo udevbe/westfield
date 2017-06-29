@@ -122,7 +122,7 @@ export class MSE {
             this._bufferPromise = new Promise((resolve, reject) => {
                 this.setCodec = (mimeCodec) => {
                     const sourceBuffer = this._mediaSource.addSourceBuffer(mimeCodec);
-                    sourceBuffer.mode = "segments";
+                    sourceBuffer.mode = 'sequence';
                     this.buffer = new MSEBuffer(this._mediaSource, this._video, sourceBuffer);
                     resolve(this.buffer);
                 };
