@@ -21,10 +21,10 @@ export class Remuxer {
         this.initialized = true;
     }
 
-    _initMSE(mse) {
-        mse.setCodec(`video/mp4; codecs="${this.trackConverter.mp4track.codec}"`);
-        mse.feed(MP4.initSegment([this.trackConverter.mp4track], Infinity, this.trackConverter.timescale));
-        mse.play();
+    _initMSE() {
+        this.mse.setCodec(`video/mp4; codecs="${this.trackConverter.mp4track.codec}"`);
+        this.mse.feed(MP4.initSegment([this.trackConverter.mp4track], Infinity, this.trackConverter.timescale));
+        this.mse.play();
     }
 
     addVideo(video) {
@@ -54,7 +54,7 @@ export class Remuxer {
 
         if (this.initialized) {
             if (!this.mse.initialized) {
-                this._initMSE(this.mse);
+                this._initMSE();
                 this.mse.initialized = true;
             } else {
                 if (this.trackConverter.samples.length > 2) {
