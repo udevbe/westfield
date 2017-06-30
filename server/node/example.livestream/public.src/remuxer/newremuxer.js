@@ -57,12 +57,10 @@ export class Remuxer {
                 this._initMSE();
                 this.mse.initialized = true;
             } else {
-                if (this.trackConverter.samples.length > 2) {
-                    let pay = this.trackConverter.getPayload();
-                    if (pay && pay.byteLength) {
-                        this.mse.feed([MP4.moof(this.trackConverter.seq, this.trackConverter.firstDTS, this.trackConverter.mp4track), MP4.mdat(pay)]);
-                        this.trackConverter.flush();
-                    }
+                let pay = this.trackConverter.getPayload();
+                if (pay && pay.byteLength) {
+                    this.mse.feed([MP4.moof(this.trackConverter.seq, this.trackConverter.firstDTS, this.trackConverter.mp4track), MP4.mdat(pay)]);
+                    this.trackConverter.flush();
                 }
             }
         }

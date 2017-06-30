@@ -81,10 +81,6 @@ function setupStreamChannel(receiveChannel,
                             sdpParser,
                             remuxer,
                             mse) {
-
-    let oldestRtp = 0;
-
-    const rtpQueue = [];
     const nalQueue = [];
 
     const rtpPayloadParser = new RTPPayloadParser();
@@ -93,41 +89,17 @@ function setupStreamChannel(receiveChannel,
     receiveChannel.onmessage = function (event) {
         const rtpPacket = rtpFactory.build(new Uint8Array(event.data), sdpParser);
 
-        //TODO jitter buffer?
+        // //TODO jitter buffer?
 
-        //filter out packets that arrive out of order
-        if (rtpPacket.timestamp < oldestRtp) {
-            console.log("Got rtp package too old. dropping.");
-            return;
-        }
-
-        rtpQueue.push(rtpPacket);
-    };
-
-    setInterval(() => {
-        if (!rtpQueue.length) {
-            return;
+        const nal = rtpPayloadParser.parse(rtpPacket);
+        if (nal) {
+            nalQueue.push(nal);
         }
 
         if (mse.buffer === null || (mse.buffer.queue.length === 0)) {
-
-            rtpQueue.sort((a, b) => {
-                return a.sequence - b.sequence;
-            });
-
-            oldestRtp = rtpQueue[0].timestamp;
-
-            while (rtpQueue.length) {
-                const rtpPacket = rtpQueue.shift();
-                const nal = rtpPayloadParser.parse(rtpPacket);
-                if (nal) {
-                    nalQueue.push(nal);
-                }
-            }
-
             remuxer.flush(nalQueue);
         }
-    }, 50);
+    };
 
     mse.onBuffer().then((buffer) => {
         remuxer.flush(nalQueue);
