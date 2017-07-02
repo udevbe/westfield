@@ -89,7 +89,7 @@ export class H264Remuxer extends BaseRemuxer {
             const sample = this.samples.shift();
             if (sample === null) {
                 // discontinuity
-                break;
+                continue ;
             }
 
             let unit = sample.unit;
@@ -99,8 +99,8 @@ export class H264Remuxer extends BaseRemuxer {
 
             mp4Sample = {
                 size: unit.getSize(),
-                duration: this.lastDTS ? sample.dts - this.lastDTS : (16 * 90),
-                duration: this.lastDTS ? sample.dts - this.lastDTS : (16 * 90),
+                duration: this.lastDTS ? sample.dts - this.lastDTS : 1500,
+                duration: this.lastDTS ? sample.dts - this.lastDTS : 1500,
                 cts: 0,
                 flags: {
                     isLeading: 0,
