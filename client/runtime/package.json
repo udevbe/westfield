@@ -1,6 +1,6 @@
 {
   "name": "westfield-runtime-client",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Wayland HTML5 core client protocol",
   "main": "westfield-client-core.js",
   "scripts": {
