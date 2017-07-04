@@ -567,7 +567,7 @@ wfc.Connection = class {
         }
         else {
             const byteArray = new Uint8Array(wireMsg, wireMsg.readIndex, stringSize);
-            wireMsg.readIndex += (stringSize + (4 - (stringSize % 4)));
+            wireMsg.readIndex += ((stringSize + 3) & ~3);
             return String.fromCharCode.apply(null, byteArray);
         }
     }
@@ -585,7 +585,7 @@ wfc.Connection = class {
             return null;
         } else {
             const arg = wireMsg.slice(wireMsg.readIndex, wireMsg.readIndex + arraySize);
-            wireMsg.readIndex += (arraySize + (4 - (arraySize % 4)));
+            wireMsg.readIndex += ((arraySize + 3) & ~3);
             return arg;
         }
     }

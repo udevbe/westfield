@@ -837,7 +837,7 @@ describe("westfield-client-core", function () {
 
             const connection = new wf.Connection("dummyURL");
 
-            const wireMsg = new ArrayBuffer(16);//4+12
+            const wireMsg = new ArrayBuffer(16);//4+8
             wireMsg.readIndex = 0;
             const buf32 = new Uint32Array(wireMsg);
 
@@ -864,7 +864,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "a");
 
             //then
-            expect(wireMsg.readIndex).toBe(16);
+            expect(wireMsg.readIndex).toBe(12);
             const arr = new Uint32Array(args[0]);
             expect(arr[0]).toBe(argValue[0]);
             expect(arr[1]).toBe(argValue[1]);
@@ -879,7 +879,7 @@ describe("westfield-client-core", function () {
 
             const connection = new wf.Connection("dummyURL");
 
-            const wireMsg = new ArrayBuffer(16);//4+12
+            const wireMsg = new ArrayBuffer(12);//4+8
             wireMsg.readIndex = 0;
             const buf32 = new Uint32Array(wireMsg);
 
@@ -906,7 +906,7 @@ describe("westfield-client-core", function () {
             const args = connection._unmarshallArgs(wireMsg, "?a");
 
             //then
-            expect(wireMsg.readIndex).toBe(16);
+            expect(wireMsg.readIndex).toBe(12);
             const arr = new Uint32Array(args[0]);
             expect(arr[0]).toBe(argValue[0]);
             expect(arr[1]).toBe(argValue[1]);
