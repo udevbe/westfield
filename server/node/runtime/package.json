@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
   "devDependencies": {
+    "standard": "^10.0.2",
     "jasmine": "2.5.2",
     "jasmine-core": "2.5.2"
   }

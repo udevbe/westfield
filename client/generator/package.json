@@ -2,6 +2,9 @@
   "name": "westfield-scanner-client",
   "version": "0.0.3",
   "description": "Wayland HTML5 protocol generator for the browser",
+  "scripts": {
+    "test": "standard"
+  },
   "bin": "westfield-scanner-client.js",
   "dependencies": {
     "xml2js": "0.4.17",
@@ -25,5 +28,8 @@
   "bugs": {
     "url": "https://github.com/udevbe/westfield/issues"
   },
-  "homepage": "https://github.com/udevbe/westfield#readme"
+  "homepage": "https://github.com/udevbe/westfield#readme",
+  "devDependencies": {
+    "standard": "^10.0.2"
+  }
 }

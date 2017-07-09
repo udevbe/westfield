@@ -8,7 +8,7 @@
     "prepare:client:webpack": "webpack --config webpack.config.js",
     "prepare": "npm run prepare:server:generate && npm run prepare:client:generate && npm run prepare:client:webpack",
     "start": "node compositor-server.js",
-    "test": "node ./node_modules/jasmine/bin/jasmine.js"
+    "test": "standard && node ./node_modules/jasmine/bin/jasmine.js"
   },
   "main": "compositor-server.js",
   "repository": {
@@ -37,6 +37,7 @@
     "westfield-runtime-client": "file:../../../client/runtime"
   },
   "devDependencies": {
+    "standard": "^10.0.2",
     "webpack": "2.5.1",
     "westfield-scanner-server": "file:../generator/",
     "westfield-scanner-client": "file:../../../client/generator"

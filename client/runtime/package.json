@@ -4,7 +4,7 @@
   "description": "Wayland HTML5 core client protocol",
   "main": "westfield-client-core.js",
   "scripts": {
-    "test": "node ./node_modules/jasmine/bin/jasmine.js"
+    "test": "standard && node ./node_modules/jasmine/bin/jasmine.js"
   },
   "repository": {
     "type": "git",
@@ -27,6 +27,7 @@
   "homepage": "https://github.com/udevbe/westfield#readme",
   "devDependencies": {
     "jasmine": "2.5.2",
-    "jasmine-core": "2.5.2"
+    "jasmine-core": "2.5.2",
+    "standard": "^10.0.2"
   }
 }

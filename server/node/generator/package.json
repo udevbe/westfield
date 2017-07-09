@@ -2,6 +2,9 @@
   "name": "westfield-scanner-server",
   "version": "0.0.3",
   "description": "Wayland HTML5 protocol generator for Node.js",
+  "scripts": {
+    "test": "standard"
+  },
   "bin": "westfield-scanner-server.js",
   "dependencies": {
     "xml2js": "0.4.17",
@@ -25,5 +28,8 @@
   "bugs": {
     "url": "https://github.com/udevbe/westfield/issues"
   },
-  "homepage": "https://github.com/udevbe/westfield#readme"
+  "homepage": "https://github.com/udevbe/westfield#readme",
+  "devDependencies": {
+    "standard": "^10.0.2"
+  }
 }
