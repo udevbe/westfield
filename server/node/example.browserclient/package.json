@@ -7,10 +7,10 @@
     "prepare:client:generate": "westfield-scanner-client example.xml -o public.src/westfield-client-example.js",
     "prepare:client:webpack": "webpack --config webpack.config.js",
     "prepare": "npm run prepare:server:generate && npm run prepare:client:generate && npm run prepare:client:webpack",
-    "start": "node compositor-server.js",
+    "start": "node node.js",
     "test": "standard && node ./node_modules/jasmine/bin/jasmine.js"
   },
-  "main": "compositor-server.js",
+  "main": "node.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/udevbe/westfield.git"
