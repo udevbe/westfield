@@ -148,32 +148,34 @@ wfg.ProtocolParser = class {
     const evName = itfEvent.$.name
 
     // function docs
-    const description = itfEvent.description
-    description.forEach((val) => {
-      out.write('\n\t\t\t/**\n')
-      if (val.hasOwnProperty('_')) {
-        val._.split('\n').forEach((line) => {
-          out.write('\t\t\t *' + line + '\n')
-        })
-      }
+    if (itfEvent.hasOwnProperty('description')) {
+      const description = itfEvent.description
+      description.forEach((val) => {
+        out.write('\n\t\t\t/**\n')
+        if (val.hasOwnProperty('_')) {
+          val._.split('\n').forEach((line) => {
+            out.write('\t\t\t *' + line + '\n')
+          })
+        }
 
-      if (itfEvent.hasOwnProperty('arg')) {
-        const evArgs = itfEvent.arg
-        out.write('\t\t\t *\n')
-        evArgs.forEach((arg) => {
-          const argDescription = arg.$.summary
-          const argName = arg.$.name
-          const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
-          const argType = arg.$.type
+        if (itfEvent.hasOwnProperty('arg')) {
+          const evArgs = itfEvent.arg
+          out.write('\t\t\t *\n')
+          evArgs.forEach((arg) => {
+            const argDescription = arg.$.summary
+            const argName = arg.$.name
+            const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
+            const argType = arg.$.type
 
-          out.write(util.format('\t\t\t * @param {%s} %s %s \n', this[argType](argName, optional).jsType, argName, argDescription))
-        })
+            out.write(util.format('\t\t\t * @param {%s} %s %s \n', this[argType](argName, optional).jsType, argName, argDescription))
+          })
+          out.write('\t\t\t *\n')
+        }
+        out.write(util.format('\t\t\t * @since %d\n', sinceVersion))
         out.write('\t\t\t *\n')
-      }
-      out.write(util.format('\t\t\t * @since %d\n', sinceVersion))
-      out.write('\t\t\t *\n')
-      out.write('\t\t\t */\n')
-    })
+        out.write('\t\t\t */\n')
+      })
+    }
 
     // function
     out.write(util.format('\t\t\t%s(', evName))
@@ -190,42 +192,44 @@ wfg.ProtocolParser = class {
     const reqName = itfRequest.$.name
 
     // function docs
-    const description = itfRequest.description
-    description.forEach((val) => {
-      out.write('\n\t/**\n')
-      if (val.hasOwnProperty('_')) {
-        val._.split('\n').forEach((line) => {
-          out.write('\t *' + line + '\n')
-        })
-      }
+    if (itfRequest.hasOwnProperty('description')) {
+      const description = itfRequest.description
+      description.forEach((val) => {
+        out.write('\n\t/**\n')
+        if (val.hasOwnProperty('_')) {
+          val._.split('\n').forEach((line) => {
+            out.write('\t *' + line + '\n')
+          })
+        }
 
-      if (itfRequest.hasOwnProperty('arg')) {
-        const reqArgs = itfRequest.arg
-        out.write('\t *\n')
-        reqArgs.forEach((arg) => {
-          const argDescription = arg.$.summary
-          const argName = arg.$.name
-          const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
-          const argType = arg.$.type
-          if (argType !== 'new_id') {
-            out.write(util.format('\t * @param {%s} %s %s \n', this[argType](argName, optional).jsType, argName, argDescription))
-          }
-        })
+        if (itfRequest.hasOwnProperty('arg')) {
+          const reqArgs = itfRequest.arg
+          out.write('\t *\n')
+          reqArgs.forEach((arg) => {
+            const argDescription = arg.$.summary
+            const argName = arg.$.name
+            const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
+            const argType = arg.$.type
+            if (argType !== 'new_id') {
+              out.write(util.format('\t * @param {%s} %s %s \n', this[argType](argName, optional).jsType, argName, argDescription))
+            }
+          })
 
-        reqArgs.forEach((arg) => {
-          const argDescription = arg.$.summary
-          const argItf = arg.$['interface']
-          const argType = arg.$.type
-          if (argType === 'new_id') {
-            out.write(util.format('\t * @return {%s} %s \n', argItf, argDescription))
-          }
-        })
+          reqArgs.forEach((arg) => {
+            const argDescription = arg.$.summary
+            const argItf = arg.$['interface']
+            const argType = arg.$.type
+            if (argType === 'new_id') {
+              out.write(util.format('\t * @return {%s} %s \n', argItf, argDescription))
+            }
+          })
+          out.write('\t *\n')
+        }
+        out.write(util.format('\t * @since %d\n', sinceVersion))
         out.write('\t *\n')
-      }
-      out.write(util.format('\t * @since %d\n', sinceVersion))
-      out.write('\t *\n')
-      out.write('\t */\n')
-    })
+        out.write('\t */\n')
+      })
+    }
 
     // function
     out.write(util.format('\t%s(', reqName))
