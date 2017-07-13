@@ -484,7 +484,7 @@ wfc.Registry = class extends wfc.WObject {
  * @param {String} socketUrl
  * @constructor
  */
-wfc.Connection = class {
+wfc.Connection = class extends wfc.WObject {
   /**
    *
    * @param {DataView} wireMsg
@@ -663,7 +663,7 @@ wfc.Connection = class {
     Object.freeze(wObject)
 
     // determine required wire message length
-    let size = 4 + 2 + 2  // id+size+opcode
+    let size = 4 + 2 + 2 // id+size+opcode
     argsArray.forEach(function (arg) {
       if (arg.type === 'n') {
         arg.value = wObject
@@ -675,7 +675,7 @@ wfc.Connection = class {
     this.__marshallMsg(id, opcode, size, argsArray)
 
     return wObject
-  };
+  }
 
   /**
    *
@@ -692,7 +692,7 @@ wfc.Connection = class {
     })
 
     this.__marshallMsg(id, opcode, size, argsArray)
-  };
+  }
 
   /**
    * Close the connection to the remote host. All objects will be deleted before the connection is closed.
@@ -702,13 +702,13 @@ wfc.Connection = class {
       object.delete()
     })
     this.onClose()
-  };
+  }
 
   /**
    * Callback when this connection is closed. This callback can be used to close the underlying websocket connection.
    */
   onClose () {
-  };
+  }
 
   /**
    * Callback when this connection wishes to send data to the other end. This callback can be used to send the given
@@ -716,7 +716,7 @@ wfc.Connection = class {
    * @param {ArrayBuffer}wireMsg
    */
   onSend (wireMsg) {
-  };
+  }
 
   /**
    *
@@ -731,9 +731,21 @@ wfc.Connection = class {
     object._id = this.nextId
     this._objects.set(object._id, object)
     this.nextId++
-  };
+  }
+
+  createRegistry () {
+    //createRegistry -> opcode 1
+    return this.connection._marshallConstructor(this._id, 1, 'Registry', [wfc._newObject()])
+  }
 
   constructor () {
+    // WObject expects a connection object as super arg. We can't do that here so we set it immediately afterwards.
+    // This is mostly to make our connection object be in line of a general WObject layout as the connection object
+    // is a special case as it's the core root object.
+    super(null, {
+      name: 'Connection'
+    })
+    this.connection = this
     /**
      * Pool of objects that live on this connection.
      * Key: Number, Value: a subtype of wfc._Object with wfc._Object._id === Key
@@ -742,9 +754,8 @@ wfc.Connection = class {
      * @private
      */
     this._objects = new Map()
-    this.registry = new wfc.Registry(this)
     this.nextId = 1
-    this._registerObject(this.registry)
+    this._registerObject(this)
   }
 }
 

@@ -507,11 +507,34 @@ wfs.Registry = class {
    * @param {Client} client
    * @private
    */
-  _createResource (client) {
-    const registryResource = new wfs.RegistryResource(client, 1, 1)
+  _createResource (client, id) {
+    const registryResource = new wfs.RegistryResource(client, id, 1)
     registryResource.implementation = this
     this._registryResources.push(registryResource)
     return registryResource
+  }
+}
+
+/**
+ * @type {ClientResource}
+ * @property {object} implementation
+ * @property {create_registry} implementation.create_registry
+ */
+wfs.ClientResource = class extends wfs.Resource {
+  constructor (client, id, version) {
+    super(client, id, version, {
+      create_registry (resource, id) {}
+    })
+  }
+
+  /**
+   * opcode 1 -> createRegistry
+   *
+   * @param {ArrayBuffer} message
+   */
+  [1] (message) {
+    const args = this.client._unmarshallArgs(message, 'n')
+    this.implementation.create_registry.call(this.implementation, this, args[0])
   }
 }
 
@@ -683,10 +706,13 @@ wfs.Client = class {
     }
   }
 
-  open () {
-    // Connection established with client.
+  /**
+   *
+   * @private
+   */
+  _createRegistry (id) {
     // Create a new registry resource for this client and publish any pending globals.
-    this._server.registry._publishGlobals(this._server.registry._createResource(this))
+    this._server.registry._publishGlobals(this._server.registry._createResource(this, id))
   }
 
   /**
@@ -757,6 +783,9 @@ wfs.Client = class {
   constructor (server) {
     this._objects = new Map()
     this._server = server
+
+    const clientResource = new wfs.ClientResource(this, 1, 1)
+    clientResource.implementation.createRegistry = this._createRegistry
   }
 }
 
