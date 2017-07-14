@@ -73,7 +73,4 @@ ws.onopen = (event) => {
   ws.onclose = function () {
     client.close()
   }
-
-  // Tell the client object we ready to handle protocol communication.
-  client.open()
 }

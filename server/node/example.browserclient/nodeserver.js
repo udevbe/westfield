@@ -88,9 +88,6 @@ wss.on('connection', function connection (ws) {
   ws.onclose = function () {
     client.close()
   }
-
-  // Tell the client object we ready to handle protocol communication.
-  client.open()
 })
 
 // Listen for incoming http requests on port 8080.

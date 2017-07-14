@@ -734,7 +734,7 @@ wfc.Connection = class extends wfc.WObject {
   }
 
   createRegistry () {
-    //createRegistry -> opcode 1
+    // createRegistry -> opcode 1
     return this.connection._marshallConstructor(this._id, 1, 'Registry', [wfc._newObject()])
   }
 

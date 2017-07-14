@@ -505,6 +505,7 @@ wfs.Registry = class {
   /**
    *
    * @param {Client} client
+   * @param {Number} id
    * @private
    */
   _createResource (client, id) {
@@ -518,7 +519,7 @@ wfs.Registry = class {
 /**
  * @type {ClientResource}
  * @property {object} implementation
- * @property {create_registry} implementation.create_registry
+ * @property {function} implementation.create_registry
  */
 wfs.ClientResource = class extends wfs.Resource {
   constructor (client, id, version) {
@@ -708,15 +709,6 @@ wfs.Client = class {
 
   /**
    *
-   * @private
-   */
-  _createRegistry (id) {
-    // Create a new registry resource for this client and publish any pending globals.
-    this._server.registry._publishGlobals(this._server.registry._createResource(this, id))
-  }
-
-  /**
-   *
    * @param {wfs.Resource} resource
    * @private
    */
@@ -785,7 +777,9 @@ wfs.Client = class {
     this._server = server
 
     const clientResource = new wfs.ClientResource(this, 1, 1)
-    clientResource.implementation.createRegistry = this._createRegistry
+    clientResource.implementation.create_registry = (resource, id) => {
+      this._server.registry._publishGlobals(this._server.registry._createResource(this, id))
+    }
   }
 }
 

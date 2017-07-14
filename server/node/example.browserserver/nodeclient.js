@@ -34,12 +34,13 @@ wss.on('connection', function connection (ws) {
     connection.unmarshall(arrayBuffer)
   }
 
-  // register a listener to will be notified if a new global appears
-  connection.registry.listener.global = (name, interface_, version) => {
+  // create registry and be notified if a new global appears
+  const registry = connection.createRegistry()
+  registry.listener.global = (name, interface_, version) => {
     // check if we support the global
     if (interface_ === 'example_global') {
       // create a new object that will be bound to the global
-      const exampleGlobal = connection.registry.bind(name, interface_, version)
+      const exampleGlobal = registry.bind(name, interface_, version)
 
       // create a new clock object
       const exampleClock = exampleGlobal.create_example_clock()
