@@ -27,17 +27,14 @@ Provides server side core api and underlying protocol marshalling, required at r
 ## Client Usage
 Westfield accepts xml files in the Wayland protocol format. All arguments are supported, expect for file descriptors.
 
-`client/generator`
-```
-$ npm install
-$ node generator/westfield-scanner-client.js -- --help
-```
-or install it globally so you can use it in your build. (Make sure your global node path is added to your PATH env.)
-```angular2html
-$ npm install -g
-$ westfield-scanner-client --help
+***npm***
+
+Use it directly in the `scripts` section of your `package.json`.
+```javascript
+"prepare:client:generate": "westfield-scanner-client example.xml -o public.src/westfield-client-example.js",
 ```
 
+Usage
 ```
  Wayland HTML5 protocol generator for the browser
 
@@ -56,15 +53,11 @@ $ westfield-scanner-client --help
 
 ```
 
-We also need to build the runtime library as it will be needed by the generated protocol file.
+We also need the runtime library as it will be needed by the generated protocol file.
 
-`client/runtime`
+***npm***
 ```
-$ npm install
-```
-or install it globally
-```
-$ npm install -g
+$ npm install westfield-runtimer-client --save
 ```
 
 ### Example
