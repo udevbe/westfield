@@ -1,39 +1,24 @@
 # Westfield
 
-A HTML5 Wayland protocol generator.
+A Javascript compatible Wayland protocol generator.
 
-## Client
+## client-scanner [![NPM](https://nodei.co/npm/westfield-scanner-client.png?compact=true)](https://npmjs.org/package/westfield-scanner-client)
 
-**Scanner**
-
-Generates client side compatible javascript at build time, using a Wayland protocol xml file. The generated code is usable
+Generates client side protocol stubs at build time, using a Wayland protocol xml file. The generated code is usable
 in both browser and Node.js.
 
-[![NPM](https://nodei.co/npm/westfield-scanner-client.png?compact=true)](https://npmjs.org/package/westfield-scanner-client)
-
-**Runtime**
+## client-runtime [![NPM](https://nodei.co/npm/westfield-runtime-client.png?compact=true)](https://npmjs.org/package/westfield-runtime-client)
 
 Provides client side core api and underlying protocol marshalling, required at runtime.
 
-[![NPM](https://nodei.co/npm/westfield-runtime-client.png?compact=true)](https://npmjs.org/package/westfield-runtime-client)
+## server-scanner [![NPM](https://nodei.co/npm/westfield-scanner-server.png?compact=true)](https://npmjs.org/package/westfield-scanner-server) 
 
-
-## Server
-
-**Scanner**
-
-Generates server side side compatible javascript at build time, using a Wayland protocol xml file. The generated code is usable
+Generates server side protocol stubs at build time, using a Wayland protocol xml file. The generated code is usable
 in both browser and Node.js
 
-[![NPM](https://nodei.co/npm/westfield-scanner-server.png?compact=true)](https://npmjs.org/package/westfield-scanner-server) 
-
-**Runtime**
+## server-runtime [![NPM](https://nodei.co/npm/westfield-runtime-server.png?compact=true)](https://npmjs.org/package/westfield-runtime-server)
 
 Provides server side core api and underlying protocol marshalling, required at runtime.
-
-[![NPM](https://nodei.co/npm/westfield-runtime-server.png?compact=true)](https://npmjs.org/package/westfield-runtime-server)
-
-
 
 ## Client Usage
 Westfield accepts xml files in the Wayland protocol format. All arguments are supported, expect for file descriptors.
