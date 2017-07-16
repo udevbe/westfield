@@ -2,24 +2,24 @@
 
 A Javascript compatible Wayland protocol generator.
 
-## client-scanner [![NPM](https://nodei.co/npm/westfield-scanner-client.png?compact=true)](https://npmjs.org/package/westfield-scanner-client)
+## client-scanner [![NPM](https://nodei.co/npm/westfield-scanner-client.png?mini=true)](https://npmjs.org/package/westfield-scanner-client)
 `npm install westfield-scanner-client --save-dev`
 
 Generates client side protocol stubs at build time, using a Wayland protocol xml file. The generated code is usable
 in both browser and Node.js.
 
-## client-runtime [![NPM](https://nodei.co/npm/westfield-runtime-client.png?compact=true)](https://npmjs.org/package/westfield-runtime-client)
+## client-runtime [![NPM](https://nodei.co/npm/westfield-runtime-client.png?mini=true)](https://npmjs.org/package/westfield-runtime-client)
 `npm install westfield-runtimer-client --save`
 
 Provides client side core api and underlying protocol marshalling, required at runtime.
 
-## server-scanner [![NPM](https://nodei.co/npm/westfield-scanner-server.png?compact=true)](https://npmjs.org/package/westfield-scanner-server) 
+## server-scanner [![NPM](https://nodei.co/npm/westfield-scanner-server.png?mini=true)](https://npmjs.org/package/westfield-scanner-server) 
 `npm install westfield-scanner-server --save-dev`
 
 Generates server side protocol stubs at build time, using a Wayland protocol xml file. The generated code is usable
 in both browser and Node.js
 
-## server-runtime [![NPM](https://nodei.co/npm/westfield-runtime-server.png?compact=true)](https://npmjs.org/package/westfield-runtime-server)
+## server-runtime [![NPM](https://nodei.co/npm/westfield-runtime-server.png?mini=true)](https://npmjs.org/package/westfield-runtime-server)
 `npm install westfield-runtimer-server --save`
 
 Provides server side core api and underlying protocol marshalling, required at runtime.
