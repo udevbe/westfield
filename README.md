@@ -3,15 +3,37 @@
 A HTML5 Wayland protocol generator.
 
 ## Client
-[![NPM](https://nodei.co/npm/westfield-scanner-client.png)](https://npmjs.org/package/westfield-scanner-client) [![NPM](https://nodei.co/npm/westfield-runtime-client.png)](https://npmjs.org/package/westfield-runtime-client)
 
-Generate client side HTML5 compatible javascript using a Wayland protocol xml file.
+**Scanner**
+
+Generates client side compatible javascript at build time, using a Wayland protocol xml file. The generated code is usable
+in both browser and Node.js.
+
+[![NPM](https://nodei.co/npm/westfield-scanner-client.png?compact=true)](https://npmjs.org/package/westfield-scanner-client)
+
+**Runtime**
+
+Provides client side core api and underlying protocol marshalling, required at runtime.
+
+[![NPM](https://nodei.co/npm/westfield-runtime-client.png?compact=true)](https://npmjs.org/package/westfield-runtime-client)
+
 
 ## Server
-[![NPM](https://nodei.co/npm/westfield-scanner-server.png)](https://npmjs.org/package/westfield-scanner-server) [![NPM](https://nodei.co/npm/westfield-runtime-server.png)](https://npmjs.org/package/westfield-runtime-server)
 
-Server side generation is supported for:
- - Node.js
+**Scanner**
+
+Generates server side side compatible javascript at build time, using a Wayland protocol xml file. The generated code is usable
+in both browser and Node.js
+
+[![NPM](https://nodei.co/npm/westfield-scanner-server.png?compact=true)](https://npmjs.org/package/westfield-scanner-server) 
+
+**Runtime**
+
+Provides server side core api and underlying protocol marshalling, required at runtime.
+
+[![NPM](https://nodei.co/npm/westfield-runtime-server.png?compact=true)](https://npmjs.org/package/westfield-runtime-server)
+
+
 
 ## Client Usage
 Westfield accepts xml files in the Wayland protocol format. All arguments are supported, expect for file descriptors.
