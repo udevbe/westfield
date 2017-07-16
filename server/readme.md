@@ -5,7 +5,6 @@ Server side implementations that are to be used in conjunction
 with the client side library.
 
 Currently implementations for the following languages exist:
- - Java
  - NodeJS
  
 TODO: C

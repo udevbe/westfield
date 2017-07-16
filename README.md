@@ -1,13 +1,17 @@
 # Westfield
+
 A HTML5 Wayland protocol generator.
 
 ## Client
+[![NPM](https://nodei.co/npm/westfield-scanner-client.png)](https://npmjs.org/package/westfield-scanner-client) [![NPM](https://nodei.co/npm/westfield-runtime-client.png)](https://npmjs.org/package/westfield-runtime-client)
+
 Generate client side HTML5 compatible javascript using a Wayland protocol xml file.
 
 ## Server
+[![NPM](https://nodei.co/npm/westfield-scanner-server.png)](https://npmjs.org/package/westfield-scanner-server) [![NPM](https://nodei.co/npm/westfield-runtime-server.png)](https://npmjs.org/package/westfield-runtime-server)
+
 Server side generation is supported for:
  - Node.js
- - Java
 
 ## Client Usage
 Westfield accepts xml files in the Wayland protocol format. All arguments are supported, expect for file descriptors.
@@ -170,49 +174,49 @@ wfc.example_clock = class example_clock extends wfc.WObject {
 module.exports = wfc;
 ```
 
-and subsequently used in `compositor-client.js`
+and subsequently used in `browser.js`
 ```javascript
-"use strict";
-const wfc = require("./westfield-client-example.js");
+'use strict'
+const wfc = require('./westfield-client-example.js')
 
-//connect to the server
-const connection = new wfc.Connection("ws://127.0.0.1:8080/westfield");
+const ws = new window.WebSocket('ws://127.0.0.1:8080/westfield')// create new websocket connection
+ws.binaryType = 'arraybuffer'// set socket type to array buffer, required for wfc connection to work.
 
-//register a listener to will be notified if a new global appears
-connection.registry.listener.global = (name, interface_, version) => {
+const connection = new wfc.Connection()// create connection
+connection.onSend = (data) => {
+  ws.send(data)
+}// wire connection send to websocket
+ws.onmessage = (event) => {
+  connection.unmarshall(event.data)
+}// wire websocket message to connection unmarshall
 
-    //check if we support the global
-    if (interface_ === "example_global") {
-    
-        //create a new object that will be bound to the global
-        const exampleGlobal = connection.registry.bind(name, interface_, version);
-        
-        //create a new clock object
-        const exampleClock = exampleGlobal.create_example_clock();
-        
-        //listen for time updates
-        exampleClock.listener.time_update = (time) => {
-        
-            //show the time
-            document.getElementById("the_time").innerHTML = time.toString();
-        };
+ws.onopen = (event) => {
+  const registry = connection.createRegistry() // create a registry that will notify us of any current and new globals
+  registry.listener.global = (name, interface_, version) => { // register a listener to will be notified if a new global appears
+    if (interface_ === 'example_global') { // check if we support the global
+      const exampleGlobal = registry.bind(name, interface_, version)// create a new object that will be bound to the global
+      const exampleClock = exampleGlobal.create_example_clock()// create a new clock object
+      exampleClock.listener.time_update = (time) => { // listen for time updates
+        document.getElementById('the_time').innerHTML = time.toString()// show the time
+      }
     }
-};
+  }
+}
 ```
 
 To include the generated file in your build, you will need a CommonJS module aware build system like webpack.
 
 Example webpack.config.js
 ```javascript
-const path = require('path');
+const path = require('path')
 
 module.exports = {
-    entry: './public.src/compositor-client.js',
-    output: {
-        path: path.resolve(__dirname, 'public'),
-        filename: 'compositor-client.bundle.js'
-    }
-};
+  entry: './public.src/browser.js',
+  output: {
+    path: path.resolve(__dirname, 'public'),
+    filename: 'browser.bundle.js'
+  }
+}
 ```
 
 Which can then be included in your `index.html`.
@@ -222,7 +226,7 @@ Which can then be included in your `index.html`.
 <head>
     <meta charset="UTF-8">
     <title>Westfield Example</title>
-    <script src="compositor-client.bundle.js"></script>
+    <script src="browser.bundle.js"></script>
 </head>
 <body>
 <h1 id="the_time"></h1>
@@ -232,6 +236,186 @@ Which can then be included in your `index.html`.
 
 # Server usage
 
-Check out the Java and Node.js example projects in the `server` directory. They implement the server side part of the client example mentioned above.
+You can implement the server side in Node.js. 
+
+Continuing from client example, the generate protocol file `westfield-server-example.s` will look like this:
+```javascript
+/*
+ *
+ *        Example HTML5 Protocol
+ *        Copyright (C) 2017 Erik De Rijcke
+ *
+ *        This program is free software: you can redistribute it and/or modify
+ *        it under the terms of the GNU Affero General Public License as
+ *        published by the Free Software Foundation, either version 3 of the
+ *        License, or (at your option) any later version.
+ *
+ *        This program is distributed in the hope that it will be useful,
+ *        but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *        GNU Affero General Public License for more details.
+ *
+ *        You should have received a copy of the GNU Affero General Public License
+ *        along with this program. If not, see >http://www.gnu.org/licenses/<.
+ *    
+ */
+const wfs = require('westfield-runtime-server');
+/**
+ */
+wfs.example_global = class example_global extends wfs.Resource {
+
+	constructor(client, id, version) {
+		super(client, id, version, {
+			name: "example_global",
+			version: 1,
+
+			/**
+			 *
+			 * @param {example_global} resource 
+			 * @param {*} id A new example clock. 
+			 *
+			 * @since 1
+			 *
+			 */
+			create_example_clock(resource, id) {},
+		});
+	}
+
+	[1](message){
+		const args = this.client._unmarshallArgs(message,"n");
+		this.implementation.create_example_clock.call(this.implementation, this, args[0]);
+	}
+
+};
+
+/**
+ */
+wfs.example_clock = class example_clock extends wfs.Resource {
+
+	/**
+	 *
+	 * @param {Number} the_time The updated time. 
+	 *
+	 * @since 1
+	 *
+	 */
+	time_update(the_time) {
+		this.client._marshall(this.id, 1, [wfs._uint(the_time)]);
+	}
+
+	constructor(client, id, version) {
+		super(client, id, version, {
+			name: "example_clock",
+			version: 1,
+		});
+	}
+
+};
+module.exports = wfs;
+```
+
+
+Which we can implement server side in `nodeserver.js`:
+```javascript
+#!/usr/bin/env node
+'use strict'
+
+const wfs = require('./westfield-server-example.js')
+const WebSocket = require('ws')
+const express = require('express')
+const http = require('http')
+
+// Create a new global singleton clock-factory implementation.
+const exampleGlobal = new wfs.Global('example_global', 1)
+exampleGlobal.bindClient = function (client, id, version) {
+  // Create a new example-global resource when a client binds to the global.
+  const resource = new wfs.example_global(client, id, version)
+
+  // Assign implemented factory method.
+  resource.implementation.create_example_clock = createExampleClock
+}
+
+// Implementation of the example-clock factory method that we assigned earlier.
+function createExampleClock (resource, id) {
+  // Create a new example clock resource.
+  const clockResource = new wfs.example_clock(resource.client, id, 1)
+
+  // Send time update events to the client.
+  setInterval(function () {
+    clockResource.time_update(new Date().getTime())
+  }, 1)
+}
+
+// Create westfield server. Required to expose global singleton protocol objects to clients.
+const wfsServer = new wfs.Server()
+
+// Register the global so clients can find it when they connect.
+wfsServer.registry.register(exampleGlobal)
+
+// setup connection logic (http+websocket)
+const app = express()
+app.use(express.static('public'))
+
+const server = http.createServer()
+server.on('request', app)
+const wss = new WebSocket.Server({
+  server: server,
+  path: '/westfield'
+})
+
+// listen for new websocket connections.
+wss.on('connection', function connection (ws) {
+  // Make sure we detected disconnects asap.
+  ws._socket.setKeepAlive(true)
+
+  // A new connection was established. Create a new westfield client object to represent this connection.
+  const client = wfsServer.createClient()
+
+  // Wire the send callback of this client object to our websocket.
+  client.onSend = function (wireMsg) {
+    if (ws.readyState === WebSocket.CLOSING || ws.readyState === WebSocket.CLOSED) {
+      // Fail silently as we will soon receive the close event which will trigger the cleanup.
+      return
+    }
+
+    try {
+      ws.send(wireMsg, function (error) {
+        if (error !== undefined) {
+          console.error(error)
+          ws.close()
+        }
+      })
+    } catch (error) {
+      console.error(error)
+      ws.close()
+    }
+  }
+
+  // Wire data receiving from the websocket to the client object.
+  ws.onmessage = function incoming (message) {
+    try {
+      // The client object expects an ArrayBuffer as it's argument.
+      // Slice and get the ArrayBuffer of the Node Buffer with the provided offset, else we take too much data into account.
+      client.message(message.data.buffer.slice(message.data.offset, message.data.length + message.data.offset))
+    } catch (error) {
+      console.error(error)
+      ws.close()
+    }
+  }
+
+  // Wire closing of the websocket to our client object.
+  ws.onclose = function () {
+    client.close()
+  }
+})
+
+// Listen for incoming http requests on port 8080.
+server.listen(8080)
+```
+
+# Further examples
+Check out the Node.js example projects in the `server` directory. They implement the example mentioned above as well
+as the reverse case where the browser acts as a 'server'.
+
 They also provide a good starting point to setup server and client side protocol generation in your build.
 
