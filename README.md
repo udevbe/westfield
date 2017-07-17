@@ -5,7 +5,7 @@ The generated code is compatible for both Node.js and browser.
 
 While the Wayland protocol has the notion of client and
 server, Westfield makes no assumptions whether the browser is the client or the server, as such a browser can 
-functin as a Wayland server.
+function as a Wayland compositor (server).
 
 ## client-scanner
 `npm install westfield-scanner-client --save-dev`
@@ -33,8 +33,10 @@ Provides server side core api and underlying protocol marshalling required at ru
 Westfield accepts xml files in the Wayland protocol format. All arguments are supported, expect for file descriptors.
 
 ***npm***
-
-Use it directly in the `scripts` section of your `package.json`.
+```
+$ npm install westfield-scanner-client --save-dev
+```
+and use it directly in the `scripts` section of your `package.json`.
 ```json
 "prepare:client:generate" : "westfield-scanner-client example.xml -o public.src/westfield-client-example.js"
 ```
