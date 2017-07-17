@@ -1,6 +1,11 @@
 # Westfield
 
-A Javascript compatible Wayland protocol generator.
+A Javascript compatible Wayland protocol generator. Generates javascript RPC stubs based on a wayland xml.
+The generated code is compatible for both Node.js and browser. 
+
+While the Wayland protocol has the notion of client and
+server, Westfield makes no assumptions whether the browser is the client or the server, as such a browser can 
+functin as a Wayland server.
 
 ## client-scanner
 `npm install westfield-scanner-client --save-dev`
@@ -11,7 +16,7 @@ in both browser and Node.js.
 ## client-runtime
 `npm install westfield-runtimer-client --save`
 
-Provides client side core api and underlying protocol marshalling, required at runtime.
+Provides client side core api and underlying protocol marshalling required at runtime.
 
 ## server-scanner
 `npm install westfield-scanner-server --save-dev`
@@ -22,7 +27,7 @@ in both browser and Node.js
 ## server-runtime
 `npm install westfield-runtimer-server --save`
 
-Provides server side core api and underlying protocol marshalling, required at runtime.
+Provides server side core api and underlying protocol marshalling required at runtime.
 
 ## Client Usage
 Westfield accepts xml files in the Wayland protocol format. All arguments are supported, expect for file descriptors.
@@ -30,8 +35,8 @@ Westfield accepts xml files in the Wayland protocol format. All arguments are su
 ***npm***
 
 Use it directly in the `scripts` section of your `package.json`.
-```javascript
-"prepare:client:generate": "westfield-scanner-client example.xml -o public.src/westfield-client-example.js",
+```json
+"prepare:client:generate" : "westfield-scanner-client example.xml -o public.src/westfield-client-example.js"
 ```
 
 Usage
@@ -98,12 +103,7 @@ Given the file `example.xml`
 </protocol>
 ```
 
-We can generate the client side stubs:
-```
-$ westfield-scanner-client example.xml
-```
-
-This will generate the file `westfield-client-example.js`:
+We can generate the client side stubs: `westfield-client-example.js`:
 ```javascript
 /*
  *
@@ -240,9 +240,9 @@ Which can then be included in your `index.html`.
 
 # Server usage
 
-You can implement the server side in Node.js. 
+Continuing from client example, we can implement the server side in Node.js.
 
-Continuing from client example, the generate protocol file `westfield-server-example.s` will look like this:
+The generate protocol file `westfield-server-example.js` will look like this:
 ```javascript
 /*
  *
@@ -419,7 +419,7 @@ server.listen(8080)
 
 # Further examples
 Check out the Node.js example projects in the `server` directory. They implement the example mentioned above as well
-as the reverse case where the browser acts as a 'server'.
+as the reverse case where the browser acts as a Wayland server.
 
 They also provide a good starting point to setup server and client side protocol generation in your build.
 
