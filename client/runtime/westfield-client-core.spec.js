@@ -1029,7 +1029,7 @@ describe('westfield-client-core', function () {
       const newObjectItfName = 'newObjectItf'
       wf[newObjectItfName] = class newObjectItf extends wf.WObject {
         constructor (connection) {
-          super(connection, {name: newObjectItfName})
+          super(connection, {})
         }
       }
 
@@ -1041,12 +1041,12 @@ describe('westfield-client-core', function () {
       arrayArg[1] = 0x1234567F
 
       const targetObject = new wf.WObject(connection, {
-        name: 'dummyObject',
         mock: jasmine.createSpy('mock object function')
       })
       targetObject[opcode] = function (wireMsg) {
         const args = this.connection._unmarshallArgs(wireMsg, 'uifonsa')
-        this.listener.mock(
+        /* eslint-disable no-useless-call */
+        this.listener.mock.call(
           this.listener,
           args[0], // u
           args[1], // i
@@ -1056,6 +1056,7 @@ describe('westfield-client-core', function () {
           args[5], // s
           args[6] // a
         )
+        /* eslint-enable no-useless-call */
       }
       targetObject._id = objectid
       connection._objects.set(objectid, targetObject)
@@ -1112,7 +1113,6 @@ describe('westfield-client-core', function () {
       expect(targetObject.listener.mock.calls.mostRecent().args[2]).toEqual(fixedArg)
       expect(targetObject.listener.mock.calls.mostRecent().args[3]).toEqual(objectArg)
       expect(targetObject.listener.mock.calls.mostRecent().args[4]._id).toEqual(newObjectId)
-      expect(targetObject.listener.mock.calls.mostRecent().args[4].listener.name).toEqual(newObjectItfName)
       expect(targetObject.listener.mock.calls.mostRecent().args[5]).toEqual(stringArg)
       expect(targetObject.listener.mock.calls.mostRecent().args[6]).toBeBlobEqual(buffer)
     })
