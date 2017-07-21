@@ -470,12 +470,16 @@ wfc.Registry = class extends wfc.WObject {
 
   [1] (message) {
     const args = this.connection._unmarshallArgs(message, 'isu')
+    /* eslint-disable no-useless-call */
     this.listener.global.call(this.listener, args[0], args[1], args[2])
+    /* eslint-enable no-useless-call */
   }
 
   [2] (message) {
     const args = this.connection._unmarshallArgs(message, 'i')
+    /* eslint-disable no-useless-call */
     this.listener.globalRemove.call(this.listener, args[0])
+    /* eslint-enable no-useless-call */
   }
 }
 
