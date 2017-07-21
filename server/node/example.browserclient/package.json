@@ -1,6 +1,6 @@
 {
   "name": "westfield-server-example",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Wayland HTML5 runtime for Node.js",
   "scripts": {
     "prepare:server:generate": "westfield-scanner-server example.xml",

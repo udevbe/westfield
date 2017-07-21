@@ -1,9 +1,9 @@
 {
   "name": "westfield-runtime-server",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "main": "westfield-server-core.js",
   "scripts": {
-    "test": "node ./node_modules/jasmine/bin/jasmine.js"
+    "test": "standard --verbose && node ./node_modules/jasmine/bin/jasmine.js"
   },
   "description": "Wayland HTML5 runtime for Node.js",
   "repository": {
