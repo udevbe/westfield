@@ -1,7 +1,7 @@
 'use strict'
 const wfc = require('./westfield-client-example.js')
 
-const ws = new window.WebSocket('ws://127.0.0.1:8080/westfield')// create new websocket connection
+const ws = new window.WebSocket('ws://' + window.location.host + '/westfield')// create new websocket connection
 ws.binaryType = 'arraybuffer'// set socket type to array buffer, required for wfc connection to work.
 
 const connection = new wfc.Connection()// create connection

@@ -29,7 +29,7 @@ const wfsServer = new wfs.Server()
 wfsServer.registry.register(exampleGlobal)
 
 // setup connection logic (http+websocket)
-const ws = new window.WebSocket('ws://127.0.0.1:8080/westfield')
+const ws = new window.WebSocket('ws://' + window.location.host + '/westfield')
 // set socket type to array buffer, required for wfc connection to work.
 ws.binaryType = 'arraybuffer'
 
