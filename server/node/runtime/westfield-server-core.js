@@ -420,12 +420,13 @@ wfs.Resource = class {
     this.id = id
     this.version = version
     this.implementation = implementation
+    this.client = client
 
-    client._registerResource(this)
+    this.client._registerResource(this)
   }
 
   destroy () {
-    client._unregisterResource(this)
+    this.client._unregisterResource(this)
   }
 }
 
