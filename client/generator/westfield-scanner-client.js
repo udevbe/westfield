@@ -318,8 +318,6 @@ wfg.ProtocolParser = class {
       // constructor
       out.write('\n\tconstructor(connection) {\n')
       out.write('\t\tsuper(connection, {\n')
-      out.write(util.format('\t\t\tname: "%s",\n', itfName))
-      out.write(util.format('\t\t\tversion: %d,\n', i))
       // events
       if (protocolItf.hasOwnProperty('event')) {
         const itfEvents = protocolItf.event

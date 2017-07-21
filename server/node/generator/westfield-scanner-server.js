@@ -317,8 +317,6 @@ wfg.ProtocolParser = class {
       // constructor
       out.write('\n\tconstructor(client, id, version) {\n')
       out.write('\t\tsuper(client, id, version, {\n')
-      out.write(util.format('\t\t\tname: "%s",\n', itfName))
-      out.write(util.format('\t\t\tversion: %d,\n', i))
       // requests
       if (protocolItf.hasOwnProperty('request')) {
         const itfRequests = protocolItf.request
