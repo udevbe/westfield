@@ -664,7 +664,6 @@ wfc.Connection = class extends wfc.WObject {
     // cosntruct new object
     const wObject = new wfc[itfName](this)
     this._registerObject(wObject)
-    Object.freeze(wObject)
 
     // determine required wire message length
     let size = 4 + 2 + 2 // id+size+opcode
