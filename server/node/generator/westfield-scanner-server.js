@@ -278,6 +278,7 @@ wfg.ProtocolParser = class {
     }
 
     console.log(util.format('Processing interface %s v%d', itfName, itfVersion))
+    out.write(util.format('wfs.%sName = "%s"\n', itfName, itfName))
 
     for (let i = 1; i <= itfVersion; i++) {
       // class docs
