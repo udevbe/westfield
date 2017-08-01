@@ -421,12 +421,22 @@ wfs.Resource = class {
     this.version = version
     this.implementation = implementation
     this.client = client
+    this._destroyListeners = []
 
     this.client._registerResource(this)
   }
 
   destroy () {
+    this._destroyListeners.forEach((destroyListener) => destroyListener(this))
     this.client._unregisterResource(this)
+  }
+
+  addDestroyListener (destroyListener) {
+    this._destroyListeners.push(destroyListener)
+  }
+
+  removeDestroyListener (destroyListener) {
+    this._destroyListeners = this._destroyListeners.filter((item) => { return item !== destroyListener })
   }
 }
 
@@ -702,10 +712,23 @@ wfs.Client = class {
   close () {
     const index = this._server.clients.indexOf(this)
     if (index > -1) {
+      this._objects.forEach((object) => {
+        object.destroy()
+      })
       this._objects.clear()
+
+      this._destroyListeners.forEach((destroyListener) => destroyListener(this))
       this._server.clients.splice(this._server.clients.indexOf(this), 1)
       this._server = null
     }
+  }
+
+  addDestroyListener (destroyListener) {
+    this._destroyListeners.push(destroyListener)
+  }
+
+  removeDestroyListener (destroyListener) {
+    this._destroyListeners = this._destroyListeners.filter((item) => { return item !== destroyListener })
   }
 
   /**
@@ -786,6 +809,7 @@ wfs.Client = class {
 
 wfs.Server = class {
   constructor () {
+    this._destroyListeners = []
     this.registry = new wfs.Registry()
     this.clients = []
     /*
