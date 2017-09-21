@@ -701,9 +701,10 @@ wfc.Connection = class extends wfc.WObject {
    * Close the connection to the remote host. All objects will be deleted before the connection is closed.
    */
   close () {
-    this._objects.values().slice().forEach(function (object) {
-      object.delete()
+    this._objects.forEach((object) => {
+      object.destroy()
     })
+    this._objects.clear()
     this.onClose()
   }
 
