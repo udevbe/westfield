@@ -1,6 +1,6 @@
 {
   "name": "westfield-runtime-server",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "main": "westfield-server-core.js",
   "scripts": {
     "test": "standard --verbose && node ./node_modules/jasmine/bin/jasmine.js"
