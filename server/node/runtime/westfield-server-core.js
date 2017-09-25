@@ -717,18 +717,18 @@ wfs.Client = class {
       })
       this._objects.clear()
 
-      this._destroyListeners.forEach((destroyListener) => destroyListener(this))
+      this._destroyedResolver(this)
       this._server.clients.splice(this._server.clients.indexOf(this), 1)
       this._server = null
     }
   }
 
-  addDestroyListener (destroyListener) {
-    this._destroyListeners.push(destroyListener)
-  }
-
-  removeDestroyListener (destroyListener) {
-    this._destroyListeners = this._destroyListeners.filter((item) => { return item !== destroyListener })
+  /**
+   *
+   * @returns {Promise.<wfs.Client>}
+   */
+  onClose () {
+    return this._destroyPromise
   }
 
   /**
@@ -799,6 +799,9 @@ wfs.Client = class {
   constructor (server) {
     this._objects = new Map()
     this._server = server
+    this._destroyPromise = new Promise((resolve) => {
+      this._destroyedResolver = resolve
+    })
 
     const clientResource = new wfs.ClientResource(this, 1, 1)
     clientResource.implementation.create_registry = (resource, id) => {

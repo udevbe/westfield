@@ -702,13 +702,14 @@ wfc.Connection = class extends wfc.WObject {
    */
   close () {
     this._objects.clear()
-    this.onClose()
+    this._destroyedResolver(this)
   }
 
   /**
-   * Callback when this connection is closed. This callback can be used to close the underlying websocket connection.
+   * @returns {Promise.<wfs.Client>}
    */
   onClose () {
+    return this._destroyPromise
   }
 
   /**
@@ -743,9 +744,7 @@ wfc.Connection = class extends wfc.WObject {
     // WObject expects a connection object as super arg. We can't do that here so we set it immediately afterwards.
     // This is mostly to make our connection object be in line of a general WObject layout as the connection object
     // is a special case as it's the core root object.
-    super(null, {
-      name: 'Connection'
-    })
+    super(null, {})
     this.connection = this
     /**
      * Pool of objects that live on this connection.
@@ -757,6 +756,10 @@ wfc.Connection = class extends wfc.WObject {
     this._objects = new Map()
     this.nextId = 1
     this._registerObject(this)
+
+    this._destroyPromise = new Promise((resolve) => {
+      this._destroyedResolver = resolve
+    })
   }
 }
 
