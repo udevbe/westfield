@@ -280,7 +280,6 @@ wfg.ProtocolParser = class {
     }
 
     console.log(util.format('Processing interface %s v%d', itfName, itfVersion))
-    out.write(util.format('wfs.%sName = "%s"\n', itfName, itfName))
 
     for (let i = 1; i <= itfVersion; i++) {
       // class docs
@@ -354,8 +353,8 @@ wfg.ProtocolParser = class {
         }
       }
 
-      out.write('};\n')
-
+      out.write('};\n\n')
+      out.write(util.format('wfs.%s.name = "%s"\n\n', itfName, itfName))
       // enums
       if (protocolItf.hasOwnProperty('enum')) {
         // create new files to define enums
@@ -364,7 +363,7 @@ wfg.ProtocolParser = class {
           const itfEnum = itfEnums[j]
           const enumName = upperCamelCase(itfEnum.$.name)
 
-          out.write(util.format('wfc.%s.%s = {\n', itfName, enumName))
+          out.write(util.format('wfs.%s.%s = {\n', itfName, enumName))
 
           let firstArg = true
           itfEnum.entry.forEach((entry) => {
