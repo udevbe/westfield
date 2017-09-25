@@ -5,6 +5,8 @@ const fs = require('fs')
 const util = require('util')
 const xml2js = require('xml2js')
 const meow = require('meow')
+const camelCase = require('camelcase')
+const upperCamelCase = require('uppercamelcase')
 
 const wfg = {}
 
@@ -75,7 +77,7 @@ wfg.ProtocolParser = class {
           continue
         }
 
-        const argName = arg.$.name
+        const argName = camelCase(arg.$.name)
         if (processedFirstArg) {
           out.write(', ')
         }
@@ -90,7 +92,7 @@ wfg.ProtocolParser = class {
       const evArgs = ev.arg
       for (let i = 0; i < evArgs.length; i++) {
         const arg = evArgs[i]
-        const argName = arg.$.name
+        const argName = camelCase(arg.$.name)
         if (i !== 0) {
           out.write(', ')
         }
@@ -106,7 +108,7 @@ wfg.ProtocolParser = class {
       for (let i = 0; i < evArgs.length; i++) {
         const arg = evArgs[i]
 
-        const argName = arg.$.name
+        const argName = camelCase(arg.$.name)
         const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
         const argType = arg.$.type
 
@@ -118,7 +120,7 @@ wfg.ProtocolParser = class {
   }
 
   _generateIfEventGlue (out, ev, opcode) {
-    const evName = ev.$.name
+    const evName = camelCase(ev.$.name)
 
     out.write(util.format('\t[%d](message){\n', opcode))
     const evSig = this._parseEventSignature(ev)
@@ -145,7 +147,7 @@ wfg.ProtocolParser = class {
 
   _parseItfEvent (out, itfEvent) {
     const sinceVersion = itfEvent.$.hasOwnProperty('since') ? parseInt(itfEvent.$.since) : 1
-    const evName = itfEvent.$.name
+    const evName = camelCase(itfEvent.$.name)
 
     // function docs
     if (itfEvent.hasOwnProperty('description')) {
@@ -163,7 +165,7 @@ wfg.ProtocolParser = class {
           out.write('\t\t\t *\n')
           evArgs.forEach((arg) => {
             const argDescription = arg.$.summary
-            const argName = arg.$.name
+            const argName = camelCase(arg.$.name)
             const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
             const argType = arg.$.type
 
@@ -189,7 +191,7 @@ wfg.ProtocolParser = class {
       return
     }
 
-    const reqName = itfRequest.$.name
+    const reqName = camelCase(itfRequest.$.name)
 
     // function docs
     if (itfRequest.hasOwnProperty('description')) {
@@ -207,7 +209,7 @@ wfg.ProtocolParser = class {
           out.write('\t *\n')
           reqArgs.forEach((arg) => {
             const argDescription = arg.$.summary
-            const argName = arg.$.name
+            const argName = camelCase(arg.$.name)
             const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
             const argType = arg.$.type
             if (argType !== 'new_id') {
@@ -245,11 +247,11 @@ wfg.ProtocolParser = class {
       for (let i = 0; i < reqArgs.length; i++) {
         const arg = reqArgs[i]
         const argType = arg.$.type
-        const argName = arg.$.name
+        const argName = camelCase(arg.$.name)
         const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
 
         if (argType === 'new_id') {
-          itfName = arg.$['interface']
+          itfName = camelCase(arg.$['interface'])
         }
 
         if (i !== 0) {
@@ -271,7 +273,7 @@ wfg.ProtocolParser = class {
   }
 
   _parseInterface (out, protocolItf) {
-    const itfName = protocolItf.$.name
+    const itfName = upperCamelCase(protocolItf.$.name)
     let itfVersion = 1
 
     if (protocolItf.$.hasOwnProperty('version')) {
@@ -354,6 +356,36 @@ wfg.ProtocolParser = class {
       }
 
       out.write('};\n')
+
+      // enums
+      if (protocolItf.hasOwnProperty('enum')) {
+        // create new files to define enums
+        const itfEnums = protocolItf.enum
+        for (let j = 0; j < itfEnums.length; j++) {
+          const itfEnum = itfEnums[j]
+          const enumName = upperCamelCase(itfEnum.$.name)
+
+          out.write(util.format('wfc.%s.%s = {\n', itfName, enumName))
+
+          let firstArg = true
+          itfEnum.entry.forEach((entry) => {
+            const entryName = camelCase(entry.$.name)
+            const entryValue = entry.$.value
+            const entrySummary = entry.$.summary
+
+            if (!firstArg) {
+              out.write(',\n')
+            }
+            firstArg = false
+
+            out.write('  /**\n')
+            out.write(util.format('   * %s\n', entrySummary))
+            out.write('   */\n')
+            out.write(util.format('  %s: %s', entryName, entryValue))
+          })
+          out.write('\n}\n\n')
+        }
+      }
     }
   }
 
