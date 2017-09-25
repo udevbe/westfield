@@ -185,11 +185,8 @@ wfg.ProtocolParser = class {
     out.write(') {},\n')
   }
 
-  _parseItfRequest (out, itfRequest, opcode, itfVersion) {
+  _parseItfRequest (out, itfRequest, opcode) {
     const sinceVersion = itfRequest.$.hasOwnProperty('since') ? parseInt(itfRequest.$.since) : 1
-    if (sinceVersion !== itfVersion) {
-      return
-    }
 
     const reqName = camelCase(itfRequest.$.name)
 
@@ -282,108 +279,92 @@ wfg.ProtocolParser = class {
 
     console.log(util.format('Processing interface %s v%d', itfName, itfVersion))
 
-    for (let i = 1; i <= itfVersion; i++) {
-      // class docs
-      const description = protocolItf.description
-      if (description) {
-        description.forEach((val) => {
-          out.write('\n/**\n')
-          if (val.hasOwnProperty('_')) {
-            val._.split('\n').forEach((line) => {
-              out.write(' *' + line + '\n')
-            })
-          }
-          out.write(' */\n')
-        })
-      }
-
-      // class
-      if (i === 1) {
-        out.write(util.format('wfc.%s = class %s extends wfc.WObject {\n', itfName, itfName))
-      } else {
-        const className = util.format('%sV%d', itfName, i)
-        if (i === 2) {
-          out.write(util.format('wfc.%s = class %s extends wfc.%s {\n', className, className, itfName))
-        } else {
-          out.write(util.format('wfc.%s = class %s extends wfc.%sV%d {\n', className, className, itfName, i - 1))
-        }
-      }
-
-      // requests
-      if (protocolItf.hasOwnProperty('request')) {
-        const itfRequests = protocolItf.request
-        for (let j = 0; j < itfRequests.length; j++) {
-          this._parseItfRequest(out, itfRequests[j], j + 1, i)
-        }
-      }
-
-      // constructor
-      out.write('\n\tconstructor(connection) {\n')
-      out.write('\t\tsuper(connection, {\n')
-      // events
-      if (protocolItf.hasOwnProperty('event')) {
-        const itfEvents = protocolItf.event
-        for (let j = 0; j < itfEvents.length; j++) {
-          const itfEvent = itfEvents[j]
-          let since = '1'
-          if (itfEvent.$.hasOwnProperty('since')) {
-            since = itfEvent.$.since
-          }
-
-          if (parseInt(since) <= i) {
-            this._parseItfEvent(out, itfEvent)
-          }
-        }
-      }
-      out.write('\t\t});\n')
-      out.write('\t}\n\n')
-
-      // glue event functions
-      if (protocolItf.hasOwnProperty('event')) {
-        const itfEvents = protocolItf.event
-        for (let j = 0; j < itfEvents.length; j++) {
-          const itfEvent = itfEvents[j]
-          let since = '1'
-          if (itfEvent.$.hasOwnProperty('since')) {
-            since = itfEvent.$.since
-          }
-
-          if (parseInt(since) === i) {
-            this._generateIfEventGlue(out, itfEvent, j + 1)
-          }
-        }
-      }
-
-      out.write('};\n\n')
-      out.write(util.format('wfc.%s.name = "%s"\n\n', itfName, itfName))
-      // enums
-      if (protocolItf.hasOwnProperty('enum')) {
-        // create new files to define enums
-        const itfEnums = protocolItf.enum
-        for (let j = 0; j < itfEnums.length; j++) {
-          const itfEnum = itfEnums[j]
-          const enumName = upperCamelCase(itfEnum.$.name)
-
-          out.write(util.format('wfc.%s.%s = {\n', itfName, enumName))
-
-          let firstArg = true
-          itfEnum.entry.forEach((entry) => {
-            const entryName = camelCase(entry.$.name)
-            const entryValue = entry.$.value
-            const entrySummary = entry.$.summary
-
-            if (!firstArg) {
-              out.write(',\n')
-            }
-            firstArg = false
-
-            out.write('  /**\n')
-            out.write(util.format('   * %s\n', entrySummary))
-            out.write('   */\n')
-            out.write(util.format('  %s: %s', entryName, entryValue))
+    // class docs
+    const description = protocolItf.description
+    if (description) {
+      description.forEach((val) => {
+        out.write('\n/**\n')
+        if (val.hasOwnProperty('_')) {
+          val._.split('\n').forEach((line) => {
+            out.write(' *' + line + '\n')
           })
-          out.write('\n}\n\n')
         }
+        out.write(' */\n')
+      })
+    }
+
+    // class
+    out.write(util.format('wfc.%s = class %s extends wfc.WObject {\n', itfName, itfName))
+
+    // requests
+    if (protocolItf.hasOwnProperty('request')) {
+      const itfRequests = protocolItf.request
+      for (let j = 0; j < itfRequests.length; j++) {
+        this._parseItfRequest(out, itfRequests[j], j + 1)
+      }
+    }
+
+    // constructor
+    out.write('\n\tconstructor(connection) {\n')
+    out.write('\t\tsuper(connection, {\n')
+    // events
+    if (protocolItf.hasOwnProperty('event')) {
+      const itfEvents = protocolItf.event
+      for (let j = 0; j < itfEvents.length; j++) {
+        const itfEvent = itfEvents[j]
+        let since = '1'
+        if (itfEvent.$.hasOwnProperty('since')) {
+          since = itfEvent.$.since
+        }
+        this._parseItfEvent(out, itfEvent)
+      }
+    }
+    out.write('\t\t});\n')
+    out.write('\t}\n\n')
+
+    // glue event functions
+    if (protocolItf.hasOwnProperty('event')) {
+      const itfEvents = protocolItf.event
+      for (let j = 0; j < itfEvents.length; j++) {
+        const itfEvent = itfEvents[j]
+        let since = '1'
+        if (itfEvent.$.hasOwnProperty('since')) {
+          since = itfEvent.$.since
+        }
+
+        this._generateIfEventGlue(out, itfEvent, j + 1)
+      }
+    }
+
+    out.write('};\n\n')
+    out.write(util.format('wfc.%s.name = "%s"\n\n', itfName, itfName))
+    // enums
+    if (protocolItf.hasOwnProperty('enum')) {
+      // create new files to define enums
+      const itfEnums = protocolItf.enum
+      for (let j = 0; j < itfEnums.length; j++) {
+        const itfEnum = itfEnums[j]
+        const enumName = upperCamelCase(itfEnum.$.name)
+
+        out.write(util.format('wfc.%s.%s = {\n', itfName, enumName))
+
+        let firstArg = true
+        itfEnum.entry.forEach((entry) => {
+          const entryName = camelCase(entry.$.name)
+          const entryValue = entry.$.value
+          const entrySummary = entry.$.summary
+
+          if (!firstArg) {
+            out.write(',\n')
+          }
+          firstArg = false
+
+          out.write('  /**\n')
+          out.write(util.format('   * %s\n', entrySummary))
+          out.write('   */\n')
+          out.write(util.format('  %s: %s', entryName, entryValue))
+        })
+        out.write('\n}\n\n')
       }
     }
   }
