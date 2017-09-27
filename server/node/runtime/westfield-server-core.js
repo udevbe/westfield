@@ -712,12 +712,13 @@ wfs.Client = class {
   close () {
     const index = this._server.clients.indexOf(this)
     if (index > -1) {
+      this._destroyedResolver(this)
+
       this._objects.forEach((object) => {
         object.destroy()
       })
       this._objects.clear()
 
-      this._destroyedResolver(this)
       this._server.clients.splice(this._server.clients.indexOf(this), 1)
       this._server = null
     }
