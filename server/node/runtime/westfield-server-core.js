@@ -421,13 +421,19 @@ wfs.Resource = class {
     this.version = version
     this.implementation = implementation
     this.client = client
+    this._destroyPromise = new Promise((resolve) => {
+      this._destroyResolver = resolve
+    })
     this._destroyListeners = []
+    this._destroyPromise.then(() => {
+      this._destroyListeners.forEach((destroyListener) => destroyListener(this))
+    })
 
     this.client._registerResource(this)
   }
 
   destroy () {
-    this._destroyListeners.forEach((destroyListener) => destroyListener(this))
+    this._destroyResolver(this)
     this.client._unregisterResource(this)
   }
 
@@ -437,6 +443,10 @@ wfs.Resource = class {
 
   removeDestroyListener (destroyListener) {
     this._destroyListeners = this._destroyListeners.filter((item) => { return item !== destroyListener })
+  }
+
+  onDestroy () {
+    return this._destroyPromise
   }
 }
 
