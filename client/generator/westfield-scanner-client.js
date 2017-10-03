@@ -248,7 +248,7 @@ wfg.ProtocolParser = class {
         const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
 
         if (argType === 'new_id') {
-          itfName = camelCase(arg.$['interface'])
+          itfName = upperCamelCase(arg.$['interface'])
         }
 
         if (i !== 0) {
