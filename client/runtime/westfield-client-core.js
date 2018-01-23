@@ -661,7 +661,7 @@ wfc.Connection = class extends wfc.WObject {
    * @private
    */
   _marshallConstructor (id, opcode, itfName, argsArray) {
-    // cosntruct new object
+    // construct new object
     const wObject = new wfc[itfName](this)
     this._registerObject(wObject)
 
