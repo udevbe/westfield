@@ -234,7 +234,7 @@ wfs._objectOptional = function (arg) {
  */
 wfs._newObject = function () {
   return {
-    value: null, // filled in by _marshallConstructor
+    value: null, // id filled in by _marshallConstructor
     type: 'n',
     size: 4,
     optional: false,
@@ -244,7 +244,7 @@ wfs._newObject = function () {
      * @private
      */
     _marshallArg: function (wireMsg) {
-      new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value.id
+      new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value
       wireMsg.readIndex += this.size
     }
   }
@@ -784,6 +784,34 @@ wfs.Client = class {
     })
 
     this.onSend(wireMsg)
+  }
+
+  /**
+   *
+   * @param {Number} id
+   * @param {Number} opcode
+   * @param {string} itfName
+   * @param {Array} argsArray
+   * @private
+   */
+  _marshallConstructor (id, opcode, itfName, argsArray) {
+    // get next server id
+    const objectId =  this._server.nextId
+    this._server.nextId++
+
+    // determine required wire message length
+    let size = 4 + 2 + 2 // id+size+opcode
+    argsArray.forEach(function (arg) {
+      if (arg.type === 'n') {
+        arg.value = objectId
+      }
+
+      size += arg.size // add size of the actual argument values
+    })
+
+    this.__marshallMsg(id, opcode, size, argsArray)
+
+    return objectId
   }
 
   /**
