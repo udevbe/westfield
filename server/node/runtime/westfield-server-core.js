@@ -417,10 +417,20 @@ wfs.Global = class {
 wfs.Resource = class {
   constructor (client, id, version, implementation) {
     this.client = client
+    /**
+     * @type {number}
+     */
     this.id = id
+    /**
+     * @type {number}
+     */
     this.version = version
+    /**
+     * Arbitrary data that can be attached to the resource.
+     * @type {{}}
+     */
+    this.userData = {}
     this.implementation = implementation
-    this.client = client
     this._destroyPromise = new Promise((resolve) => {
       this._destroyResolver = resolve
     })
@@ -796,7 +806,7 @@ wfs.Client = class {
    */
   _marshallConstructor (id, opcode, itfName, argsArray) {
     // get next server id
-    const objectId =  this._server.nextId
+    const objectId = this._server.nextId
     this._server.nextId++
 
     // determine required wire message length
