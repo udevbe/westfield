@@ -136,7 +136,7 @@ wfg.ProtocolParser = class {
         out.write(util.format('args[%d]', i))
         if (argType === 'new_id') {
           const argItf = arg.$['interface']
-          out.write(util.format('("%s")', argItf))
+          out.write(util.format('("%s")', upperCamelCase(argItf)))
         }
       }
     }

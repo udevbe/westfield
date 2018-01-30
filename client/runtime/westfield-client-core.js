@@ -547,7 +547,7 @@ wfc.Connection = class extends wfc.WObject {
     const arg = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0]
     wireMsg.readIndex += 4
     const connection = this
-    return function (type) {
+    return (type) => {
       const newObject = new wfc[type](this)
       newObject._id = arg
       connection._objects.set(newObject._id, newObject)
