@@ -7,6 +7,8 @@ While the Wayland protocol has the notion of client and
 server, Westfield makes no assumptions whether the browser is the client or the server, as such a browser can 
 function as a Wayland compositor (server).
 
+[Greenfield](https://github.com/udevbe/greenfield) is an experiment in using Westfield together with webrtc/object-rtc to create an in-browser wayland compositor.
+
 ## client-scanner
 `npm install westfield-scanner-client --save-dev`
 
