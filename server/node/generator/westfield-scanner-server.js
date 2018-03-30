@@ -91,16 +91,13 @@ wfg.ProtocolParser = class {
   }
 
   static _generateRequestArgs (out, ev) {
-    out.write('resource, ')
+    out.write('resource')
     if (ev.hasOwnProperty('arg')) {
       const evArgs = ev.arg
       for (let i = 0; i < evArgs.length; i++) {
         const arg = evArgs[i]
         const argName = camelCase(arg.$.name)
-        if (i !== 0) {
-          out.write(', ')
-        }
-        out.write(argName)
+        out.write(', ' + argName)
       }
     }
   }
