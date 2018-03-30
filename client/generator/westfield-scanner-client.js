@@ -337,7 +337,6 @@ wfg.ProtocolParser = class {
     }
 
     out.write('};\n\n')
-    out.write(util.format('wfc.%s.name = "%s"\n\n', itfName, itfName))
     // enums
     if (protocolItf.hasOwnProperty('enum')) {
       // create new files to define enums
