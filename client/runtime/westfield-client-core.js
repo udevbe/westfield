@@ -631,7 +631,11 @@ wfc.Connection = class extends wfc.WObject {
     buffer.readIndex = 8
 
     const obj = this._objects.get(id)
-    obj[opcode](buffer)
+    if(obj == null){
+      throw new Error(`Object with id=${id} does not exist (opcode=${opcode})`)
+    }else {
+      obj[opcode](buffer)
+    }
   }
 
   __marshallMsg (id, opcode, size, argsArray) {
