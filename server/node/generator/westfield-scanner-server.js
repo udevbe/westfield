@@ -123,9 +123,9 @@ wfg.ProtocolParser = class {
   _generateIfRequestGlue (out, ev, opcode) {
     const evName = camelCase(ev.$.name)
 
-    out.write(util.format('\t[%d](message){\n', opcode))
+    out.write(util.format('\t[%d] (message) {\n', opcode))
     const evSig = this._parseRequestSignature(ev)
-    out.write(util.format('\t\tconst args = this.client._unmarshallArgs(message,"%s");\n', evSig))
+    out.write(util.format('\t\tconst args = this.client._unmarshallArgs(message,"%s")\n', evSig))
     out.write(util.format('\t\tthis.implementation.%s.call(this.implementation, this', evName))
 
     if (ev.hasOwnProperty('arg')) {
@@ -136,7 +136,7 @@ wfg.ProtocolParser = class {
       }
     }
 
-    out.write(');\n')
+    out.write(')\n')
     out.write('\t}\n\n')
   }
 
@@ -227,7 +227,7 @@ wfg.ProtocolParser = class {
     }
 
     // function
-    out.write(util.format('\t%s(', reqName))
+    out.write(util.format('\t%s (', reqName))
     wfg.ProtocolParser._generateEventArgs(out, itfEvent)
     out.write(') {\n')
 
@@ -257,9 +257,9 @@ wfg.ProtocolParser = class {
     argArray += ']'
 
     if (itfName) {
-      out.write(util.format('\t\treturn this.client._marshallConstructor(this.id, %d, "%s", %s);\n', opcode, itfName, argArray))
+      out.write(util.format('\t\treturn this.client._marshallConstructor(this.id, %d, "%s", %s)\n', opcode, itfName, argArray))
     } else {
-      out.write(util.format('\t\tthis.client._marshall(this.id, %d, %s);\n', opcode, argArray))
+      out.write(util.format('\t\tthis.client._marshall(this.id, %d, %s)\n', opcode, argArray))
     }
 
     out.write('\t}\n')
@@ -301,7 +301,7 @@ wfg.ProtocolParser = class {
     }
 
     // constructor
-    out.write('\n\tconstructor(client, id, version) {\n')
+    out.write('\n\tconstructor (client, id, version) {\n')
     out.write('\t\tsuper(client, id, version, {\n')
     // requests
     if (protocolItf.hasOwnProperty('request')) {
@@ -316,7 +316,7 @@ wfg.ProtocolParser = class {
         this._parseItfRequest(out, itfName, itfRequest)
       }
     }
-    out.write('\t\t});\n')
+    out.write('\t\t})\n')
     out.write('\t}\n\n')
 
     // glue event functions
@@ -333,7 +333,7 @@ wfg.ProtocolParser = class {
       }
     }
 
-    out.write('};\n\n')
+    out.write('}\n\n')
     // enums
     if (protocolItf.hasOwnProperty('enum')) {
       // create new files to define enums
@@ -382,13 +382,13 @@ wfg.ProtocolParser = class {
       })
       out.write(' */\n')
 
-      out.write('const wfs = require(\'westfield-runtime-server\');')
+      out.write('const wfs = require(\'westfield-runtime-server\')')
 
       jsonProtocol.protocol.interface.forEach((itf) => {
         this._parseInterface(out, itf)
       })
 
-      out.write('module.exports = wfs;')
+      out.write('module.exports = wfs')
 
       console.log('Done')
     })

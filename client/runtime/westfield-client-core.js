@@ -631,9 +631,7 @@ wfc.Connection = class extends wfc.WObject {
     buffer.readIndex = 8
 
     const obj = this._objects.get(id)
-    if(obj == null){
-      throw new Error(`Object with id=${id} does not exist (opcode=${opcode})`)
-    }else {
+    if (obj) {
       obj[opcode](buffer)
     }
   }
@@ -737,6 +735,10 @@ wfc.Connection = class extends wfc.WObject {
     object._id = this.nextId
     this._objects.set(object._id, object)
     this.nextId++
+  }
+
+  _deleteObject (object) {
+    this._objects.delete(object._id)
   }
 
   createRegistry () {

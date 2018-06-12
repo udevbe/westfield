@@ -710,7 +710,12 @@ wfs.Client = class {
     buffer.readIndex = 8
 
     const obj = this._objects.get(id)
-    obj[opcode](buffer)
+    if (obj) {
+      obj[opcode](buffer)
+    } else {
+      console.error(`Object with id=${id} does not exist (opcode=${opcode}). Disconnecting client.`)
+      this.close()
+    }
   }
 
   /**
