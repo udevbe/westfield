@@ -442,6 +442,15 @@ wfs.Resource = class {
     this.client._registerResource(this)
   }
 
+  /**
+   *
+   * @param {number} code
+   * @param {string} msg
+   */
+  postError (code, msg) {
+    this.client._marshall(this.id, 0, [wfs._uint(code), wfs._string(msg)])
+  }
+
   destroy () {
     this._destroyResolver(this)
     this.client._unregisterResource(this)
@@ -571,7 +580,7 @@ wfs.ClientResource = class extends wfs.Resource {
 }
 
 /**
- * Represents a client websocket connection.
+ * Represents a client connection.
  *
  */
 wfs.Client = class {

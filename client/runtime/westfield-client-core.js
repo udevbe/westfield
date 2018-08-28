@@ -411,6 +411,17 @@ wfc.WObject = class {
     this.connection = connection
     this.listener = listener
   }
+
+  /**
+   * @param {number}code
+   * @param {string}message
+   */
+  onError (code, message) {}
+
+  [0] (message) {
+    const args = this.connection._unmarshallArgs(message, 'us')
+    this.onError(args[0], args[1])
+  }
 }
 
 wfc.Registry = class extends wfc.WObject {
