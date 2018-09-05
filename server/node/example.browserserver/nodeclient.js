@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict'
 
-const wfc = require('./westfield-client-example.js')
+const {Connection, ExampleGlobal} = require('./westfield-client-example.js')
 const WebSocket = require('ws')
 const express = require('express')
 const http = require('http')
@@ -18,12 +18,12 @@ const wss = new WebSocket.Server({
 })
 
 // listen for new websocket connections.
-wss.on('connection', function connection (ws) {
+wss.on('connection', ws => {
   // create connection
-  const connection = new wfc.Connection()
+  const connection = new Connection()
 
   // wire connection send to websocket
-  connection.onSend = (data) => {
+  connection.onFlush = (data) => {
     ws.send(data)
   }
 
@@ -32,26 +32,29 @@ wss.on('connection', function connection (ws) {
     const b = event.data
     const arrayBuffer = b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength)
     connection.unmarshall(arrayBuffer)
+    // flush any messages that might have been queued by our call to connection.unmarshall(..)
+    connection.flush()
   }
 
   // create registry and be notified if a new global appears
   const registry = connection.createRegistry()
   registry.listener.global = (name, interface_, version) => {
     // check if we support the global
-    if (interface_ === 'example_global') {
+    if (interface_ === ExampleGlobal.name) {
       // create a new object that will be bound to the global
       const exampleGlobal = registry.bind(name, interface_, version)
 
       // create a new clock object
-      const exampleClock = exampleGlobal.create_example_clock()
+      const exampleClock = exampleGlobal.createExampleClock()
 
       // listen for time updates
-      exampleClock.listener.time_update = (time) => {
+      exampleClock.listener.timeUpdate = (time) => {
         // print the time
         console.log(time)
       }
     }
   }
+  connection.flush()
 })
 
 // Listen for incoming http requests on port 8080.
