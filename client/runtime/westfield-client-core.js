@@ -629,21 +629,21 @@ wfc.Connection = class extends wfc.WObject {
   /**
    * Should be called when data arrives from the remote end. This is needed to drive the whole rpc mechanism.
    *
-   * @param {ArrayBuffer} buffer
-   * @private
+   * @param {ArrayBuffer} wireMessages
    */
-  unmarshall (buffer) {
-    const bufu32 = new Uint32Array(buffer)
-    const bufu16 = new Uint16Array(buffer)
-
-    const id = bufu32[0]
-    // const size = bufu16[2];//not used.
-    const opcode = bufu16[3]
-    buffer.readIndex = 8
-
-    const obj = this._objects.get(id)
-    if (obj) {
-      obj[opcode](buffer)
+  async unmarshall (wireMessages) {
+    let offset = 0
+    while (offset < wireMessages.byteLength) {
+      const id = new Uint32Array(wireMessages, offset)[0]
+      const bufu16 = new Uint16Array(wireMessages, offset + 4)
+      const size = bufu16[0]
+      const opcode = bufu16[1]
+      const obj = this._objects.get(id)
+      if (obj) {
+        wireMessages.readIndex = offset + 8
+        await obj[opcode](wireMessages)
+      }
+      offset += size
     }
   }
 
@@ -662,7 +662,7 @@ wfc.Connection = class extends wfc.WObject {
       arg._marshallArg(wireMsg) // write actual argument value to buffer
     })
 
-    this.onSend(wireMsg)
+    this._onSend(wireMsg)
   }
 
   /**
@@ -726,12 +726,42 @@ wfc.Connection = class extends wfc.WObject {
   }
 
   /**
-   * Callback when this connection wishes to send data to the other end. This callback can be used to send the given
-   * array buffer using the underlying websocket.
    * @param {ArrayBuffer}wireMsg
+   * @private
    */
-  onSend (wireMsg) {
+  _onSend (wireMsg) {
+    this._queuedMessages.push(wireMsg)
   }
+
+  /**
+   * Empty the queue of wire messages and send them to the other end.
+   */
+  flush () {
+    if (this._queuedMessages.length === 0) {
+      return
+    }
+
+    const totalLength = this._queuedMessages.reduce((previous, current) => {
+      return previous + current.byteLength
+    }, 0)
+    let offset = 0
+    const wireMessages = new Uint8Array(new ArrayBuffer(totalLength))
+
+    this._queuedMessages.forEach((wireMessage) => {
+      wireMessages.set(new Uint8Array(wireMessage), offset)
+      offset += wireMessage.byteLength
+    })
+
+    this.onFlush(wireMessages.buffer)
+    this._queuedMessages = []
+  }
+
+  /**
+   * Callback when this connection wishes to send data to the other end. This callback can be used to send the given
+   * array buffers using any transport mechanism.
+   * @param {ArrayBuffer}wireMessages
+   */
+  onFlush (wireMessages) {}
 
   /**
    *
@@ -762,6 +792,11 @@ wfc.Connection = class extends wfc.WObject {
     // This is mostly to make our connection object be in line of a general WObject layout as the connection object
     // is a special case as it's the core root object.
     super(null, {})
+    /**
+     * @type {Array<ArrayBuffer>}
+     * @private
+     */
+    this._queuedMessages = []
     this.connection = this
     /**
      * Pool of objects that live on this connection.

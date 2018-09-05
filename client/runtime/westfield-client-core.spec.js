@@ -921,7 +921,7 @@ describe('westfield-client-core', function () {
       }// mock Registry
 
       const connection = new wf.Connection()
-      connection.onSend = jasmine.createSpy('mock send')
+      connection._onSend = jasmine.createSpy('mock send')
 
       const objectid = 123
       const opcode = 255
@@ -1001,8 +1001,8 @@ describe('westfield-client-core', function () {
         bufu8[(readIndex * 4) + i] = bufferBlob[i]
       }
 
-      expect(connection.onSend).toHaveBeenCalled()
-      expect(connection.onSend.calls.mostRecent().args[0]).toBeBlobEqual(wireMsg)
+      expect(connection._onSend).toHaveBeenCalled()
+      expect(connection._onSend.calls.mostRecent().args[0]).toBeBlobEqual(wireMsg)
     })
   })
 

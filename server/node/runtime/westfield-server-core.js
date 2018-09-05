@@ -705,42 +705,64 @@ wfs.Client = class {
   }
 
   /**
-   *
-   * @param {ArrayBuffer} event
+   * @param {ArrayBuffer}wireMsg
    * @private
    */
-  _unmarshall (buffer) {
-    const bufu32 = new Uint32Array(buffer)
-    const bufu16 = new Uint16Array(buffer)
+  _onSend (wireMsg) {
+    this._queuedMessages.push(wireMsg)
+  }
 
-    const id = bufu32[0]
-    // const size = bufu16[2];//not used.
-    const opcode = bufu16[3]
-    buffer.readIndex = 8
-
-    const obj = this._objects.get(id)
-    if (obj) {
-      obj[opcode](buffer)
-    } else {
-      console.error(`Object with id=${id} does not exist (opcode=${opcode}). Disconnecting client.`)
-      this.close()
+  /**
+   * Empty the queue of wire messages and send them to the other end.
+   */
+  flush () {
+    if (this._queuedMessages.length === 0) {
+      return
     }
+    const totalLength = this._queuedMessages.reduce((previous, current) => {
+      return previous + current.byteLength
+    }, 0)
+    let offset = 0
+    const wireMessages = new Uint8Array(new ArrayBuffer(totalLength))
+
+    this._queuedMessages.forEach((wireMessage) => {
+      wireMessages.set(new Uint8Array(wireMessage), offset)
+      offset += wireMessage.byteLength
+    })
+
+    this.onFlush(wireMessages.buffer)
+    this._queuedMessages = []
   }
 
   /**
-   * Sends the given wireMessage to the client over a websocket connection.
-   *
-   * @param {ArrayBuffer} wireMsg
+   * Callback when this connection wishes to send data to the other end. This callback can be used to send the given
+   * array buffers using any transport mechanism.
+   * @param {ArrayBuffer}wireMessages
    */
-  onSend (wireMsg) {
-  }
+  onFlush (wireMessages) {}
 
   /**
-   * Handle a received message from a client websocket connection
-   * @param {ArrayBuffer} buffer
+   * Handle a received message from a client.
+   * @param {ArrayBuffer} wireMessages
+   * @return {Promise<void>}
    */
-  message (buffer) {
-    this._unmarshall(buffer)
+  async message (wireMessages) {
+    let offset = 0
+    while (offset < wireMessages.byteLength) {
+      const id = new Uint32Array(wireMessages, offset)[0]
+      const bufu16 = new Uint16Array(wireMessages, offset + 4)
+      const size = bufu16[0]
+      const opcode = bufu16[1]
+      const obj = this._objects.get(id)
+      if (obj) {
+        wireMessages.readIndex = offset + 8
+        await obj[opcode](wireMessages)
+      } else {
+        console.error(`Object with id=${id} does not exist (opcode=${opcode}). Disconnecting client.`)
+        this.close()
+      }
+      offset += size
+    }
   }
 
   close () {
@@ -807,7 +829,7 @@ wfs.Client = class {
       arg._marshallArg(wireMsg) // write actual argument value to buffer
     })
 
-    this.onSend(wireMsg)
+    this._onSend(wireMsg)
   }
 
   /**
@@ -860,8 +882,20 @@ wfs.Client = class {
    * @param {wfs.Server} server
    */
   constructor (server) {
+    /**
+     * @type {Map<any, any>}
+     * @private
+     */
     this._objects = new Map()
+    /**
+     * @type {wfs.Server}
+     * @private
+     */
     this._server = server
+    /**
+     * @type {Promise<any>}
+     * @private
+     */
     this._destroyPromise = new Promise((resolve) => {
       this._destroyedResolver = resolve
     })
@@ -870,6 +904,11 @@ wfs.Client = class {
     clientResource.implementation.create_registry = (resource, id) => {
       this._server.registry._publishGlobals(this._server.registry._createResource(this, id))
     }
+    /**
+     * @type {Array<ArrayBuffer>}
+     * @private
+     */
+    this._queuedMessages = []
   }
 }
 
