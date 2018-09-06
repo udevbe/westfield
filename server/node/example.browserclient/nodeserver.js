@@ -56,7 +56,7 @@ wss.on('connection', ws => {
   ws._socket.setKeepAlive(true)
 
   // A new connection was established. Create a new westfield client object to represent this connection.
-  const client = westfieldServer.createClient()
+  const client = westfieldServer.bindClient()
 
   // Wire the send callback of this client object to our websocket.
   client.onFlush = wireMsg => {
