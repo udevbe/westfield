@@ -1,10 +1,14 @@
 'use strict'
 
 const RegistryResource = require('./RegistryResource')
+const RegistryRequests = require('./RegistryRequests')
 
-// TODO match wayland registry api/protocol
-class Registry {
+/**
+ * @implements {RegistryRequests}
+ */
+class Registry extends RegistryRequests {
   constructor () {
+    super()
     /**
      * @type {Array<RegistryResource>}
      * @private
@@ -62,10 +66,24 @@ class Registry {
    * @param {number} id
    */
   createRegistryResource (client, id) {
-    const registryResource = new RegistryResource(client, id, 1)
-    registryResource.implementation = this
+    const registryResource = new RegistryResource(client, id, 1, this)
     this._registryResources.push(registryResource)
     return registryResource
+  }
+
+  /**
+   * Binds a new, client-created object to the server using the
+   * specified name as the identifier.
+   * @param {Client}client
+   * @param {RegistryResource}resource
+   * @param {number}name unique numeric name of the object
+   * @param {string}interface_
+   * @param {number}version
+   * @param {number}id bounded object
+   * @override
+   */
+  bind (client, resource, name, interface_, version, id) {
+    this._globals[name].bindClient(client, id, version)
   }
 }
 

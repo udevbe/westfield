@@ -1,18 +1,21 @@
 'use strict'
 
 const DisplayResource = require('./DisplayResource')
+const DisplayRequests = require('./DisplayRequests')
+const SyncCallbackResource = require('./SyncCallbackResource')
 const Fixed = require('./Fixed')
 
 /**
  * Represents a client connection.
+ * @implements DisplayRequests
  */
-class Client {
+class Client extends DisplayRequests {
   /**
    *
    * @param {ArrayBuffer} wireMsg
    * @returns {number}
    */
-  ['u'] (wireMsg) { // unsigned integer {number}
+  u (wireMsg) { // unsigned integer {number}
     const arg = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0]
     wireMsg.readIndex += 4
     return arg
@@ -23,7 +26,7 @@ class Client {
    * @param {ArrayBuffer} wireMsg
    * @returns {number}
    */
-  ['i'] (wireMsg) { // integer {number}
+  i (wireMsg) { // integer {number}
     const arg = new Int32Array(wireMsg, wireMsg.readIndex, 1)[0]
     wireMsg.readIndex += 4
     return arg
@@ -34,7 +37,7 @@ class Client {
    * @param {ArrayBuffer} wireMsg
    * @returns {number}
    */
-  ['f'] (wireMsg) { // float {number}
+  f (wireMsg) { // float {number}
     const arg = new Int32Array(wireMsg, wireMsg.readIndex, 1)[0]
     wireMsg.readIndex += 4
     return new Fixed(arg >> 0)
@@ -44,15 +47,15 @@ class Client {
    *
    * @param {ArrayBuffer} wireMsg
    * @param {Boolean} optional
-   * @returns {WObject}
+   * @returns {Resource}
    */
-  ['o'] (wireMsg, optional) {
+  o (wireMsg, optional) {
     const arg = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0]
     wireMsg.readIndex += 4
     if (optional && arg === 0) {
       return null
     } else {
-      return this._objects.get(arg)
+      return this._resources[arg]
     }
   }
 
@@ -61,7 +64,7 @@ class Client {
    * @param {ArrayBuffer} wireMsg
    * @returns {number}
    */
-  ['n'] (wireMsg) {
+  n (wireMsg) {
     const arg = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0]
     wireMsg.readIndex += 4
     return arg
@@ -73,7 +76,7 @@ class Client {
    * @param {Boolean} optional
    * @returns {String}
    */
-  ['s'] (wireMsg, optional) { // {String}
+  s (wireMsg, optional) { // {String}
     const stringSize = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0]
     wireMsg.readIndex += 4
     if (optional && stringSize === 0) {
@@ -91,7 +94,7 @@ class Client {
    * @param {Boolean} optional
    * @returns {ArrayBuffer}
    */
-  ['a'] (wireMsg, optional) {
+  a (wireMsg, optional) {
     const arraySize = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0]
     wireMsg.readIndex += 4
     if (optional && arraySize === 0) {
@@ -108,9 +111,8 @@ class Client {
    * @param {ArrayBuffer} message
    * @param {string} argsSignature
    * @returns {Array}
-   * @private
    */
-  _unmarshallArgs (message, argsSignature) {
+  unmarshallArgs (message, argsSignature) {
     const argsSigLength = argsSignature.length
     const args = []
     let optional = false
@@ -128,33 +130,42 @@ class Client {
   }
 
   /**
-   * @param {ArrayBuffer}wireMsg
-   * @private
+   * This doesn't actually send the message, but queues it so it can be send on flush.
+   * @param {ArrayBuffer}wireMsg a single wire message event.
    */
-  _onSend (wireMsg) {
-    this._queuedMessages.push(wireMsg)
+  onSend (wireMsg) {
+    if (!this._display) {
+      // client destroyed
+      return
+    }
+    this._outMessages.push(wireMsg)
   }
 
   /**
    * Empty the queue of wire messages and send them to the other end.
    */
   flush () {
-    if (this._queuedMessages.length === 0) {
+    if (!this._display) {
+      // client destroyed
       return
     }
-    const totalLength = this._queuedMessages.reduce((previous, current) => {
+
+    if (this._outMessages.length === 0) {
+      return
+    }
+    const totalLength = this._outMessages.reduce((previous, current) => {
       return previous + current.byteLength
     }, 0)
     let offset = 0
     const wireMessages = new Uint8Array(new ArrayBuffer(totalLength))
 
-    this._queuedMessages.forEach((wireMessage) => {
+    this._outMessages.forEach((wireMessage) => {
       wireMessages.set(new Uint8Array(wireMessage), offset)
       offset += wireMessage.byteLength
     })
 
     this.onFlush(wireMessages.buffer)
-    this._queuedMessages = []
+    this._outMessages = []
   }
 
   /**
@@ -166,45 +177,69 @@ class Client {
 
   /**
    * Handle a received message from a client.
-   * @param {ArrayBuffer} wireMessages
+   * @param {ArrayBuffer} incomingWireMessages
    * @return {Promise<void>}
    */
-  async message (wireMessages) {
-    let offset = 0
-    while (offset < wireMessages.byteLength) {
-      const id = new Uint32Array(wireMessages, offset)[0]
-      const bufu16 = new Uint16Array(wireMessages, offset + 4)
-      const size = bufu16[0]
-      const opcode = bufu16[1]
-      const obj = this._objects.get(id)
-      if (obj) {
-        wireMessages.readIndex = offset + 8
-        await obj[opcode](wireMessages)
+  async message (incomingWireMessages) {
+    if (!this._display) {
+      // client destroyed
+      return
+    }
+
+    this._inMessages.push(incomingWireMessages)
+    if (this._inMessages.length > 1) {
+      // more than one message in queue means the message loop is in await, don't concurrently process the new
+      // message, instead return early and let the await pick up the newly queued message.
+      return
+    }
+
+    while (this._inMessages.length) {
+      const wireMessages = this._inMessages[0]
+      let offset = 0
+      while (offset < wireMessages.byteLength) {
+        if (!this._display) {
+          // client destroyed
+          return
+        }
+
+        const id = new Uint32Array(wireMessages, offset)[0]
+        const bufu16 = new Uint16Array(wireMessages, offset + 4)
+        const size = bufu16[0]
+        const opcode = bufu16[1]
+        const resource = this._resources[id]
+        if (resource) {
+          wireMessages.readIndex = offset + 8
+          await resource[opcode](wireMessages)
+        }
+        offset += size
       }
-      offset += size
+      this._inMessages.shift()
     }
   }
 
   close () {
-    if (this._server) {
-      const index = this._server.clients.indexOf(this)
-      if (index > -1) {
-        this._destroyedResolver(this)
-
-        this._objects.forEach((object) => {
-          object.destroy()
-        })
-        this._objects.clear()
-
-        this._server.clients.splice(this._server.clients.indexOf(this), 1)
-        this._server = null
-      }
+    if (!this._display) {
+      // client destroyed
+      return
     }
+
+    Object.values(this._resources).forEach((resource) => {
+      resource.destroy()
+    })
+
+    this.flush()
+
+    this._destroyedResolver()
+    this._destroyedResolver = null
+    this._outMessages = null
+    this._displayResource = null
+    this._resources = null
+    this._display = null
   }
 
   /**
    *
-   * @returns {Promise.<Client>}
+   * @returns {Promise<void>}
    */
   onClose () {
     return this._destroyPromise
@@ -215,7 +250,11 @@ class Client {
    * @param {Resource} resource
    */
   registerResource (resource) {
-    this._objects.set(resource.id, resource)
+    if (!this._display) {
+      // client destroyed
+      return
+    }
+    this._resources[resource.id] = resource
   }
 
   /**
@@ -223,7 +262,12 @@ class Client {
    * @param {Resource} resource
    */
   unregisterResource (resource) {
-    this._objects.delete(resource.id)
+    if (!this._display) {
+      // client destroyed
+      return
+    }
+    delete this._resources[resource.id]
+    this._displayResource.deleteId(resource.id)
   }
 
   /**
@@ -231,7 +275,7 @@ class Client {
    * @param {number} id
    * @param {number} opcode
    * @param {number} size
-   * @param {Array} argsArray
+   * @param {Array<{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}>} argsArray
    * @private
    */
   __marshallMsg (id, opcode, size, argsArray) {
@@ -249,7 +293,7 @@ class Client {
       arg._marshallArg(wireMsg) // write actual argument value to buffer
     })
 
-    this._onSend(wireMsg)
+    this.onSend(wireMsg)
   }
 
   /**
@@ -257,12 +301,12 @@ class Client {
    * @param {number} id
    * @param {number} opcode
    * @param {string} itfName
-   * @param {Array} argsArray
+   * @param {Array<{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}>} argsArray
    */
   marshallConstructor (id, opcode, itfName, argsArray) {
     // get next server id
-    const objectId = this._server.nextId
-    this._server.nextId++
+    const objectId = this._display.nextId
+    this._display.nextId++
 
     // determine required wire message length
     let size = 4 + 2 + 2 // id+size+opcode
@@ -293,23 +337,49 @@ class Client {
     })
 
     this.__marshallMsg(id, opcode, size, argsArray)
-  };
+  }
+
+  /**
+   * @param {DisplayResource}resource
+   * @param {number}id
+   * @override
+   */
+  sync (resource, id) {
+    const syncCallbackResource = new SyncCallbackResource(resource.client, id, 1)
+    syncCallbackResource.done(++this._syncEventSerial)
+    syncCallbackResource.destroy()
+  }
+
+  /**
+   * @param {DisplayResource}resource
+   * @param {number}id
+   * @override
+   */
+  getRegistry (resource, id) {
+    this._display.registry.publishGlobals(this._display.registry.createRegistryResource(this, id))
+  }
 
   /**
    *
-   * @param {Server} server
+   * @param {Display} display
    */
-  constructor (server) {
+  constructor (display) {
+    super()
     /**
-     * @type {Map<any, any>}
+     * @type {Object.<number, Resource>}
      * @private
      */
-    this._objects = new Map()
+    this._resources = {}
     /**
-     * @type {Server}
+     * @type {Display}
      * @private
      */
-    this._server = server
+    this._display = display
+    /**
+     * @type {number}
+     * @private
+     */
+    this._syncEventSerial = 0
     /**
      * @type {Promise<Client>}
      * @private
@@ -317,16 +387,21 @@ class Client {
     this._destroyPromise = new Promise((resolve) => {
       this._destroyedResolver = resolve
     })
-
-    const displayResource = new DisplayResource(this, 1, 1)
-    displayResource.implementation.getRegistry = (resource, id) => {
-      this._server.registry.publishGlobals(this._server.registry.createRegistryResource(this, id))
-    }
+    /**
+     * @type {DisplayResource}
+     * @private
+     */
+    this._displayResource = new DisplayResource(this, 1, 0, this)
     /**
      * @type {Array<ArrayBuffer>}
      * @private
      */
-    this._queuedMessages = []
+    this._outMessages = []
+    /**
+     * @type {Array<ArrayBuffer>}
+     * @private
+     */
+    this._inMessages = []
   }
 }
 

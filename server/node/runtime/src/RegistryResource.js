@@ -1,13 +1,25 @@
 'use strict'
 
 const Resource = require('./Resource')
-const {uint, string} = require ('./WireFormat')
+const {uint, string} = require('./WireFormat')
 
 // TODO match wayland registry api/protocol
-// TODO generatea registery api from protocol xml
 class RegistryResource extends Resource {
-  constructor (client, id, version) {
-    super(client, id, version, {})
+  /**
+   * @param {Client}client
+   * @param {number}id
+   * @param {number}version
+   * @param {RegistryRequests}implementation
+   */
+  constructor (client, id, version, implementation) {
+    super(client, id, version, implementation)
+  }
+
+  /**
+   * @return {RegistryRequests}
+   */
+  get implementation () {
+    return this._implementation
   }
 
   /**
@@ -33,8 +45,8 @@ class RegistryResource extends Resource {
    * @param {ArrayBuffer} message
    */
   [1] (message) {
-    const args = this.client._unmarshallArgs(message, 'uuu')
-    this.implementation._globals.get(args[0]).bindClient(this.client, args[1], args[2])
+    const args = this.client.unmarshallArgs(message, 'usun')
+    this.implementation.bind(this.client, this, args[0], args[1], args[2], args[3])
   }
 }
 

@@ -24,19 +24,35 @@ class Display {
   }
 
   /**
+   * Next server side object id.
    * @return {number}
    */
-  getNextId () {
+  getNextObjectId () {
     return ++this.nextId
   }
 
   /**
-   * @return {Client}
+   *
+   * Invoked when a client binds to this global. Subclasses implement this method so they can instantiate a
+   * corresponding wfs.Resource subtype.
+   *
    */
-  bindClient () {
+  createClient () {
     const client = new Client(this)
+    client.onClose().then(() => {
+      const idx = this.clients.indexOf(client)
+      if (idx > -1) {
+        this.clients.splice(idx, 1)
+      }
+    })
     this.clients.push(client)
     return client
+  }
+
+  flushClients () {
+    this.clients.forEach(client => {
+      client.flush()
+    })
   }
 }
 

@@ -13,8 +13,7 @@ class WireFormat {
 
   /**
    * @param {number} arg
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
-   *
+   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
    */
   static uint (arg) {
     return {
@@ -37,7 +36,7 @@ class WireFormat {
   /**
    *
    * @param {number} arg
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
    *
    */
   static uintOptional (arg) {
@@ -61,7 +60,7 @@ class WireFormat {
   /**
    *
    * @param {number} arg
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
    *
    */
   static int (arg) {
@@ -85,7 +84,7 @@ class WireFormat {
   /**
    *
    * @param {Number} arg
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
    *
    */
   static intOptional (arg) {
@@ -109,7 +108,7 @@ class WireFormat {
   /**
    *
    * @param {Fixed} arg
-   * @returns {{value: Fixed, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
    */
   static fixed (arg) {
     return {
@@ -132,7 +131,7 @@ class WireFormat {
   /**
    *
    * @param {Fixed} arg
-   * @returns {{value: Fixed, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
    */
   static fixedOptional (arg) {
     return {
@@ -154,8 +153,8 @@ class WireFormat {
 
   /**
    *
-   * @param {WObject} arg
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+   * @param {Resource} arg
+   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
    *
    */
   static object (arg) {
@@ -178,8 +177,8 @@ class WireFormat {
 
   /**
    *
-   * @param {WObject} arg
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: _marshallArg}}
+   * @param {Resource} arg
+   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
    *
    */
   static objectOptional (arg) {
@@ -201,9 +200,7 @@ class WireFormat {
   }
 
   /**
-   *
-   * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
-   *
+   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
    */
   static newObject () {
     return {
@@ -226,7 +223,7 @@ class WireFormat {
   /**
    *
    * @param {String} arg
-   * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
+   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
    *
    */
   static string (arg) {
@@ -259,7 +256,7 @@ class WireFormat {
   /**
    *
    * @param {String} arg
-   * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
+   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
    *
    */
   static stringOptional (arg) {
@@ -300,7 +297,7 @@ class WireFormat {
   /**
    *
    * @param {TypedArray} arg
-   * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
+   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
    *
    */
   static array (arg) {
@@ -331,7 +328,7 @@ class WireFormat {
   /**
    *
    * @param {TypedArray} arg
-   * @returns {{value: *, type: string, size: *, optional: boolean, _marshallArg: _marshallArg}}
+   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
    *
    */
   static arrayOptional (arg) {
