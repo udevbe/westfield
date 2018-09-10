@@ -8,17 +8,13 @@ class DisplayResource extends Resource {
    * @param {Client}client
    * @param {number}id
    * @param {number}version
-   * @param {DisplayRequests}implementation
    */
-  constructor (client, id, version, implementation) {
-    super(client, id, version, implementation)
-  }
-
-  /**
-   * @return {DisplayRequests}
-   */
-  get implementation () {
-    return this._implementation
+  constructor (client, id, version) {
+    super(client, id, version)
+    /**
+     * @type {DisplayRequests}
+     */
+    this.implementation = null
   }
 
   /**

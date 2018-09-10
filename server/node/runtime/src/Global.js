@@ -3,14 +3,31 @@
 class Global {
   /**
    *
-   * @param {string} interfaceName
+   * @param {Registry}registry
+   * @param {Object}implementation
+   * @param {string} interface_
    * @param {number} version
+   * @param {number}name
+   * @param {function(Client,number,number):void}bindCallback
    */
-  constructor (interfaceName, version) {
+  constructor (registry, implementation, interface_, version, name, bindCallback) {
+    /**
+     * @type {Registry}
+     */
+    this.registry = registry
+    /**
+     * @type {Object}
+     */
+    this.implementation = implementation
+    /**
+     * @type {function(Client, number, number): void}
+     * @private
+     */
+    this._bindCallback = bindCallback
     /**
      * @type {string}
      */
-    this.interfaceName = interfaceName
+    this.interface_ = interface_
     /**
      * @type {number}
      */
@@ -18,7 +35,7 @@ class Global {
     /**
      * @type {number}
      */
-    this._name = 0
+    this.name = name
   }
 
   /**
@@ -30,7 +47,16 @@ class Global {
    * @param {number} id
    * @param {number} version
    */
-  bindClient (client, id, version) {}
+  bindClient (client, id, version) {
+    this._bindCallback(client, id, version)
+  }
+
+  destroy () {
+    if (this.registry) {
+      this.registry.destroyGlobal(this)
+      this.registry = null
+    }
+  }
 }
 
 module.exports = Global

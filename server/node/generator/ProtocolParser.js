@@ -65,8 +65,10 @@ class ProtocolParser {
 
     out.write(`\t[${opcode}] (message) {\n`)
     const evSig = ProtocolParser._parseRequestSignature(ev)
-    out.write(`\t\tconst args = this.client._unmarshallArgs(message,'${evSig}')\n`)
-    out.write(`\t\tthis.implementation.${evName}.call(this.implementation, this`)
+    if (evSig.length) {
+      out.write(`\t\tconst args = this.client._unmarshallArgs(message,'${evSig}')\n`)
+    }
+    out.write(`\t\tthis.implementation.${evName}(this`)
 
     if (ev.hasOwnProperty('arg')) {
       const evArgs = ev.arg
@@ -77,14 +79,10 @@ class ProtocolParser {
     }
 
     out.write(')\n')
-    out.write('\t}\n\n')
+    out.write('\t}\n')
   }
 
-  _parseItfRequest (requestsOut, resourceName, itfRequest, requestsName) {
-    requestsOut.write('/**\n')
-    requestsOut.write(' * @interface\n')
-    requestsOut.write(' */\n')
-    requestsOut.write(`class ${requestsName} {\n`)
+  _parseItfRequest (requestsOut, resourceName, itfRequest) {
 
     const sinceVersion = itfRequest.$.hasOwnProperty('since') ? parseInt(itfRequest.$.since) : 1
     const reqName = camelCase(itfRequest.$.name)
@@ -110,7 +108,7 @@ class ProtocolParser {
             const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
             const argType = arg.$.type
 
-            requestsOut.write(`\t * @param {${ProtocolArguments[argType](argName, optional).jsType} ${argName} ${argDescription} \n`)
+            requestsOut.write(`\t * @param {${ProtocolArguments[argType](argName, optional).jsType}} ${argName} ${argDescription} \n`)
           })
         }
         requestsOut.write('\t *\n')
@@ -124,8 +122,6 @@ class ProtocolParser {
     requestsOut.write(`\t${reqName}(`)
     ProtocolParser._generateRequestArgs(requestsOut, itfRequest)
     requestsOut.write(') {}\n')
-    requestsOut.write('}\n\n')
-    requestsOut.write(`module.exports = ${requestsName}\n`)
   }
 
   _parseItfEvent (out, itfEvent, opcode) {
@@ -284,20 +280,15 @@ class ProtocolParser {
     resourceOut.write('\t *@param {number}version\n')
     resourceOut.write(`\t *@param {${requestsName}}implementation\n`)
     resourceOut.write('\t */\n')
-    resourceOut.write('\tconstructor (client, id, version, implementation) {\n')
-    resourceOut.write('\t\tsuper(client, id, version, implementation)\n')
+    resourceOut.write('\tconstructor (client, id, version) {\n')
+    resourceOut.write('\t\tsuper(client, id, version)\n')
+    resourceOut.write('\t\t/**\n')
+    resourceOut.write(`\t\t * @type {${requestsName}}\n`)
+    resourceOut.write('\t\t */\n')
+    resourceOut.write('\t\tthis.implementation = null\n')
     resourceOut.write('\t}\n\n')
 
-    // requests implementation getter
-    resourceOut.write('\t/**\n')
-    resourceOut.write(`\t * @return {${requestsName}}\n`)
-    resourceOut.write('\t */\n')
-    resourceOut.write('\tget implementation() {\n')
-    resourceOut.write('\t\treturn this._implementation\n')
-    resourceOut.write('\t}\n\n')
-
-
-    // glue event functions
+    // glue request functions
     if (protocolItf.hasOwnProperty('request')) {
       const itfRequests = protocolItf.request
       for (let j = 0; j < itfRequests.length; j++) {
@@ -381,7 +372,7 @@ class ProtocolParser {
       appRoot = process.env.PWD
     }
 
-    if(!outDir){
+    if (!outDir) {
       outDir = process.env.PWD
     }
 
@@ -414,10 +405,18 @@ class ProtocolParser {
     })
     requestsOut.write(' */\n\n')
 
+    requestsOut.write('/**\n')
+    requestsOut.write(' * @interface\n')
+    requestsOut.write(' */\n')
+    requestsOut.write(`class ${requestsName} {\n`)
+
     for (let j = 0; j < itfRequests.length; j++) {
       const itfRequest = itfRequests[j]
-      this._parseItfRequest(requestsOut, resourceName, itfRequest, requestsName)
+      this._parseItfRequest(requestsOut, resourceName, itfRequest)
     }
+
+    requestsOut.write('}\n\n')
+    requestsOut.write(`module.exports = ${requestsName}\n`)
     requestsOut.end()
   }
 }

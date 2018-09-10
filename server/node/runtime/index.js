@@ -1,3 +1,8 @@
 'use strict'
 
-module.exports = require('require-directory')(module, './src')
+module.exports = {
+  Client: require('./src/Client'),
+  Display: require('./src/Display'),
+  Fixed: require('./src/Fixed'),
+  Global: require('./src/Global')
+}

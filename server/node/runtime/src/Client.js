@@ -189,7 +189,7 @@ class Client extends DisplayRequests {
     this._inMessages.push(incomingWireMessages)
     if (this._inMessages.length > 1) {
       // more than one message in queue means the message loop is in await, don't concurrently process the new
-      // message, instead return early and let the await pick up the newly queued message.
+      // message, instead return early and let the resume-from-await pick up the newly queued message.
       return
     }
 

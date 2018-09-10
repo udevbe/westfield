@@ -7,9 +7,8 @@ class Resource {
    * @param {Client}client
    * @param {number}id
    * @param {number}version
-   * @param {*}implementation
    */
-  constructor (client, id, version, implementation) {
+  constructor (client, id, version) {
     /**
      * @type {Client}
      */
@@ -27,10 +26,6 @@ class Resource {
      * @type {{}}
      */
     this.userData = {}
-    /**
-     * @type {*}
-     */
-    this._implementation = implementation
     /**
      * @type {Promise<void>}
      * @private

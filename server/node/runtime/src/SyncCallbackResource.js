@@ -10,7 +10,7 @@ class SyncCallbackResource extends Resource {
    * @param {number}version
    */
   constructor (client, id, version) {
-    super(client, id, version, null)
+    super(client, id, version)
   }
 
   /**

@@ -629,21 +629,32 @@ wfc.Connection = class extends wfc.WObject {
   /**
    * Should be called when data arrives from the remote end. This is needed to drive the whole rpc mechanism.
    *
-   * @param {ArrayBuffer} wireMessages
+   * @param {ArrayBuffer} incomingWireMessages
    */
-  async unmarshall (wireMessages) {
-    let offset = 0
-    while (offset < wireMessages.byteLength) {
-      const id = new Uint32Array(wireMessages, offset)[0]
-      const bufu16 = new Uint16Array(wireMessages, offset + 4)
-      const size = bufu16[0]
-      const opcode = bufu16[1]
-      const obj = this._objects.get(id)
-      if (obj) {
-        wireMessages.readIndex = offset + 8
-        await obj[opcode](wireMessages)
+  async unmarshall (incomingWireMessages) {
+    this._inMessages.push(incomingWireMessages)
+    if (this._inMessages.length > 1) {
+      // more than one message in queue means the message loop is in await, don't concurrently process the new
+      // message, instead return early and let the resume-from-await pick up the newly queued message.
+      return
+    }
+
+    while (this._inMessages.length) {
+      const wireMessages = this._inMessages[0]
+      let offset = 0
+      while (offset < wireMessages.byteLength) {
+        const id = new Uint32Array(wireMessages, offset)[0]
+        const bufu16 = new Uint16Array(wireMessages, offset + 4)
+        const size = bufu16[0]
+        const opcode = bufu16[1]
+        const proxy = this._objects.get(id)
+        if (proxy) {
+          wireMessages.readIndex = offset + 8
+          await proxy[opcode](wireMessages)
+        }
+        offset += size
       }
-      offset += size
+      this._inMessages.shift()
     }
   }
 
@@ -730,30 +741,30 @@ wfc.Connection = class extends wfc.WObject {
    * @private
    */
   _onSend (wireMsg) {
-    this._queuedMessages.push(wireMsg)
+    this._outMessages.push(wireMsg)
   }
 
   /**
    * Empty the queue of wire messages and send them to the other end.
    */
   flush () {
-    if (this._queuedMessages.length === 0) {
+    if (this._outMessages.length === 0) {
       return
     }
 
-    const totalLength = this._queuedMessages.reduce((previous, current) => {
+    const totalLength = this._outMessages.reduce((previous, current) => {
       return previous + current.byteLength
     }, 0)
     let offset = 0
     const wireMessages = new Uint8Array(new ArrayBuffer(totalLength))
 
-    this._queuedMessages.forEach((wireMessage) => {
+    this._outMessages.forEach((wireMessage) => {
       wireMessages.set(new Uint8Array(wireMessage), offset)
       offset += wireMessage.byteLength
     })
 
     this.onFlush(wireMessages.buffer)
-    this._queuedMessages = []
+    this._outMessages = []
   }
 
   /**
@@ -796,7 +807,12 @@ wfc.Connection = class extends wfc.WObject {
      * @type {Array<ArrayBuffer>}
      * @private
      */
-    this._queuedMessages = []
+    this._outMessages = []
+    /**
+     * @type {Array<ArrayBuffer>}
+     * @private
+     */
+    this._inMessages = []
     this.connection = this
     /**
      * Pool of objects that live on this connection.

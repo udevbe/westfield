@@ -61,7 +61,7 @@ class ProtocolArguments {
   static new_id (argName, optional) {
     return {
       signature: optional ? '?n' : 'n',
-      jsType: '*',
+      jsType: 'number',
       marshallGen: 'newObject()'
     }
   }
@@ -87,7 +87,7 @@ class ProtocolArguments {
   static array (argName, optional) {
     return {
       signature: optional ? '?a' : 'a',
-      jsType: optional ? '?ArrayBuffer' : 'ArrayBuffer',
+      jsType: optional ? '?TypedArray' : 'TypedArray',
       marshallGen: optional ? `arrayOptional(${argName})` : `array(${argName})`
     }
   }

@@ -9,17 +9,13 @@ class RegistryResource extends Resource {
    * @param {Client}client
    * @param {number}id
    * @param {number}version
-   * @param {RegistryRequests}implementation
    */
-  constructor (client, id, version, implementation) {
-    super(client, id, version, implementation)
-  }
-
-  /**
-   * @return {RegistryRequests}
-   */
-  get implementation () {
-    return this._implementation
+  constructor (client, id, version) {
+    super(client, id, version)
+    /**
+     * @type {RegistryRequests}
+     */
+    this.implementation = null
   }
 
   /**
@@ -36,7 +32,7 @@ class RegistryResource extends Resource {
    * @param {Number} name
    */
   globalRemove (name) {
-    this.client._marshall(this.id, 2, [wfs._uint(name)])
+    this.client._marshall(this.id, 2, [uint(name)])
   }
 
   /**

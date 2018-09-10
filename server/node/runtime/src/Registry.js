@@ -2,6 +2,7 @@
 
 const RegistryResource = require('./RegistryResource')
 const RegistryRequests = require('./RegistryRequests')
+const Global = require('./Global')
 
 /**
  * @implements {RegistryRequests}
@@ -29,16 +30,18 @@ class Registry extends RegistryRequests {
   /**
    * Register a global to make it available to clients.
    *
-   * @param {Global} global
+   * @param {Object} implementation
+   * @param {string}interface_
+   * @param {number}version
+   * @param {function(Client,number,number):void}bindCallback callback with Client, id, version arguments
+   * @return {Global}
    */
-  register (global) {
-    if (!(global._name)) {
-      global._name = ++this._nextGlobalName
-    }
-    if (!this._globals[global._name]) {
-      this._globals[global._name] = global
-      this._registryResources.forEach(registryResource => registryResource.global(global._name, global.interfaceName, global.version))
-    }
+  createGlobal (implementation, interface_, version, bindCallback) {
+    const name = ++this._nextGlobalName
+    const global = new Global(this, implementation, interface_, version, name, bindCallback)
+    this._globals[name] = global
+    this._registryResources.forEach(registryResource => registryResource.global(global.name, global.interface_, global.version))
+    return global
   }
 
   /**
@@ -46,10 +49,10 @@ class Registry extends RegistryRequests {
    *
    * @param {Global} global
    */
-  unregister (global) {
-    if (this._globals[global._name]) {
-      delete this._globals[global._name]
-      this._registryResources.forEach(registryResource => registryResource.globalRemove(global._name))
+  destroyGlobal (global) {
+    if (this._globals[global.name]) {
+      delete this._globals[global.name]
+      this._registryResources.forEach(registryResource => registryResource.globalRemove(global.name))
     }
   }
 
@@ -57,7 +60,7 @@ class Registry extends RegistryRequests {
    * @param {RegistryResource} registryResource
    */
   publishGlobals (registryResource) {
-    Object.entries(this._globals).forEach((global, name) => registryResource.global(name, global.interfaceName, global.version))
+    Object.entries(this._globals).forEach((global, name) => registryResource.global(name, global.interface_, global.version))
   }
 
   /**
