@@ -1,3 +1,27 @@
+/*
+MIT License
+
+Copyright (c) 2017 Erik De Rijcke
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
 'use strict'
 
 const DisplayResource = require('./DisplayResource')
@@ -110,7 +134,7 @@ class Client extends DisplayRequests {
    *
    * @param {ArrayBuffer} message
    * @param {string} argsSignature
-   * @returns {Array}
+   * @returns {Array<*>}
    */
   unmarshallArgs (message, argsSignature) {
     const argsSigLength = argsSignature.length
@@ -210,6 +234,10 @@ class Client extends DisplayRequests {
         if (resource) {
           wireMessages.readIndex = offset + 8
           await resource[opcode](wireMessages)
+          if (!this._display) {
+            // client destroyed
+            return
+          }
         }
         offset += size
       }
@@ -227,14 +255,12 @@ class Client extends DisplayRequests {
       resource.destroy()
     })
 
-    this.flush()
-
-    this._destroyedResolver()
-    this._destroyedResolver = null
     this._outMessages = null
-    this._displayResource = null
+    this._inMessages = null
+    this.displayResource = null
     this._resources = null
     this._display = null
+    this._destroyedResolver()
   }
 
   /**
@@ -267,7 +293,7 @@ class Client extends DisplayRequests {
       return
     }
     delete this._resources[resource.id]
-    this._displayResource.deleteId(resource.id)
+    this.displayResource.deleteId(resource.id)
   }
 
   /**
@@ -297,13 +323,11 @@ class Client extends DisplayRequests {
   }
 
   /**
-   *
-   * @param {number} id
    * @param {number} opcode
-   * @param {string} itfName
    * @param {Array<{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}>} argsArray
+   * @return {number}
    */
-  marshallConstructor (id, opcode, itfName, argsArray) {
+  marshallConstructor (opcode, argsArray) {
     // get next server id
     const objectId = this._display.nextId
     this._display.nextId++
@@ -389,9 +413,9 @@ class Client extends DisplayRequests {
     })
     /**
      * @type {DisplayResource}
-     * @private
      */
-    this._displayResource = new DisplayResource(this, 1, 0, this)
+    this.displayResource = new DisplayResource(this, 1, 0)
+    this.displayResource.implementation = this
     /**
      * @type {Array<ArrayBuffer>}
      * @private

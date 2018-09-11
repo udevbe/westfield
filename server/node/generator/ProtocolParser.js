@@ -1,3 +1,27 @@
+/*
+MIT License
+
+Copyright (c) 2017 Erik De Rijcke
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
 'use strict'
 
 const path = require('path')
@@ -67,23 +91,14 @@ class ProtocolParser {
     const evSig = ProtocolParser._parseRequestSignature(ev)
     if (evSig.length) {
       out.write(`\t\tconst args = this.client._unmarshallArgs(message,'${evSig}')\n`)
+      out.write(`\t\tthis.implementation.${evName}(this, ...args)\n`)
+    } else {
+      out.write(`\t\tthis.implementation.${evName}(this)\n`)
     }
-    out.write(`\t\tthis.implementation.${evName}(this`)
-
-    if (ev.hasOwnProperty('arg')) {
-      const evArgs = ev.arg
-      for (let i = 0; i < evArgs.length; i++) {
-        out.write(', ')
-        out.write(`args[${i}]`)
-      }
-    }
-
-    out.write(')\n')
     out.write('\t}\n')
   }
 
   _parseItfRequest (requestsOut, resourceName, itfRequest) {
-
     const sinceVersion = itfRequest.$.hasOwnProperty('since') ? parseInt(itfRequest.$.since) : 1
     const reqName = camelCase(itfRequest.$.name)
 
@@ -215,7 +230,8 @@ class ProtocolParser {
    * @private
    */
   _writeResource (jsonProtocol, outDir, protocolItf) {
-    const itfName = upperCamelCase(protocolItf.$.name)
+    const itfNameOrig = protocolItf.$.name
+    const itfName = upperCamelCase(itfNameOrig)
     let itfVersion = 1
 
     if (protocolItf.$.hasOwnProperty('version')) {
@@ -302,7 +318,9 @@ class ProtocolParser {
       }
     }
 
-    resourceOut.write('}\n\n')
+    resourceOut.write('}\n')
+    resourceOut.write(`${resourceName}.protocolName = '${itfNameOrig}'\n\n`)
+
     // enums
     if (protocolItf.hasOwnProperty('enum')) {
       // create new files to define enums
