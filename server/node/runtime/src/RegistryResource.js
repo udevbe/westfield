@@ -63,7 +63,7 @@ class RegistryResource extends Resource {
    *
    * @param {ArrayBuffer} message
    */
-  [1] (message) {
+  [0] (message) {
     const args = this.client.unmarshallArgs(message, 'usun')
     this.implementation.bind(this.client, this, ...args)
   }

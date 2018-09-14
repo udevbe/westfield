@@ -323,11 +323,12 @@ class Client extends DisplayRequests {
   }
 
   /**
+   * @param {number} id
    * @param {number} opcode
    * @param {Array<{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}>} argsArray
    * @return {number}
    */
-  marshallConstructor (opcode, argsArray) {
+  marshallConstructor (id, opcode, argsArray) {
     // get next server id
     const objectId = this._display.nextId
     this._display.nextId++
