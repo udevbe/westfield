@@ -129,8 +129,8 @@ class Display extends Proxy {
     const arg = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0]
     wireMsg.readIndex += 4
     const connection = this
-    return (type) => {
-      const newProxy = new namespace[type](this)
+    return (constructor) => {
+      const newProxy = new constructor(this)
       newProxy._id = arg
       connection._proxies.set(newProxy._id, newProxy)
       return newProxy

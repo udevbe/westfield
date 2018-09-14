@@ -98,7 +98,7 @@ class Signaling extends RtcSignalingRequests {
     return clientServerPeerConnection
   }
 
-  clientClientPeer (client, client) {
+  clientClientPeer (client0, client1) {
     // TODO
   }
 }

@@ -34,7 +34,7 @@ const upperCamelCase = require('uppercamelcase')
 const ProtocolArguments = require('./ProtocolArguments')
 
 class ProtocolParser {
-  static _generateEventArgs (out, req) {
+  static _generateRequestArgs (codeLines, req) {
     if (req.hasOwnProperty('arg')) {
       const evArgs = req.arg
       let processedFirstArg = false
@@ -46,19 +46,23 @@ class ProtocolParser {
 
         const argName = camelCase(arg.$.name)
         if (processedFirstArg) {
-          out.write(', ')
+          codeLines.push(', ')
         }
-        out.write(argName)
+        codeLines.push(argName)
         processedFirstArg = true
       }
     }
   }
 
-  static _generateRequestArgs (out, ev) {
-    out.write('resource')
+  static _generateEventArgs (out, ev) {
     if (ev.hasOwnProperty('arg')) {
       const evArgs = ev.arg
-      for (let i = 0; i < evArgs.length; i++) {
+
+      const arg0 = evArgs[0]
+      const arg0Name = camelCase(arg0.$.name)
+      out.write(arg0Name)
+
+      for (let i = 1; i < evArgs.length; i++) {
         const arg = evArgs[i]
         const argName = camelCase(arg.$.name)
         out.write(', ' + argName)
@@ -66,7 +70,7 @@ class ProtocolParser {
     }
   }
 
-  static _parseRequestSignature (ev) {
+  static _parseEventSignature (ev) {
     let evSig = ''
     if (ev.hasOwnProperty('arg')) {
       const evArgs = ev.arg
@@ -84,87 +88,110 @@ class ProtocolParser {
     return evSig
   }
 
-  static _generateIfRequestGlue (out, ev, opcode) {
+  static _generateIfEventGlue (importLines, codeLines, ev, opcode) {
     const evName = camelCase(ev.$.name)
 
-    out.write(`\t[${opcode}] (message) {\n`)
-    const evSig = ProtocolParser._parseRequestSignature(ev)
-    if (evSig.length) {
-      out.write(`\t\tconst args = this.client._unmarshallArgs(message,'${evSig}')\n`)
-      out.write(`\t\tthis.implementation.${evName}(this, ...args)\n`)
-    } else {
-      out.write(`\t\tthis.implementation.${evName}(this)\n`)
-    }
-    out.write('\t}\n')
-  }
-
-  _parseItfRequest (requestsOut, resourceName, itfRequest) {
-    const sinceVersion = itfRequest.$.hasOwnProperty('since') ? parseInt(itfRequest.$.since) : 1
-    const reqName = camelCase(itfRequest.$.name)
-
-    // function docs
-    if (itfRequest.hasOwnProperty('description')) {
-      const description = itfRequest.description
-      description.forEach((val) => {
-        requestsOut.write('\n\t/**\n')
-        if (val.hasOwnProperty('_')) {
-          val._.split('\n').forEach((line) => {
-            requestsOut.write('\t *' + line + '\n')
-          })
-        }
-
-        requestsOut.write('\t *\n')
-        requestsOut.write(`\t * @param {${resourceName}} resource \n`)
-        if (itfRequest.hasOwnProperty('arg')) {
-          const evArgs = itfRequest.arg
-          evArgs.forEach((arg) => {
-            const argDescription = arg.$.summary || ''
-            const argName = camelCase(arg.$.name)
-            const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
-            const argType = arg.$.type
-
-            requestsOut.write(`\t * @param {${ProtocolArguments[argType](argName, optional).jsType}} ${argName} ${argDescription} \n`)
-          })
-        }
-        requestsOut.write('\t *\n')
-        requestsOut.write(`\t * @since ${sinceVersion}\n`)
-        requestsOut.write('\t *\n')
-        requestsOut.write('\t */\n')
-      })
+    codeLines.push(`\t[${opcode}] (message) {\n`)
+    if (ev.hasOwnProperty('arg')) {
+      const evSig = this._parseEventSignature(ev)
+      codeLines.push(`\t\tconst args = this.display.unmarshallArgs(message, '${evSig}')\n`)
     }
 
-    // function
-    requestsOut.write(`\t${reqName}(`)
-    ProtocolParser._generateRequestArgs(requestsOut, itfRequest)
-    requestsOut.write(') {}\n')
+    codeLines.push(`\t\tthis.listener.${evName}(`)
+
+    if (ev.hasOwnProperty('arg')) {
+      const evArgs = ev.arg
+      const arg0 = evArgs[0]
+      const arg0Type = arg0.$.type
+      codeLines.push(`args[0]`)
+      if (arg0Type === 'new_id') {
+        const argItf = upperCamelCase(arg0.$['interface']) + 'Proxy'
+        importLines.push(`const ${argItf} = require('./${argItf}')\n`)
+        codeLines.push(`(${argItf}.constructor)`)
+      }
+      for (let i = 1; i < evArgs.length; i++) {
+        codeLines.push(', ')
+        const arg = evArgs[i]
+        const argType = arg.$.type
+        codeLines.push(`args[${i}]`)
+        if (argType === 'new_id') {
+          const argItf = upperCamelCase(arg.$['interface']) + 'Proxy'
+          importLines.push(`const ${argItf} = require('./${argItf}')\n`)
+          codeLines.push(`(${argItf}.constructor)`)
+        }
+      }
+    }
+
+    codeLines.push(')\n')
+    codeLines.push('\t}\n\n')
   }
 
-  _parseItfEvent (out, itfEvent, opcode) {
+  _parseItfEvent (eventsOut, itfEvent) {
     const sinceVersion = itfEvent.$.hasOwnProperty('since') ? parseInt(itfEvent.$.since) : 1
-
     const reqName = camelCase(itfEvent.$.name)
 
     // function docs
     if (itfEvent.hasOwnProperty('description')) {
       const description = itfEvent.description
       description.forEach((val) => {
-        out.write('\n\t/**\n')
+        eventsOut.write('\n\t/**\n')
         if (val.hasOwnProperty('_')) {
           val._.split('\n').forEach((line) => {
-            out.write('\t *' + line + '\n')
+            eventsOut.write('\t *' + line + '\n')
           })
         }
 
+        eventsOut.write('\t *\n')
         if (itfEvent.hasOwnProperty('arg')) {
-          const reqArgs = itfEvent.arg
-          out.write('\t *\n')
+          const evArgs = itfEvent.arg
+          evArgs.forEach((arg) => {
+            const argDescription = arg.$.summary || ''
+            const argName = camelCase(arg.$.name)
+            const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
+            const argType = arg.$.type
+
+            eventsOut.write(`\t * @param {${ProtocolArguments[argType](argName, optional).jsType}} ${argName} ${argDescription} \n`)
+          })
+        }
+        eventsOut.write('\t *\n')
+        eventsOut.write(`\t * @since ${sinceVersion}\n`)
+        eventsOut.write('\t *\n')
+        eventsOut.write('\t */\n')
+      })
+    }
+
+    // function
+    eventsOut.write(`\t${reqName}(`)
+    ProtocolParser._generateEventArgs(eventsOut, itfEvent)
+    eventsOut.write(') {}\n')
+  }
+
+  _parseItfRequest (codeLines, importLines, itfRequest, opcode) {
+    const sinceVersion = itfRequest.$.hasOwnProperty('since') ? parseInt(itfRequest.$.since) : 1
+
+    const reqName = camelCase(itfRequest.$.name)
+
+    // function docs
+    if (itfRequest.hasOwnProperty('description')) {
+      const description = itfRequest.description
+      description.forEach((val) => {
+        codeLines.push('\n\t/**\n')
+        if (val.hasOwnProperty('_')) {
+          val._.split('\n').forEach((line) => {
+            codeLines.push('\t *' + line + '\n')
+          })
+        }
+
+        if (itfRequest.hasOwnProperty('arg')) {
+          const reqArgs = itfRequest.arg
+          codeLines.push('\t *\n')
           reqArgs.forEach((arg) => {
             const argDescription = arg.$.summary || ''
             const argName = camelCase(arg.$.name)
             const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
             const argType = arg.$.type
             if (argType !== 'new_id') {
-              out.write(`\t * @param {${ProtocolArguments[argType](argName, optional).jsType}} ${argName} ${argDescription} \n`)
+              codeLines.push(`\t * @param {${ProtocolArguments[argType](argName, optional).jsType}} ${argName} ${argDescription} \n`)
             }
           })
 
@@ -173,27 +200,27 @@ class ProtocolParser {
             const argItf = arg.$['interface']
             const argType = arg.$.type
             if (argType === 'new_id') {
-              out.write(`\t * @return {number} resource id. ${argDescription} \n`)
+              codeLines.push(`\t * @return {${argItf}} ${argDescription} \n`)
             }
           })
-          out.write('\t *\n')
+          codeLines.push('\t *\n')
         }
-        out.write(`\t * @since ${sinceVersion}\n`)
-        out.write('\t *\n')
-        out.write('\t */\n')
+        codeLines.push(`\t * @since ${sinceVersion}\n`)
+        codeLines.push('\t *\n')
+        codeLines.push('\t */\n')
       })
     }
 
     // function
-    out.write(`\t${reqName} (`)
-    ProtocolParser._generateEventArgs(out, itfEvent)
-    out.write(') {\n')
+    codeLines.push(`\t${reqName} (`)
+    ProtocolParser._generateRequestArgs(codeLines, itfRequest)
+    codeLines.push(') {\n')
 
     let itfName
     // function args
     let argArray = '['
-    if (itfEvent.hasOwnProperty('arg')) {
-      const reqArgs = itfEvent.arg
+    if (itfRequest.hasOwnProperty('arg')) {
+      const reqArgs = itfRequest.arg
 
       for (let i = 0; i < reqArgs.length; i++) {
         const arg = reqArgs[i]
@@ -215,12 +242,13 @@ class ProtocolParser {
     argArray += ']'
 
     if (itfName) {
-      out.write(`\t\treturn this.client.marshallConstructor(this.id, ${opcode}, '${itfName}', ${argArray})\n`)
+      importLines.push(`const ${itfName}Proxy = require('./${itfName}Proxy')\n`)
+      codeLines.push(`\t\treturn this.display.marshallConstructor(this.id, ${opcode}, ${itfName}Proxy.constructor, ${argArray})\n`)
     } else {
-      out.write(`\t\tthis.client.marshall(this.id, ${opcode}, ${argArray})\n`)
+      codeLines.push(`\t\tthis.display.marshall(this.id, ${opcode}, ${argArray})\n`)
     }
 
-    out.write('\t}\n')
+    codeLines.push('\t}\n')
   }
 
   /**
@@ -229,7 +257,7 @@ class ProtocolParser {
    * @param {Object}protocolItf
    * @private
    */
-  _writeResource (jsonProtocol, outDir, protocolItf) {
+  _writeProxy (jsonProtocol, outDir, protocolItf) {
     const itfNameOrig = protocolItf.$.name
     const itfName = upperCamelCase(itfNameOrig)
     let itfVersion = 1
@@ -240,19 +268,22 @@ class ProtocolParser {
 
     console.log(`Processing interface ${itfName} v${itfVersion}`)
 
-    const resourceName = `${itfName}Resource`
-    const resourceOut = fs.createWriteStream(path.join(outDir, `${resourceName}.js`))
+    const proxyName = `${itfName}Proxy`
+    const proxyOut = fs.createWriteStream(path.join(outDir, `${proxyName}.js`))
 
-    resourceOut.write('/*\n')
+    proxyOut.write('/*\n')
     jsonProtocol.protocol.copyright.forEach((val) => {
       val.split('\n').forEach((line) => {
-        resourceOut.write(' *' + line + '\n')
+        proxyOut.write(' *' + line + '\n')
       })
     })
-    resourceOut.write(' */\n\n')
+    proxyOut.write(' */\n\n')
 
-    resourceOut.write('const {Resource, WireFormat} = require(\'westfield-runtime-server\')\n')
-    resourceOut.write('const {parseFixed, uint, uintOptional, int, intOptional, fixed, \n' +
+    const importLines = []
+    const codeLines = []
+
+    importLines.push('const {Proxy, WireFormat} = require(\'westfield-runtime-client\')\n')
+    importLines.push('const {parseFixed, uint, uintOptional, int, intOptional, fixed, \n' +
       '\tfixedOptional, object, objectOptional, newObject, string, \n' +
       '\tstringOptional, array, arrayOptional} = WireFormat\n')
 
@@ -260,65 +291,63 @@ class ProtocolParser {
     const description = protocolItf.description
     if (description) {
       description.forEach((val) => {
-        resourceOut.write('\n/**\n')
+        codeLines.push('\n/**\n')
         if (val.hasOwnProperty('_')) {
           val._.split('\n').forEach((line) => {
-            resourceOut.write(' *' + line + '\n')
+            codeLines.push(' *' + line + '\n')
           })
         }
-        resourceOut.write(' */\n')
+        codeLines.push(' */\n')
       })
     }
 
     // class
-    resourceOut.write(`class ${resourceName} extends Resource {\n`)
-
-    // events
-    if (protocolItf.hasOwnProperty('event')) {
-      const itfEvents = protocolItf.event
-      for (let j = 0; j < itfEvents.length; j++) {
-        this._parseItfEvent(resourceOut, itfEvents[j], j)
-      }
-    }
-
-    const requestsName = `${itfName}Requests`
+    codeLines.push(`class ${proxyName} extends Proxy {\n`)
 
     // requests
     if (protocolItf.hasOwnProperty('request')) {
       const itfRequests = protocolItf.request
-      this._writeRequests(jsonProtocol, outDir, itfRequests, resourceName, requestsName)
-    }
-
-    // constructor
-    resourceOut.write('\n/**\n')
-    resourceOut.write('\t *@param {Client}client\n')
-    resourceOut.write('\t *@param {number}id\n')
-    resourceOut.write('\t *@param {number}version\n')
-    resourceOut.write('\t */\n')
-    resourceOut.write('\tconstructor (client, id, version) {\n')
-    resourceOut.write('\t\tsuper(client, id, version)\n')
-    resourceOut.write('\t\t/**\n')
-    resourceOut.write(`\t\t * @type {${requestsName}|null}\n`)
-    resourceOut.write('\t\t */\n')
-    resourceOut.write('\t\tthis.implementation = null\n')
-    resourceOut.write('\t}\n\n')
-
-    // glue request functions
-    if (protocolItf.hasOwnProperty('request')) {
-      const itfRequests = protocolItf.request
       for (let j = 0; j < itfRequests.length; j++) {
-        const itfRequest = itfRequests[j]
-        let since = '1'
-        if (itfRequest.$.hasOwnProperty('since')) {
-          since = itfRequest.$.since
-        }
-
-        ProtocolParser._generateIfRequestGlue(resourceOut, itfRequest, j)
+        this._parseItfRequest(codeLines, importLines, itfRequests[j], j)
       }
     }
 
-    resourceOut.write('}\n')
-    resourceOut.write(`${resourceName}.protocolName = '${itfNameOrig}'\n\n`)
+    const eventsName = `${itfName}Events`
+
+    // events
+    if (protocolItf.hasOwnProperty('event')) {
+      const itfEvents = protocolItf.event
+      this._writeEvents(jsonProtocol, outDir, itfEvents, eventsName)
+    }
+
+    // constructor
+    codeLines.push('\n/**\n')
+    codeLines.push('\t *@param {Display}display\n')
+    codeLines.push('\t */\n')
+    codeLines.push('\tconstructor (display) {\n')
+    codeLines.push('\t\tsuper(display)\n')
+    codeLines.push('\t\t/**\n')
+    codeLines.push(`\t\t * @type {${eventsName}|null}\n`)
+    codeLines.push('\t\t */\n')
+    codeLines.push('\t\tthis.listener = null\n')
+    codeLines.push('\t}\n\n')
+
+    // glue event functions
+    if (protocolItf.hasOwnProperty('event')) {
+      const itfEvents = protocolItf.event
+      for (let j = 0; j < itfEvents.length; j++) {
+        const itfEvent = itfEvents[j]
+        let since = '1'
+        if (itfEvent.$.hasOwnProperty('since')) {
+          since = itfEvent.$.since
+        }
+
+        ProtocolParser._generateIfEventGlue(importLines, codeLines, itfEvent, j)
+      }
+    }
+
+    codeLines.push('}\n')
+    codeLines.push(`${proxyName}.protocolName = '${itfNameOrig}'\n\n`)
 
     // enums
     if (protocolItf.hasOwnProperty('enum')) {
@@ -328,7 +357,7 @@ class ProtocolParser {
         const itfEnum = itfEnums[j]
         const enumName = upperCamelCase(itfEnum.$.name)
 
-        resourceOut.write(`${resourceName}.${enumName} = {\n`)
+        codeLines.push(`${proxyName}.${enumName} = {\n`)
 
         let firstArg = true
         itfEnum.entry.forEach((entry) => {
@@ -337,21 +366,29 @@ class ProtocolParser {
           const entrySummary = entry.$.summary || ''
 
           if (!firstArg) {
-            resourceOut.write(',\n')
+            codeLines.push(',\n')
           }
           firstArg = false
 
-          resourceOut.write('  /**\n')
-          resourceOut.write(`   * ${entrySummary}\n`)
-          resourceOut.write('   */\n')
-          resourceOut.write(`  ${entryName}: ${entryValue}`)
+          codeLines.push('  /**\n')
+          codeLines.push(`   * ${entrySummary}\n`)
+          codeLines.push('   */\n')
+          codeLines.push(`  ${entryName}: ${entryValue}`)
         })
-        resourceOut.write('\n}\n\n')
+        codeLines.push('\n}\n\n')
       }
     }
 
-    resourceOut.write(`module.exports = ${resourceName}\n`)
-    resourceOut.end()
+    codeLines.push(`module.exports = ${proxyName}\n`)
+
+    importLines.forEach(line => {
+      proxyOut.write(line)
+    })
+    codeLines.forEach(line => {
+      proxyOut.write(line)
+    })
+
+    proxyOut.end()
   }
 
   /**
@@ -361,7 +398,7 @@ class ProtocolParser {
    * @private
    */
   _parseInterface (jsonProtocol, outDir, protocolItf) {
-    this._writeResource(jsonProtocol, outDir, protocolItf)
+    this._writeProxy(jsonProtocol, outDir, protocolItf)
   }
 
   // TODO make outFile -> outDir
@@ -410,31 +447,31 @@ class ProtocolParser {
     this.protocolFile = protocolFile
   }
 
-  _writeRequests (jsonProtocol, outDir, itfRequests, resourceName, requestsName) {
-    const requestsFile = path.join(outDir, `${requestsName}.js`)
-    const requestsOut = fs.createWriteStream(requestsFile)
+  _writeEvents (jsonProtocol, outDir, itfEvents, eventsName) {
+    const eventsFile = path.join(outDir, `${eventsName}.js`)
+    const eventsOut = fs.createWriteStream(eventsFile)
 
-    requestsOut.write('/*\n')
+    eventsOut.write('/*\n')
     jsonProtocol.protocol.copyright.forEach((val) => {
       val.split('\n').forEach((line) => {
-        requestsOut.write(' *' + line + '\n')
+        eventsOut.write(' *' + line + '\n')
       })
     })
-    requestsOut.write(' */\n\n')
+    eventsOut.write(' */\n\n')
 
-    requestsOut.write('/**\n')
-    requestsOut.write(' * @interface\n')
-    requestsOut.write(' */\n')
-    requestsOut.write(`class ${requestsName} {\n`)
+    eventsOut.write('/**\n')
+    eventsOut.write(' * @interface\n')
+    eventsOut.write(' */\n')
+    eventsOut.write(`class ${eventsName} {\n`)
 
-    for (let j = 0; j < itfRequests.length; j++) {
-      const itfRequest = itfRequests[j]
-      this._parseItfRequest(requestsOut, resourceName, itfRequest)
+    for (let j = 0; j < itfEvents.length; j++) {
+      const itfEvent = itfEvents[j]
+      this._parseItfEvent(eventsOut, itfEvent)
     }
 
-    requestsOut.write('}\n\n')
-    requestsOut.write(`module.exports = ${requestsName}\n`)
-    requestsOut.end()
+    eventsOut.write('}\n\n')
+    eventsOut.write(`module.exports = ${eventsName}\n`)
+    eventsOut.end()
   }
 }
 
