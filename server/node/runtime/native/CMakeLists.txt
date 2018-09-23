@@ -46,6 +46,13 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 include_directories(${CMAKE_JS_INC} "/home/erik/.nvm/versions/node/v10.10.0/include")
 add_library(${PROJECT_NAME} SHARED
         src/westfield-native.c
-        )
+        src/connection.h
+        src/connection.c
+        src/event-loop.c
+        src/wayland-os.h
+        src/wayland-os.c
+        src/wayland-server.h
+        src/wayland-server.c
+        src/wayland-util.h)
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
 target_link_libraries(${PROJECT_NAME} ${CMAKE_JS_LIB})
