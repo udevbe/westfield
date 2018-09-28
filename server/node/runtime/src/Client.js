@@ -35,47 +35,71 @@ const Fixed = require('./Fixed')
  */
 class Client extends DisplayRequests {
   /**
+   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
+   * @param {number}consumption
+   * @private
+   */
+  static _checkMessageSize (wireMsg, consumption) {
+    if (wireMsg.consumed + consumption > wireMsg.size) {
+      throw new Error(`Request too short.`)
+    } else {
+      wireMsg.consumed += consumption
+    }
+  }
+
+  /**
    *
-   * @param {ArrayBuffer} wireMsg
+   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @returns {number}
    */
   u (wireMsg) { // unsigned integer {number}
-    const arg = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0]
-    wireMsg.readIndex += 4
+    const argSize = 4
+    Client._checkMessageSize(wireMsg, argSize)
+
+    const arg = new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0]
+    wireMsg.bufferOffset += argSize
+
     return arg
   }
 
   /**
    *
-   * @param {ArrayBuffer} wireMsg
+   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @returns {number}
    */
   i (wireMsg) { // integer {number}
-    const arg = new Int32Array(wireMsg, wireMsg.readIndex, 1)[0]
-    wireMsg.readIndex += 4
+    const argSize = 4
+    Client._checkMessageSize(wireMsg, argSize)
+
+    const arg = new Int32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0]
+    wireMsg.bufferOffset += argSize
     return arg
   }
 
   /**
    *
-   * @param {ArrayBuffer} wireMsg
+   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @returns {number}
    */
   f (wireMsg) { // float {number}
-    const arg = new Int32Array(wireMsg, wireMsg.readIndex, 1)[0]
-    wireMsg.readIndex += 4
+    const argSize = 4
+    Client._checkMessageSize(wireMsg, argSize)
+    const arg = new Int32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0]
+    wireMsg.bufferOffset += argSize
     return new Fixed(arg >> 0)
   }
 
   /**
    *
-   * @param {ArrayBuffer} wireMsg
+   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @param {Boolean} optional
    * @returns {Resource}
    */
   o (wireMsg, optional) {
-    const arg = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0]
-    wireMsg.readIndex += 4
+    const argSize = 4
+    Client._checkMessageSize(wireMsg, argSize)
+    const arg = new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0]
+    wireMsg.bufferOffset += argSize
     if (optional && arg === 0) {
       return null
     } else {
@@ -85,54 +109,79 @@ class Client extends DisplayRequests {
 
   /**
    *
-   * @param {ArrayBuffer} wireMsg
+   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @returns {number}
    */
   n (wireMsg) {
-    const arg = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0]
-    wireMsg.readIndex += 4
+    const argSize = 4
+    Client._checkMessageSize(wireMsg, argSize)
+    const arg = new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0]
+    wireMsg.bufferOffset += argSize
     return arg
   }
 
   /**
    *
-   * @param {ArrayBuffer} wireMsg
+   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @param {Boolean} optional
    * @returns {String}
    */
   s (wireMsg, optional) { // {String}
-    const stringSize = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0]
-    wireMsg.readIndex += 4
+    const argSize = 4
+    Client._checkMessageSize(wireMsg, argSize)
+    const stringSize = new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0]
+    wireMsg.bufferOffset += 4
     if (optional && stringSize === 0) {
       return null
     } else {
-      const byteArray = new Uint8Array(wireMsg, wireMsg.readIndex, stringSize)
-      wireMsg.readIndex += ((stringSize + 3) & ~3)
+      const alignedSize = ((stringSize + 3) & ~3)
+      Client._checkMessageSize(wireMsg, alignedSize)
+      const byteArray = new Uint8Array(wireMsg.buffer, wireMsg.bufferOffset, stringSize)
+      wireMsg.bufferOffset += alignedSize
       return String.fromCharCode.apply(null, byteArray)
     }
   }
 
   /**
    *
-   * @param {ArrayBuffer} wireMsg
+   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @param {Boolean} optional
    * @returns {ArrayBuffer}
    */
   a (wireMsg, optional) {
-    const arraySize = new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0]
-    wireMsg.readIndex += 4
+    const argSize = 4
+    Client._checkMessageSize(wireMsg, argSize)
+    const arraySize = new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0]
+    wireMsg.bufferOffset += 4
     if (optional && arraySize === 0) {
       return null
     } else {
-      const arg = wireMsg.slice(wireMsg.readIndex, wireMsg.readIndex + arraySize)
-      wireMsg.readIndex += ((arraySize + 3) & ~3)
+      const alignedSize = ((stringSize + 3) & ~3)
+      Client._checkMessageSize(wireMsg, alignedSize)
+      const arg = wireMsg.buffer.slice(wireMsg.bufferOffset, wireMsg.bufferOffset + arraySize)
+      wireMsg.bufferOffset += alignedSize
       return arg
     }
   }
 
   /**
    *
-   * @param {ArrayBuffer} message
+   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
+   * @returns {number}
+   */
+  h (wireMsg) { // file descriptor {number}
+    const argSize = 4
+    Client._checkMessageSize(wireMsg, argSize)
+    if (wireMsg.fds.length) {
+      return wireMsg.fds.shift()
+    } else {
+      throw new Error('File descriptor expected.')
+    }
+  }
+
+  /**
+   *
+   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} message
    * @param {string} argsSignature
    * @returns {Array<*>}
    */
@@ -155,7 +204,7 @@ class Client extends DisplayRequests {
 
   /**
    * This doesn't actually send the message, but queues it so it can be send on flush.
-   * @param {ArrayBuffer}wireMsg a single wire message event.
+   * @param {{buffer: ArrayBuffer, fds: Array<number>}}wireMsg a single wire message event.
    */
   onSend (wireMsg) {
     if (!this._display) {
@@ -177,32 +226,33 @@ class Client extends DisplayRequests {
     if (this._outMessages.length === 0) {
       return
     }
-    const totalLength = this._outMessages.reduce((previous, current) => {
-      return previous + current.byteLength
-    }, 0)
-    let offset = 0
-    const wireMessages = new Uint8Array(new ArrayBuffer(totalLength))
+    // const totalBufferLength = this._outMessages.reduce((previous, current) => {
+    //   return previous + current.buffer.byteLength
+    // }, 0)
+    // let offset = 0
+    // const wireMessages = new Uint8Array(new ArrayBuffer(totalBufferLength))
+    //
+    // this._outMessages.forEach((wireMessage) => {
+    //   wireMessages.set(new Uint8Array(wireMessage.buffer), offset)
+    //   offset += wireMessage.buffer.byteLength
+    // })
 
-    this._outMessages.forEach((wireMessage) => {
-      wireMessages.set(new Uint8Array(wireMessage), offset)
-      offset += wireMessage.byteLength
-    })
-
-    this.onFlush(wireMessages.buffer)
+    this.onFlush(this._outMessages)
     this._outMessages = []
   }
 
   /**
    * Callback when this connection wishes to send data to the other end. This callback can be used to send the given
    * array buffers using any transport mechanism.
-   * @param {ArrayBuffer}wireMessages
+   * @param {Array<{buffer: ArrayBuffer, fds: Array<number>}>}wireMessages
    */
   onFlush (wireMessages) {}
 
   /**
    * Handle a received message from a client.
-   * @param {ArrayBuffer} incomingWireMessages
+   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} incomingWireMessages
    * @return {Promise<void>}
+   * @throws Error If an illegal client request is received ie. bad length or missing file descriptor.
    */
   async message (incomingWireMessages) {
     if (!this._display) {
@@ -210,7 +260,7 @@ class Client extends DisplayRequests {
       return
     }
 
-    this._inMessages.push(incomingWireMessages)
+    this._inMessages.push(...incomingWireMessages)
     if (this._inMessages.length > 1) {
       // more than one message in queue means the message loop is in await, don't concurrently process the new
       // message, instead return early and let the resume-from-await pick up the newly queued message.
@@ -219,27 +269,24 @@ class Client extends DisplayRequests {
 
     while (this._inMessages.length) {
       const wireMessages = this._inMessages[0]
-      let offset = 0
-      while (offset < wireMessages.byteLength) {
-        if (!this._display) {
-          // client destroyed
-          return
+      while (wireMessages.bufferOffset < wireMessages.byteLength) {
+        const id = new Uint32Array(wireMessages.buffer, wireMessages.bufferOffset)[0]
+        const bufu16 = new Uint16Array(wireMessages.buffer, wireMessages.bufferOffset + 4)
+        wireMessages.size = bufu16[0]
+        if (wireMessages.size > wireMessages.buffer.byteLength) {
+          throw new Error('Request buffer too small')
         }
 
-        const id = new Uint32Array(wireMessages, offset)[0]
-        const bufu16 = new Uint16Array(wireMessages, offset + 4)
-        const size = bufu16[0]
         const opcode = bufu16[1]
         const resource = this._resources[id]
         if (resource) {
-          wireMessages.readIndex = offset + 8
+          wireMessages.buffer.bufferOffset += 8
           await resource[opcode](wireMessages)
           if (!this._display) {
             // client destroyed
             return
           }
         }
-        offset += size
       }
       this._inMessages.shift()
     }
@@ -301,21 +348,28 @@ class Client extends DisplayRequests {
    * @param {number} id
    * @param {number} opcode
    * @param {number} size
-   * @param {Array<{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}>} argsArray
+   * @param {Array<{value: *, type: string, size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}):void}>} argsArray
    * @private
    */
   __marshallMsg (id, opcode, size, argsArray) {
-    const wireMsg = new ArrayBuffer(size)
+    /**
+     * @type {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}}
+     */
+    const wireMsg = {
+      buffer: new ArrayBuffer(size),
+      fds: [],
+      bufferOffset: 0
+    }
 
     // write actual wire message
-    const bufu32 = new Uint32Array(wireMsg)
-    const bufu16 = new Uint16Array(wireMsg)
+    const bufu32 = new Uint32Array(wireMsg.buffer)
+    const bufu16 = new Uint16Array(wireMsg.buffer)
     bufu32[0] = id
     bufu16[2] = size
     bufu16[3] = opcode
-    wireMsg.readIndex = 8
+    wireMsg.bufferOffset = 8
 
-    argsArray.forEach(function (arg) {
+    argsArray.forEach((arg) => {
       arg._marshallArg(wireMsg) // write actual argument value to buffer
     })
 
@@ -325,7 +379,7 @@ class Client extends DisplayRequests {
   /**
    * @param {number} id
    * @param {number} opcode
-   * @param {Array<{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}>} argsArray
+   * @param {Array<{value: *, type: string, size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}):void}>} argsArray
    * @return {number}
    */
   marshallConstructor (id, opcode, argsArray) {
@@ -352,7 +406,7 @@ class Client extends DisplayRequests {
    *
    * @param {number} id
    * @param {number} opcode
-   * @param {Array} argsArray
+   * @param {Array<{value: *, type: string, size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}):void}>} argsArray
    */
   marshall (id, opcode, argsArray) {
     // determine required wire message length
@@ -406,7 +460,12 @@ class Client extends DisplayRequests {
      */
     this._syncEventSerial = 0
     /**
-     * @type {Promise<Client>}
+     * @type {function():void}
+     * @private
+     */
+    this._destroyedResolver = null
+    /**
+     * @type {Promise<void>}
      * @private
      */
     this._destroyPromise = new Promise((resolve) => {
@@ -418,12 +477,12 @@ class Client extends DisplayRequests {
     this.displayResource = new DisplayResource(this, 1, 0)
     this.displayResource.implementation = this
     /**
-     * @type {Array<ArrayBuffer>}
+     * @type {Array<{buffer: ArrayBuffer, fds: Array<number>}>}
      * @private
      */
     this._outMessages = []
     /**
-     * @type {Array<ArrayBuffer>}
+     * @type {Array<{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}>}
      * @private
      */
     this._inMessages = []

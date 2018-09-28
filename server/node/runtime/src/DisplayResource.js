@@ -44,7 +44,7 @@ class DisplayResource extends Resource {
   /**
    * opcode 0 -> sync
    *
-   * @param {ArrayBuffer} message
+   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} message
    */
   [0] (message) {
     const args = this.client.unmarshallArgs(message, 'n')
@@ -54,7 +54,7 @@ class DisplayResource extends Resource {
   /**
    * opcode 1 -> getRegistry
    *
-   * @param {ArrayBuffer} message
+   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} message
    */
   [1] (message) {
     const args = this.client.unmarshallArgs(message, 'n')

@@ -61,7 +61,7 @@ class RegistryResource extends Resource {
   /**
    * opcode 1 -> bind
    *
-   * @param {ArrayBuffer} message
+   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} message
    */
   [0] (message) {
     const args = this.client.unmarshallArgs(message, 'usun')

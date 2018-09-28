@@ -30,6 +30,19 @@ class ProtocolArguments {
    * @param {boolean}optional
    * @return {{signature: string, jsType: string, marshallGen: string}}
    */
+  static fd (argName, optional) {
+    return {
+      signature: optional ? '?h' : 'h',
+      jsType: optional ? '?number' : 'number',
+      marshallGen: optional ? `fileDescriptorOptional(${argName})` : `fileDescriptor(${argName})`
+    }
+  }
+
+  /**
+   * @param {string}argName
+   * @param {boolean}optional
+   * @return {{signature: string, jsType: string, marshallGen: string}}
+   */
   static uint (argName, optional) {
     return {
       signature: optional ? '?u' : 'u',

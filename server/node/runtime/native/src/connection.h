@@ -32,3 +32,10 @@ wl_connection_fds_in_count(struct wl_connection *connection);
 
 int
 wl_connection_read_next_fd_in(struct wl_connection *connection, int* fd);
+
+int
+wl_connection_put_fd(struct wl_connection *connection, int32_t fd);
+
+int
+wl_connection_write(struct wl_connection *connection,
+                    const void *data, size_t count);

@@ -93,7 +93,8 @@ class Registry extends RegistryRequests {
    * @param {number} id
    */
   createRegistryResource (client, id) {
-    const registryResource = new RegistryResource(client, id, 1, this)
+    const registryResource = new RegistryResource(client, id, 1)
+    registryResource.implementation = this
     this._registryResources.push(registryResource)
     return registryResource
   }

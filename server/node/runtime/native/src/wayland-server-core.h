@@ -43,8 +43,6 @@ enum {
 	WL_EVENT_ERROR    = 0x08
 };
 
-typedef int (*wl_connection_wire_message_t)(int client_fd, int32_t * wire_message, size_t wire_message_length, int* fds_in, size_t fds_in_count);
-
 /** File descriptor dispatch function type
  *
  * Functions of this type are used as callbacks for file descriptor events.
@@ -130,6 +128,9 @@ wl_display_create(void);
 void
 wl_display_destroy(struct wl_display *display);
 
+struct wl_event_loop *
+wl_display_get_event_loop(struct wl_display *display);
+
 int
 wl_display_add_socket(struct wl_display *display, const char *name);
 
@@ -152,6 +153,18 @@ void
 wl_display_destroy_clients(struct wl_display *display);
 
 struct wl_client;
+
+typedef void (*wl_connection_wire_message_t)(struct wl_client* client, int32_t * wire_message, size_t wire_message_length, int* fds_in, size_t fds_in_count);
+
+void
+wl_client_set_user_data(struct wl_client* client, void* data);
+
+void*
+wl_client_get_user_data(struct wl_client* client);
+
+void
+wl_display_add_destroy_listener(struct wl_display *display,
+                                struct wl_listener *listener);
 
 void
 wl_display_add_client_created_listener(struct wl_display *display,

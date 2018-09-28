@@ -75,6 +75,7 @@ struct wl_client {
     struct wl_connection *connection;
     struct wl_event_source *source;
     struct wl_display *display;
+    void* user_data;
     wl_connection_wire_message_t wire_message_cb;
     struct wl_list link;
     struct wl_priv_signal destroy_signal;
@@ -166,7 +167,7 @@ wl_client_connection_data(int fd, uint32_t mask, void *data) {
         wl_connection_consume(connection, size);
 
         if (client->wire_message_cb) {
-            client->wire_message_cb(fd, buffer, size, fds_in, fds_in_count);
+            client->wire_message_cb(client, buffer, size, fds_in, fds_in_count);
         }
 
         if (client->error)
@@ -202,6 +203,16 @@ wl_client_flush(struct wl_client *client) {
 void
 wl_client_set_wire_message_cb(struct wl_client *client, wl_connection_wire_message_t wire_message_cb) {
     client->wire_message_cb = wire_message_cb;
+}
+
+void
+wl_client_set_user_data(struct wl_client* client, void* data) {
+    client->user_data = data;
+}
+
+void*
+wl_client_get_user_data(struct wl_client* client) {
+    return client->user_data;
 }
 
 /** Create a client for the given file descriptor
@@ -449,6 +460,12 @@ wl_display_destroy(struct wl_display *display) {
     wl_list_remove(&display->protocol_loggers);
 
     free(display);
+}
+
+WL_EXPORT struct wl_event_loop *
+wl_display_get_event_loop(struct wl_display *display)
+{
+    return display->loop;
 }
 
 WL_EXPORT void
@@ -786,6 +803,13 @@ wl_display_add_socket(struct wl_display *display, const char *name) {
     }
 
     return 0;
+}
+
+WL_EXPORT void
+wl_display_add_destroy_listener(struct wl_display *display,
+                                struct wl_listener *listener)
+{
+    wl_priv_signal_add(&display->destroy_signal, listener);
 }
 
 /** Registers a listener for the client connection signal.

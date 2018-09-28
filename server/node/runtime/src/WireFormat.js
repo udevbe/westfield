@@ -28,7 +28,7 @@ const Fixed = require('./Fixed')
 
 class WireFormat {
   /**
-   * @param number
+   * @param {number}number
    * @return {Fixed}
    */
   static parseFixed (number) {
@@ -37,7 +37,7 @@ class WireFormat {
 
   /**
    * @param {number} arg
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
+   * @returns {{value: number, type: 'u', size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}):void}}
    */
   static uint (arg) {
     return {
@@ -47,12 +47,12 @@ class WireFormat {
       optional: false,
       /**
        *
-       * @param {ArrayBuffer} wireMsg
+       * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} wireMsg
        * @private
        */
       _marshallArg: function (wireMsg) {
-        new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value
-        wireMsg.readIndex += this.size
+        new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value
+        wireMsg.bufferOffset += this.size
       }
     }
   }
@@ -60,7 +60,7 @@ class WireFormat {
   /**
    *
    * @param {number} arg
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
+   * @returns {{value: number, type: 'u', size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}):void}}
    *
    */
   static uintOptional (arg) {
@@ -71,12 +71,12 @@ class WireFormat {
       optional: true,
       /**
        *
-       * @param {ArrayBuffer} wireMsg
+       * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} wireMsg
        * @private
        */
       _marshallArg: function (wireMsg) {
-        new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = (arg === null ? 0 : this.value)
-        wireMsg.readIndex += this.size
+        new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = (arg === null ? 0 : this.value)
+        wireMsg.bufferOffset += this.size
       }
     }
   }
@@ -84,7 +84,53 @@ class WireFormat {
   /**
    *
    * @param {number} arg
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
+   * @returns {{value: number, type: 'h', size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}):void}}
+   *
+   */
+  static fileDescriptor (arg) {
+    return {
+      value: arg,
+      type: 'h',
+      size: 4,
+      optional: false,
+      /**
+       *
+       * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} wireMsg
+       * @private
+       */
+      _marshallArg: function (wireMsg) {
+        wireMsg.fds.push(this.value)
+      }
+    }
+  }
+
+  /**
+   *
+   * @param {number} arg
+   * @returns {{value: number, type: 'h', size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}):void}}
+   *
+   */
+  static fileDescriptorOptional (arg) {
+    return {
+      value: arg,
+      type: 'h',
+      size: 4,
+      optional: true,
+      /**
+       *
+       * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} wireMsg
+       * @private
+       */
+      _marshallArg: function (wireMsg) {
+        wireMsg.fds.push(this.value)
+      }
+    }
+  }
+
+  /**
+   *
+   * @param {number} arg
+   * @returns {{value: number, type: 'i', size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}):void}}
    *
    */
   static int (arg) {
@@ -95,20 +141,20 @@ class WireFormat {
       optional: false,
       /**
        *
-       * @param {ArrayBuffer} wireMsg
+       * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} wireMsg
        * @private
        */
       _marshallArg: function (wireMsg) {
-        new Int32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value
-        wireMsg.readIndex += this.size
+        new Int32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value
+        wireMsg.bufferOffset += this.size
       }
     }
   }
 
   /**
    *
-   * @param {Number} arg
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
+   * @param {number} arg
+   * @returns {{value: number, type: 'i', size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}):void}}
    *
    */
   static intOptional (arg) {
@@ -119,12 +165,12 @@ class WireFormat {
       optional: true,
       /**
        *
-       * @param {ArrayBuffer} wireMsg
+       * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} wireMsg
        * @private
        */
       _marshallArg: function (wireMsg) {
-        new Int32Array(wireMsg, wireMsg.readIndex, 1)[0] = (arg === null ? 0 : this.value)
-        wireMsg.readIndex += this.size
+        new Int32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = (arg === null ? 0 : this.value)
+        wireMsg.bufferOffset += this.size
       }
     }
   }
@@ -132,7 +178,7 @@ class WireFormat {
   /**
    *
    * @param {Fixed} arg
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
+   * @returns {{value: Fixed, type: 'f', size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}):void}}
    */
   static fixed (arg) {
     return {
@@ -142,12 +188,12 @@ class WireFormat {
       optional: false,
       /**
        *
-       * @param {ArrayBuffer} wireMsg
+       * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} wireMsg
        * @private
        */
       _marshallArg: function (wireMsg) {
-        new Int32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value._raw
-        wireMsg.readIndex += this.size
+        new Int32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value._raw
+        wireMsg.bufferOffset += this.size
       }
     }
   }
@@ -155,7 +201,7 @@ class WireFormat {
   /**
    *
    * @param {Fixed} arg
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
+   * @returns {{value: Fixed, type: 'f', size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}):void}}
    */
   static fixedOptional (arg) {
     return {
@@ -165,12 +211,12 @@ class WireFormat {
       optional: true,
       /**
        *
-       * @param {ArrayBuffer} wireMsg
+       * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} wireMsg
        * @private
        */
       _marshallArg: function (wireMsg) {
-        new Int32Array(wireMsg, wireMsg.readIndex, 1)[0] = (arg === null ? 0 : this.value._raw)
-        wireMsg.readIndex += this.size
+        new Int32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = (arg === null ? 0 : this.value._raw)
+        wireMsg.bufferOffset += this.size
       }
     }
   }
@@ -178,7 +224,7 @@ class WireFormat {
   /**
    *
    * @param {Resource} arg
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
+   * @returns {{value: Resource, type: 'o', size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}):void}}
    *
    */
   static object (arg) {
@@ -189,12 +235,12 @@ class WireFormat {
       optional: false,
       /**
        *
-       * @param {ArrayBuffer} wireMsg
+       * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} wireMsg
        * @private
        */
       _marshallArg: function (wireMsg) {
-        new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value.id
-        wireMsg.readIndex += this.size
+        new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value.id
+        wireMsg.bufferOffset += this.size
       }
     }
   }
@@ -202,7 +248,7 @@ class WireFormat {
   /**
    *
    * @param {Resource} arg
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
+   * @returns {{value: Resource, type: 'o', size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}):void}}
    *
    */
   static objectOptional (arg) {
@@ -213,41 +259,40 @@ class WireFormat {
       optional: true,
       /**
        *
-       * @param {ArrayBuffer} wireMsg
+       * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} wireMsg
        * @private
        */
       _marshallArg: function (wireMsg) {
-        new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = (arg === null ? 0 : this.value.id)
-        wireMsg.readIndex += this.size
+        new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = (arg === null ? 0 : this.value.id)
+        wireMsg.bufferOffset += this.size
       }
     }
   }
 
   /**
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
+   * @returns {{value: number, type: 'n', size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}):void}}
    */
   static newObject () {
     return {
-      value: null, // id filled in by _marshallConstructor
+      value: 0, // id filled in by _marshallConstructor
       type: 'n',
       size: 4,
       optional: false,
       /**
-       *
-       * @param {ArrayBuffer} wireMsg
+       * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} wireMsg
        * @private
        */
       _marshallArg: function (wireMsg) {
-        new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value
-        wireMsg.readIndex += this.size
+        new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value
+        wireMsg.bufferOffset += this.size
       }
     }
   }
 
   /**
    *
-   * @param {String} arg
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
+   * @param {string} arg
+   * @returns {{value: string, type: 's', size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}):void}}
    *
    */
   static string (arg) {
@@ -260,19 +305,18 @@ class WireFormat {
       })(),
       optional: false,
       /**
-       *
-       * @param {ArrayBuffer} wireMsg
+       * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} wireMsg
        * @private
        */
       _marshallArg: function (wireMsg) {
-        new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value.length
+        new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value.length
 
         const strLen = this.value.length
-        const buf8 = new Uint8Array(wireMsg, wireMsg.readIndex + 4, strLen)
+        const buf8 = new Uint8Array(wireMsg.buffer, wireMsg.bufferOffset + 4, strLen)
         for (let i = 0; i < strLen; i++) {
           buf8[i] = this.value[i].codePointAt(0)
         }
-        wireMsg.readIndex += this.size
+        wireMsg.bufferOffset += this.size
       }
     }
   }
@@ -280,7 +324,7 @@ class WireFormat {
   /**
    *
    * @param {String} arg
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
+   * @returns {{value: *, type: 's', size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}):void}}
    *
    */
   static stringOptional (arg) {
@@ -298,22 +342,22 @@ class WireFormat {
       optional: true,
       /**
        *
-       * @param {ArrayBuffer} wireMsg
+       * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} wireMsg
        * @private
        */
       _marshallArg: function (wireMsg) {
         if (this.value === null) {
-          new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = 0
+          new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = 0
         } else {
-          new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value.length
+          new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value.length
 
           const strLen = this.value.length
-          const buf8 = new Uint8Array(wireMsg, wireMsg.readIndex + 4, strLen)
+          const buf8 = new Uint8Array(wireMsg.buffer, wireMsg.bufferOffset + 4, strLen)
           for (let i = 0; i < strLen; i++) {
             buf8[i] = this.value[i].codePointAt(0)
           }
         }
-        wireMsg.readIndex += this.size
+        wireMsg.bufferOffset += this.size
       }
     }
   }
@@ -321,7 +365,7 @@ class WireFormat {
   /**
    *
    * @param {TypedArray} arg
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
+   * @returns {{value: *, type: 'a', size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}):void}}
    *
    */
   static array (arg) {
@@ -335,16 +379,16 @@ class WireFormat {
       optional: false,
       /**
        *
-       * @param {ArrayBuffer} wireMsg
+       * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} wireMsg
        * @private
        */
       _marshallArg: function (wireMsg) {
-        new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value.byteLength
+        new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value.byteLength
 
         const byteLength = this.value.byteLength
-        new Uint8Array(wireMsg, wireMsg.readIndex + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength))
+        new Uint8Array(wireMsg.buffer, wireMsg.bufferOffset + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength))
 
-        wireMsg.readIndex += this.size
+        wireMsg.bufferOffset += this.size
       }
     }
   }
@@ -352,7 +396,7 @@ class WireFormat {
   /**
    *
    * @param {TypedArray} arg
-   * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
+   * @returns {{value: *, type: 'a', size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}):void}}
    *
    */
   static arrayOptional (arg) {
@@ -370,14 +414,14 @@ class WireFormat {
       optional: true,
       _marshallArg: function (wireMsg) {
         if (this.value === null) {
-          new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = 0
+          new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = 0
         } else {
-          new Uint32Array(wireMsg, wireMsg.readIndex, 1)[0] = this.value.byteLength
+          new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value.byteLength
 
           const byteLength = this.value.byteLength
-          new Uint8Array(wireMsg, wireMsg.readIndex + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength))
+          new Uint8Array(wireMsg.buffer, wireMsg.bufferOffset + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength))
         }
-        wireMsg.readIndex += this.size
+        wireMsg.bufferOffset += this.size
       }
     }
   }

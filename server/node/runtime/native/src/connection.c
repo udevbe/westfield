@@ -362,7 +362,7 @@ wl_connection_get_fd(struct wl_connection *connection) {
     return connection->fd;
 }
 
-static int
+int
 wl_connection_put_fd(struct wl_connection *connection, int32_t fd) {
     if (wl_buffer_size(&connection->fds_out) == MAX_FDS_OUT * sizeof fd) {
         connection->want_flush = 1;
