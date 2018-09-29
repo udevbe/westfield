@@ -28,14 +28,6 @@ const Fixed = require('./Fixed')
 
 class WireFormat {
   /**
-   * @param number
-   * @return {Fixed}
-   */
-  static parseFixed (number) {
-    return new Fixed((number * 256.0) >> 0)
-  }
-
-  /**
    * @param {number} arg
    * @returns {{value: *, type: string, size: number, optional: boolean, _marshallArg: function(ArrayBuffer):void}}
    */

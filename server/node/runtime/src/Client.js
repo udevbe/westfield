@@ -156,7 +156,7 @@ class Client extends DisplayRequests {
     if (optional && arraySize === 0) {
       return null
     } else {
-      const alignedSize = ((stringSize + 3) & ~3)
+      const alignedSize = ((arraySize + 3) & ~3)
       Client._checkMessageSize(wireMsg, alignedSize)
       const arg = wireMsg.buffer.slice(wireMsg.bufferOffset, wireMsg.bufferOffset + arraySize)
       wireMsg.bufferOffset += alignedSize
@@ -260,7 +260,7 @@ class Client extends DisplayRequests {
       return
     }
 
-    this._inMessages.push(...incomingWireMessages)
+    this._inMessages.push(incomingWireMessages)
     if (this._inMessages.length > 1) {
       // more than one message in queue means the message loop is in await, don't concurrently process the new
       // message, instead return early and let the resume-from-await pick up the newly queued message.
@@ -269,7 +269,7 @@ class Client extends DisplayRequests {
 
     while (this._inMessages.length) {
       const wireMessages = this._inMessages[0]
-      while (wireMessages.bufferOffset < wireMessages.byteLength) {
+      while (wireMessages.bufferOffset < wireMessages.buffer.byteLength) {
         const id = new Uint32Array(wireMessages.buffer, wireMessages.bufferOffset)[0]
         const bufu16 = new Uint16Array(wireMessages.buffer, wireMessages.bufferOffset + 4)
         wireMessages.size = bufu16[0]
@@ -280,7 +280,8 @@ class Client extends DisplayRequests {
         const opcode = bufu16[1]
         const resource = this._resources[id]
         if (resource) {
-          wireMessages.buffer.bufferOffset += 8
+          wireMessages.bufferOffset += 8
+          wireMessages.consumed = 8
           await resource[opcode](wireMessages)
           if (!this._display) {
             // client destroyed

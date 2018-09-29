@@ -26,6 +26,14 @@ SOFTWARE.
 
 class Fixed {
   /**
+   * @param {number}number
+   * @return {Fixed}
+   */
+  static parse (number) {
+    return new Fixed((number * 256.0) >> 0)
+  }
+
+  /**
    * Represent fixed as a signed 24-bit integer.
    *
    * @returns {number}

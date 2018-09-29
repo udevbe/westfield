@@ -46,9 +46,9 @@ class DisplayResource extends Resource {
    *
    * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} message
    */
-  [0] (message) {
+  async [0] (message) {
     const args = this.client.unmarshallArgs(message, 'n')
-    this.implementation.sync(this, ...args)
+    await this.implementation.sync(this, ...args)
   }
 
   /**
@@ -56,9 +56,9 @@ class DisplayResource extends Resource {
    *
    * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number}} message
    */
-  [1] (message) {
+  async [1] (message) {
     const args = this.client.unmarshallArgs(message, 'n')
-    this.implementation.getRegistry(this, ...args)
+    await this.implementation.getRegistry(this, ...args)
   }
 
   /**
@@ -94,5 +94,4 @@ class DisplayResource extends Resource {
   }
 }
 
-namespace.DisplayResource = DisplayResource
 module.exports = DisplayResource
