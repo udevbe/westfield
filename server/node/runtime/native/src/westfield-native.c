@@ -5,6 +5,7 @@
 
 #include "wayland-util.h"
 #include "wayland-server-core.h"
+#include "connection.h"
 
 #define DECLARE_NAPI_METHOD(name, func)                          \
   { name, 0, func, 0, 0, 0, napi_default, 0 }
@@ -189,8 +190,34 @@ destroyClient(napi_env env, napi_callback_info info) {
 // - void
 napi_value
 sendEvents(napi_env env, napi_callback_info info) {
-    // TODO add client send message function
+    napi_status status;
+    size_t argc = 3;
+    napi_value argv[argc], client_value, messages_value, fds_value;
+    struct wl_client *client;
+    struct wl_connection *connection;
+    void *messages;
+    int *fds;
+    size_t messages_length, fds_byte_length, fds_length;
 
+
+    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
+    assert(status == napi_ok);
+
+    client_value = argv[0];
+    napi_get_value_external(env, client_value, (void **) &client);
+
+    messages_value = argv[1];
+    napi_get_arraybuffer_info(env, messages_value, &messages, &messages_length);
+
+    fds_value = argv[2];
+    napi_get_arraybuffer_info(env, fds_value, (void **) &fds, &fds_byte_length);
+    fds_length = fds_byte_length / sizeof(int);
+
+    connection = wl_client_get_connection(client);
+    wl_connection_write(connection, messages, messages_length);
+    for (int i = 0; i < fds_length; ++i) {
+        wl_connection_put_fd(connection, fds[i]);
+    }
 }
 
 // expected arguments in order:

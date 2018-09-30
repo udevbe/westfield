@@ -215,6 +215,11 @@ wl_client_get_user_data(struct wl_client* client) {
     return client->user_data;
 }
 
+struct wl_connection*
+wl_client_get_connection(struct wl_client* client) {
+    return client->connection;
+}
+
 /** Create a client for the given file descriptor
  *
  * \param display The display object

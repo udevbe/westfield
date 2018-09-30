@@ -162,6 +162,9 @@ wl_client_set_user_data(struct wl_client* client, void* data);
 void*
 wl_client_get_user_data(struct wl_client* client);
 
+struct wl_connection*
+wl_client_get_connection(struct wl_client* client);
+
 void
 wl_display_add_destroy_listener(struct wl_display *display,
                                 struct wl_listener *listener);
