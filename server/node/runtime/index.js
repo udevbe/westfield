@@ -25,11 +25,12 @@ SOFTWARE.
 'use strict'
 
 /**
- * @type {{namespace: Object, Client: Client, Display: Display, Fixed: Fixed, Global: Global}}
+ * @type {{namespace: Object, Client: Client, Display: Display, Fixed: Fixed, Global: Global, CompositorEndpoint: CompositorEndpoint}}
  */
 module.exports = {
   Client: require('./src/Client'),
   Display: require('./src/Display'),
   Fixed: require('./src/Fixed'),
-  Global: require('./src/Global')
+  Global: require('./src/Global'),
+  CompsitorEndpoint: require('./src/CompositorEndpoint')
 }

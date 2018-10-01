@@ -53,6 +53,7 @@ add_library(${PROJECT_NAME} SHARED
         src/wayland-os.c
         src/wayland-server.h
         src/wayland-server.c
-        src/wayland-util.h)
+        src/wayland-util.h
+        src/wayland-util.c)
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
 target_link_libraries(${PROJECT_NAME} ${CMAKE_JS_LIB})

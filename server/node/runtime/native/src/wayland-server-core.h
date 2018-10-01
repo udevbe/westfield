@@ -97,6 +97,9 @@ typedef void (*wl_event_loop_idle_func_t)(void *data);
 struct wl_event_loop *
 wl_event_loop_create(void);
 
+int
+wl_event_loop_get_fd(struct wl_event_loop *loop);
+
 void
 wl_event_loop_destroy(struct wl_event_loop *loop);
 

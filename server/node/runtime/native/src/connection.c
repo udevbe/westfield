@@ -67,7 +67,7 @@ wl_buffer_put(struct wl_buffer *b, const void *data, size_t count) {
     uint32_t head, size;
 
     if (count > sizeof(b->data)) {
-        wl_log("Data too big for buffer (%d > %d).\n",
+        printf("Data too big for buffer (%d > %d).\n",
                count, sizeof(b->data));
         errno = E2BIG;
         return -1;
@@ -337,6 +337,12 @@ wl_connection_read(struct wl_connection *connection) {
     connection->in.head += len;
 
     return wl_connection_pending_input(connection);
+}
+
+void
+wl_connection_consume(struct wl_connection *connection, size_t size)
+{
+    connection->in.tail += size;
 }
 
 int

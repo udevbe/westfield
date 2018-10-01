@@ -88,9 +88,9 @@ function mockRawWireMessages (targetResource, resourceArg) {
   }
 }
 
-describe('Client', function () {
-  describe('message', function () {
-    it('Should invoke the correct resource with the correct arguments.', async function () {
+describe('Client', () => {
+  describe('message', () => {
+    it('Should invoke the correct resource with the correct arguments.', async () => {
       //given
       // - a mock display
       // - a resource with a two requests with all possible arguments

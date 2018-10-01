@@ -97,7 +97,7 @@ struct wl_display {
 
 static void
 destroy_client_with_error(struct wl_client *client, const char *reason) {
-    wl_log("%s (pid %u)\n", reason, client->ucred.pid);
+    printf("%s (pid %u)\n", reason, client->ucred.pid);
     wl_client_destroy(client);
 }
 
@@ -537,7 +537,7 @@ wl_display_destroy_clients(struct wl_display *display) {
     }
 
     if (!wl_list_empty(&display->client_list)) {
-        wl_log("wl_display_destroy_clients: cannot destroy all clients because "
+        printf("wl_display_destroy_clients: cannot destroy all clients because "
                "new ones were created by destroy callbacks\n");
     }
 }
@@ -553,7 +553,7 @@ socket_data(int fd, uint32_t mask, void *data) {
     client_fd = wl_os_accept_cloexec(fd, (struct sockaddr *) &name,
                                      &length);
     if (client_fd < 0)
-        wl_log("failed to accept: %m\n");
+        printf("failed to accept: %m\n");
     else if (!wl_client_create(display, client_fd))
         close(client_fd);
 
@@ -571,20 +571,20 @@ wl_socket_lock(struct wl_socket *socket) {
                            (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP));
 
     if (socket->fd_lock < 0) {
-        wl_log("unable to open lockfile %s check permissions\n",
+        printf("unable to open lockfile %s check permissions\n",
                socket->lock_addr);
         goto err;
     }
 
     if (flock(socket->fd_lock, LOCK_EX | LOCK_NB) < 0) {
-        wl_log("unable to lock lockfile %s, maybe another compositor is running\n",
+        printf("unable to lock lockfile %s, maybe another compositor is running\n",
                socket->lock_addr);
         goto err_fd;
     }
 
     if (stat(socket->addr.sun_path, &socket_stat) < 0) {
         if (errno != ENOENT) {
-            wl_log("did not manage to stat file %s\n",
+            printf("did not manage to stat file %s\n",
                    socket->addr.sun_path);
             goto err_fd;
         }
@@ -615,7 +615,7 @@ wl_socket_init_for_display_name(struct wl_socket *s, const char *name) {
 
     runtime_dir = getenv("XDG_RUNTIME_DIR");
     if (!runtime_dir) {
-        wl_log("error: XDG_RUNTIME_DIR not set in the environment\n");
+        printf("error: XDG_RUNTIME_DIR not set in the environment\n");
 
         /* to prevent programs reporting
          * "failed to add socket: Success" */
@@ -631,7 +631,7 @@ wl_socket_init_for_display_name(struct wl_socket *s, const char *name) {
 
     assert(name_size > 0);
     if (name_size > (int) sizeof s->addr.sun_path) {
-        wl_log("error: socket path \"%s/%s\" plus null terminator"
+        printf("error: socket path \"%s/%s\" plus null terminator"
                " exceeds 108 bytes\n", runtime_dir, name);
         *s->addr.sun_path = 0;
         /* to prevent programs reporting
@@ -654,12 +654,12 @@ _wl_display_add_socket(struct wl_display *display, struct wl_socket *s) {
 
     size = offsetof (struct sockaddr_un, sun_path) + strlen(s->addr.sun_path);
     if (bind(s->fd, (struct sockaddr *) &s->addr, size) < 0) {
-        wl_log("bind() failed with error: %m\n");
+        printf("bind() failed with error: %m\n");
         return -1;
     }
 
     if (listen(s->fd, 128) < 0) {
-        wl_log("listen() failed with error: %m\n");
+        printf("listen() failed with error: %m\n");
         return -1;
     }
 
@@ -742,7 +742,7 @@ wl_display_add_socket_fd(struct wl_display *display, int sock_fd) {
                                      WL_EVENT_READABLE,
                                      socket_data, display);
     if (s->source == NULL) {
-        wl_log("failed to establish event source\n");
+        printf("failed to establish event source\n");
         wl_socket_destroy(s);
         return -1;
     }
@@ -832,11 +832,6 @@ WL_EXPORT void
 wl_display_add_client_created_listener(struct wl_display *display,
                                        struct wl_listener *listener) {
     wl_priv_signal_add(&display->create_client_signal, listener);
-}
-
-WL_EXPORT void
-wl_log_set_handler_server(wl_log_func_t handler) {
-    wl_log_handler = handler;
 }
 
 /** Get the list of currently connected clients

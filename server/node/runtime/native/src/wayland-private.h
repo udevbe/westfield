@@ -41,13 +41,13 @@
 
 #define ARRAY_LENGTH(a) (sizeof (a) / sizeof (a)[0])
 
-#define container_of(ptr, type, member) ({				\
-	const __typeof__( ((type *)0)->member ) *__mptr = (ptr);	\
-	(type *)( (char *)__mptr - offsetof(type,member) );})
+#define container_of(ptr, type, member) ({                \
+    const __typeof__( ((type *)0)->member ) *__mptr = (ptr);    \
+    (type *)( (char *)__mptr - offsetof(type,member) );})
 
 typedef enum wl_iterator_result (*wl_iterator_func_t)(void *element,
-						      void *data,
-						      uint32_t flags);
+                                                      void *data,
+                                                      uint32_t flags);
 
 struct wl_connection *
 wl_connection_create(int fd);
@@ -72,26 +72,21 @@ wl_connection_read(struct wl_connection *connection);
 
 int
 wl_connection_write(struct wl_connection *connection,
-		    const void *data, size_t count);
+                    const void *data, size_t count);
 
 int
 wl_connection_get_fd(struct wl_connection *connection);
 
-extern wl_log_func_t wl_log_handler;
-
-void wl_log(const char *fmt, ...);
-
 struct wl_display;
 
 static inline void *
-zalloc(size_t s)
-{
-	return calloc(1, s);
+zalloc(size_t s) {
+    return calloc(1, s);
 }
 
 struct wl_priv_signal {
-	struct wl_list listener_list;
-	struct wl_list emit_list;
+    struct wl_list listener_list;
+    struct wl_list emit_list;
 };
 
 void

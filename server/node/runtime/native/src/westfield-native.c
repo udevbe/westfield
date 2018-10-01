@@ -108,7 +108,7 @@ on_display_destroyed(struct wl_listener *listener, void *data) {
 // return:
 // - Object display
 napi_value
-start(napi_env env, napi_callback_info info) {
+createDisplay(napi_env env, napi_callback_info info) {
     napi_status status;
     size_t argc = 3;
     napi_value argv[argc], display_value;
@@ -134,7 +134,6 @@ start(napi_env env, napi_callback_info info) {
     struct wl_display *display = wl_display_create();
     wl_display_add_destroy_listener(display, &display_destruction_listener->listener);
     wl_display_add_client_created_listener(display, &client_creation_listener->listener);
-    wl_display_add_socket_auto(display);
 
     napi_create_external(env, display, NULL, NULL, &display_value);
     return display_value;
@@ -143,9 +142,32 @@ start(napi_env env, napi_callback_info info) {
 // expected arguments in order:
 // - Object display
 // return:
+// - string
+napi_value
+addSocketAuto(napi_env env, napi_callback_info info) {
+    napi_status status;
+    size_t argc = 1;
+    napi_value argv[argc], display_value, display_name_value;
+    struct wl_display *display;
+
+    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
+    assert(status == napi_ok);
+
+    display_value = argv[0];
+    napi_get_value_external(env, display_value, (void **) &display);
+
+    const char *display_name = wl_display_add_socket_auto(display);
+    napi_create_string_latin1(env, display_name, NAPI_AUTO_LENGTH, &display_name_value);
+
+    return display_name_value;
+}
+
+// expected arguments in order:
+// - Object display
+// return:
 // - void
 napi_value
-stop(napi_env env, napi_callback_info info) {
+destroyDisplay(napi_env env, napi_callback_info info) {
     napi_status status;
     size_t argc = 1;
     napi_value argv[argc], display_value;
@@ -260,19 +282,47 @@ flushEvents(napi_env env, napi_callback_info info) {
     wl_display_flush_clients(display);
 }
 
+// expected arguments in order:
+// - Object display
+// return:
+// - number
+napi_value
+getFd(napi_env env, napi_callback_info info) {
+    napi_status status;
+    size_t argc = 1;
+    napi_value argv[argc], display_value, fd_value;
+    struct wl_display *display;
+    int fd;
+
+    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
+    assert(status == napi_ok);
+
+    display_value = argv[0];
+    napi_get_value_external(env, display_value, (void **) &display);
+
+    fd = wl_event_loop_get_fd(wl_display_get_event_loop(display));
+
+    status = napi_create_int32(env, fd, &fd_value);
+    assert(status == napi_ok);
+
+    return fd_value;
+}
+
 napi_value
 init(napi_env env, napi_value exports) {
     napi_status status;
-    napi_property_descriptor desc[6] = {
-            DECLARE_NAPI_METHOD("start", start),
-            DECLARE_NAPI_METHOD("stop", stop),
+    napi_property_descriptor desc[8] = {
+            DECLARE_NAPI_METHOD("createDisplay", createDisplay),
+            DECLARE_NAPI_METHOD("destroyDisplay", destroyDisplay),
+            DECLARE_NAPI_METHOD("addSocketAuto", addSocketAuto),
+            DECLARE_NAPI_METHOD("getFd", getFd),
             DECLARE_NAPI_METHOD("destroyClient", destroyClient),
             DECLARE_NAPI_METHOD("sendEvents", sendEvents),
             DECLARE_NAPI_METHOD("dispatchRequests", dispatchRequests),
             DECLARE_NAPI_METHOD("flushEvents", flushEvents)
     };
 
-    status = napi_define_properties(env, exports, 6, desc);
+    status = napi_define_properties(env, exports, 8, desc);
     assert(status == napi_ok);
 
     return exports;

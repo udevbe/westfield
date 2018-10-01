@@ -46,88 +46,86 @@
 /** \cond INTERNAL */
 
 struct wl_event_loop {
-	int epoll_fd;
-	struct wl_list check_list;
-	struct wl_list idle_list;
-	struct wl_list destroy_list;
+    int epoll_fd;
+    struct wl_list check_list;
+    struct wl_list idle_list;
+    struct wl_list destroy_list;
 
-	struct wl_signal destroy_signal;
+    struct wl_signal destroy_signal;
 };
 
 struct wl_event_source_interface {
-	int (*dispatch)(struct wl_event_source *source,
-			struct epoll_event *ep);
+    int (*dispatch)(struct wl_event_source *source,
+                    struct epoll_event *ep);
 };
 
 struct wl_event_source {
-	struct wl_event_source_interface *interface;
-	struct wl_event_loop *loop;
-	struct wl_list link;
-	void *data;
-	int fd;
+    struct wl_event_source_interface *interface;
+    struct wl_event_loop *loop;
+    struct wl_list link;
+    void *data;
+    int fd;
 };
 
 struct wl_event_source_fd {
-	struct wl_event_source base;
-	wl_event_loop_fd_func_t func;
-	int fd;
+    struct wl_event_source base;
+    wl_event_loop_fd_func_t func;
+    int fd;
 };
 
 /** \endcond */
 
 static int
 wl_event_source_fd_dispatch(struct wl_event_source *source,
-			    struct epoll_event *ep)
-{
-	struct wl_event_source_fd *fd_source = (struct wl_event_source_fd *) source;
-	uint32_t mask;
+                            struct epoll_event *ep) {
+    struct wl_event_source_fd *fd_source = (struct wl_event_source_fd *) source;
+    uint32_t mask;
 
-	mask = 0;
-	if (ep->events & EPOLLIN)
-		mask |= WL_EVENT_READABLE;
-	if (ep->events & EPOLLOUT)
-		mask |= WL_EVENT_WRITABLE;
-	if (ep->events & EPOLLHUP)
-		mask |= WL_EVENT_HANGUP;
-	if (ep->events & EPOLLERR)
-		mask |= WL_EVENT_ERROR;
+    mask = 0;
+    if (ep->events & EPOLLIN)
+        mask |= WL_EVENT_READABLE;
+    if (ep->events & EPOLLOUT)
+        mask |= WL_EVENT_WRITABLE;
+    if (ep->events & EPOLLHUP)
+        mask |= WL_EVENT_HANGUP;
+    if (ep->events & EPOLLERR)
+        mask |= WL_EVENT_ERROR;
 
-	return fd_source->func(fd_source->fd, mask, source->data);
+    return fd_source->func(fd_source->fd, mask, source->data);
 }
 
 struct wl_event_source_interface fd_source_interface = {
-	wl_event_source_fd_dispatch,
+        wl_event_source_fd_dispatch,
 };
 
 static struct wl_event_source *
 add_source(struct wl_event_loop *loop,
-	   struct wl_event_source *source, uint32_t mask, void *data)
-{
-	struct epoll_event ep;
+           struct wl_event_source *source, uint32_t mask, void *data) {
+    struct epoll_event ep;
 
-	if (source->fd < 0) {
-		free(source);
-		return NULL;
-	}
+    if (source->fd < 0) {
+        free(source);
+        return NULL;
+    }
 
-	source->loop = loop;
-	source->data = data;
-	wl_list_init(&source->link);
+    source->loop = loop;
+    source->data = data;
+    wl_list_init(&source->link);
 
-	memset(&ep, 0, sizeof ep);
-	if (mask & WL_EVENT_READABLE)
-		ep.events |= EPOLLIN;
-	if (mask & WL_EVENT_WRITABLE)
-		ep.events |= EPOLLOUT;
-	ep.data.ptr = source;
+    memset(&ep, 0, sizeof ep);
+    if (mask & WL_EVENT_READABLE)
+        ep.events |= EPOLLIN;
+    if (mask & WL_EVENT_WRITABLE)
+        ep.events |= EPOLLOUT;
+    ep.data.ptr = source;
 
-	if (epoll_ctl(loop->epoll_fd, EPOLL_CTL_ADD, source->fd, &ep) < 0) {
-		close(source->fd);
-		free(source);
-		return NULL;
-	}
+    if (epoll_ctl(loop->epoll_fd, EPOLL_CTL_ADD, source->fd, &ep) < 0) {
+        close(source->fd);
+        free(source);
+        return NULL;
+    }
 
-	return source;
+    return source;
 }
 
 /** Create a file descriptor event source
@@ -156,22 +154,21 @@ add_source(struct wl_event_loop *loop,
  */
 WL_EXPORT struct wl_event_source *
 wl_event_loop_add_fd(struct wl_event_loop *loop,
-		     int fd, uint32_t mask,
-		     wl_event_loop_fd_func_t func,
-		     void *data)
-{
-	struct wl_event_source_fd *source;
+                     int fd, uint32_t mask,
+                     wl_event_loop_fd_func_t func,
+                     void *data) {
+    struct wl_event_source_fd *source;
 
-	source = malloc(sizeof *source);
-	if (source == NULL)
-		return NULL;
+    source = malloc(sizeof *source);
+    if (source == NULL)
+        return NULL;
 
-	source->base.interface = &fd_source_interface;
-	source->base.fd = wl_os_dupfd_cloexec(fd, 0);
-	source->func = func;
-	source->fd = fd;
+    source->base.interface = &fd_source_interface;
+    source->base.fd = wl_os_dupfd_cloexec(fd, 0);
+    source->func = func;
+    source->fd = fd;
 
-	return add_source(loop, &source->base, mask, data);
+    return add_source(loop, &source->base, mask, data);
 }
 
 /** Update a file descriptor source's event mask
@@ -195,26 +192,25 @@ wl_event_loop_add_fd(struct wl_event_loop *loop,
  * \memberof wl_event_source
  */
 WL_EXPORT int
-wl_event_source_fd_update(struct wl_event_source *source, uint32_t mask)
-{
-	struct wl_event_loop *loop = source->loop;
-	struct epoll_event ep;
+wl_event_source_fd_update(struct wl_event_source *source, uint32_t mask) {
+    struct wl_event_loop *loop = source->loop;
+    struct epoll_event ep;
 
-	memset(&ep, 0, sizeof ep);
-	if (mask & WL_EVENT_READABLE)
-		ep.events |= EPOLLIN;
-	if (mask & WL_EVENT_WRITABLE)
-		ep.events |= EPOLLOUT;
-	ep.data.ptr = source;
+    memset(&ep, 0, sizeof ep);
+    if (mask & WL_EVENT_READABLE)
+        ep.events |= EPOLLIN;
+    if (mask & WL_EVENT_WRITABLE)
+        ep.events |= EPOLLOUT;
+    ep.data.ptr = source;
 
-	return epoll_ctl(loop->epoll_fd, EPOLL_CTL_MOD, source->fd, &ep);
+    return epoll_ctl(loop->epoll_fd, EPOLL_CTL_MOD, source->fd, &ep);
 }
 
 /** \cond INTERNAL */
 
 struct wl_event_source_idle {
-	struct wl_event_source base;
-	wl_event_loop_idle_func_t func;
+    struct wl_event_source base;
+    wl_event_loop_idle_func_t func;
 };
 
 /** \endcond */
@@ -249,33 +245,30 @@ struct wl_event_source_idle {
  * \memberof wl_event_source
  */
 WL_EXPORT int
-wl_event_source_remove(struct wl_event_source *source)
-{
-	struct wl_event_loop *loop = source->loop;
+wl_event_source_remove(struct wl_event_source *source) {
+    struct wl_event_loop *loop = source->loop;
 
-	/* We need to explicitly remove the fd, since closing the fd
-	 * isn't enough in case we've dup'ed the fd. */
-	if (source->fd >= 0) {
-		epoll_ctl(loop->epoll_fd, EPOLL_CTL_DEL, source->fd, NULL);
-		close(source->fd);
-		source->fd = -1;
-	}
+    /* We need to explicitly remove the fd, since closing the fd
+     * isn't enough in case we've dup'ed the fd. */
+    if (source->fd >= 0) {
+        epoll_ctl(loop->epoll_fd, EPOLL_CTL_DEL, source->fd, NULL);
+        close(source->fd);
+        source->fd = -1;
+    }
 
-	wl_list_remove(&source->link);
-	wl_list_insert(&loop->destroy_list, &source->link);
+    wl_list_remove(&source->link);
+    wl_list_insert(&loop->destroy_list, &source->link);
 
-	return 0;
+    return 0;
 }
 
 static void
-wl_event_loop_process_destroy_list(struct wl_event_loop *loop)
-{
-	struct wl_event_source *source, *next;
+wl_event_loop_process_destroy_list(struct wl_event_loop *loop) {
+    struct wl_event_source *source, *next;
 
-	wl_list_for_each_safe(source, next, &loop->destroy_list, link)
-		free(source);
+    wl_list_for_each_safe(source, next, &loop->destroy_list, link) free(source);
 
-	wl_list_init(&loop->destroy_list);
+    wl_list_init(&loop->destroy_list);
 }
 
 /** Create a new event loop context
@@ -293,26 +286,25 @@ wl_event_loop_process_destroy_list(struct wl_event_loop *loop)
  * \memberof wl_event_loop
  */
 WL_EXPORT struct wl_event_loop *
-wl_event_loop_create(void)
-{
-	struct wl_event_loop *loop;
+wl_event_loop_create(void) {
+    struct wl_event_loop *loop;
 
-	loop = malloc(sizeof *loop);
-	if (loop == NULL)
-		return NULL;
+    loop = malloc(sizeof *loop);
+    if (loop == NULL)
+        return NULL;
 
-	loop->epoll_fd = wl_os_epoll_create_cloexec();
-	if (loop->epoll_fd < 0) {
-		free(loop);
-		return NULL;
-	}
-	wl_list_init(&loop->check_list);
-	wl_list_init(&loop->idle_list);
-	wl_list_init(&loop->destroy_list);
+    loop->epoll_fd = wl_os_epoll_create_cloexec();
+    if (loop->epoll_fd < 0) {
+        free(loop);
+        return NULL;
+    }
+    wl_list_init(&loop->check_list);
+    wl_list_init(&loop->idle_list);
+    wl_list_init(&loop->destroy_list);
 
-	wl_signal_init(&loop->destroy_signal);
+    wl_signal_init(&loop->destroy_signal);
 
-	return loop;
+    return loop;
 }
 
 /** Destroy an event loop context
@@ -329,35 +321,33 @@ wl_event_loop_create(void)
  * \memberof wl_event_loop
  */
 WL_EXPORT void
-wl_event_loop_destroy(struct wl_event_loop *loop)
-{
-	wl_signal_emit(&loop->destroy_signal, loop);
+wl_event_loop_destroy(struct wl_event_loop *loop) {
+    wl_signal_emit(&loop->destroy_signal, loop);
 
-	wl_event_loop_process_destroy_list(loop);
-	close(loop->epoll_fd);
-	free(loop);
+    wl_event_loop_process_destroy_list(loop);
+    close(loop->epoll_fd);
+    free(loop);
 }
 
 static bool
-post_dispatch_check(struct wl_event_loop *loop)
-{
-	struct epoll_event ep;
-	struct wl_event_source *source, *next;
-	bool needs_recheck = false;
+post_dispatch_check(struct wl_event_loop *loop) {
+    struct epoll_event ep;
+    struct wl_event_source *source, *next;
+    bool needs_recheck = false;
 
-	ep.events = 0;
-	wl_list_for_each_safe(source, next, &loop->check_list, link) {
-		int dispatch_result;
+    ep.events = 0;
+    wl_list_for_each_safe(source, next, &loop->check_list, link) {
+        int dispatch_result;
 
-		dispatch_result = source->interface->dispatch(source, &ep);
-		if (dispatch_result < 0) {
-			wl_log("Source dispatch function returned negative value!");
-			wl_log("This would previously accidentally suppress a follow-up dispatch");
-		}
-		needs_recheck |= dispatch_result != 0;
-	}
+        dispatch_result = source->interface->dispatch(source, &ep);
+        if (dispatch_result < 0) {
+            printf("Source dispatch function returned negative value!");
+            printf("This would previously accidentally suppress a follow-up dispatch");
+        }
+        needs_recheck |= dispatch_result != 0;
+    }
 
-	return needs_recheck;
+    return needs_recheck;
 }
 
 /** Dispatch the idle sources
@@ -368,16 +358,15 @@ post_dispatch_check(struct wl_event_loop *loop)
  * \memberof wl_event_loop
  */
 WL_EXPORT void
-wl_event_loop_dispatch_idle(struct wl_event_loop *loop)
-{
-	struct wl_event_source_idle *source;
+wl_event_loop_dispatch_idle(struct wl_event_loop *loop) {
+    struct wl_event_source_idle *source;
 
-	while (!wl_list_empty(&loop->idle_list)) {
-		source = container_of(loop->idle_list.next,
-				      struct wl_event_source_idle, base.link);
-		source->func(source->base.data);
-		wl_event_source_remove(&source->base);
-	}
+    while (!wl_list_empty(&loop->idle_list)) {
+        source = container_of(loop->idle_list.next,
+                              struct wl_event_source_idle, base.link);
+        source->func(source->base.data);
+        wl_event_source_remove(&source->base);
+    }
 }
 
 /** Wait for events and dispatch them
@@ -401,29 +390,49 @@ wl_event_loop_dispatch_idle(struct wl_event_loop *loop)
  * \memberof wl_event_loop
  */
 WL_EXPORT int
-wl_event_loop_dispatch(struct wl_event_loop *loop, int timeout)
-{
-	struct epoll_event ep[32];
-	struct wl_event_source *source;
-	int i, count;
+wl_event_loop_dispatch(struct wl_event_loop *loop, int timeout) {
+    struct epoll_event ep[32];
+    struct wl_event_source *source;
+    int i, count;
 
-	wl_event_loop_dispatch_idle(loop);
+    wl_event_loop_dispatch_idle(loop);
 
-	count = epoll_wait(loop->epoll_fd, ep, ARRAY_LENGTH(ep), timeout);
-	if (count < 0)
-		return -1;
+    count = epoll_wait(loop->epoll_fd, ep, ARRAY_LENGTH(ep), timeout);
+    if (count < 0)
+        return -1;
 
-	for (i = 0; i < count; i++) {
-		source = ep[i].data.ptr;
-		if (source->fd != -1)
-			source->interface->dispatch(source, &ep[i]);
-	}
+    for (i = 0; i < count; i++) {
+        source = ep[i].data.ptr;
+        if (source->fd != -1)
+            source->interface->dispatch(source, &ep[i]);
+    }
 
-	wl_event_loop_process_destroy_list(loop);
+    wl_event_loop_process_destroy_list(loop);
 
-	wl_event_loop_dispatch_idle(loop);
+    wl_event_loop_dispatch_idle(loop);
 
-	while (post_dispatch_check(loop));
+    while (post_dispatch_check(loop));
 
-	return 0;
+    return 0;
+}
+
+/** Get the event loop file descriptor
+ *
+ * \param loop The event loop context.
+ * \return The aggregate file descriptor.
+ *
+ * This function returns the aggregate file descriptor, that represents all
+ * the event sources (idle sources excluded) associated with the given event
+ * loop context. When any event source makes an event available, it will be
+ * reflected in the aggregate file descriptor.
+ *
+ * When the aggregate file descriptor delivers an event, one can call
+ * wl_event_loop_dispatch() on the event loop context to dispatch all the
+ * available events.
+ *
+ * \memberof wl_event_loop
+ */
+WL_EXPORT int
+wl_event_loop_get_fd(struct wl_event_loop *loop) {
+    return loop->epoll_fd;
 }

@@ -153,6 +153,67 @@ struct wl_message {
 	const struct wl_interface **types;
 };
 
+/**
+ * Protocol object interface
+ *
+ * A wl_interface describes the API of a protocol object defined in the Wayland
+ * protocol specification. The protocol implementation uses a wl_interface
+ * within its marshalling machinery for encoding client requests.
+ *
+ * The `name` of a wl_interface is the name of the corresponding protocol
+ * interface, and `version` represents the version of the interface. The members
+ * `method_count` and `event_count` represent the number of `methods` (requests)
+ * and `events` in the respective wl_message members.
+ *
+ * For example, consider a protocol interface `foo`, marked as version `1`, with
+ * two requests and one event.
+ *
+ * \code
+ * <interface name="foo" version="1">
+ *   <request name="a"></request>
+ *   <request name="b"></request>
+ *   <event name="c"></event>
+ * </interface>
+ * \endcode
+ *
+ * Given two wl_message arrays `foo_requests` and `foo_events`, a wl_interface
+ * for `foo` might be:
+ *
+ * \code
+ * struct wl_interface foo_interface = {
+ *         "foo", 1,
+ *         2, foo_requests,
+ *         1, foo_events
+ * };
+ * \endcode
+ *
+ * \note The server side of the protocol may define interface <em>implementation
+ *       types</em> that incorporate the term `interface` in their name. Take
+ *       care to not confuse these server-side `struct`s with a wl_interface
+ *       variable whose name also ends in `interface`. For example, while the
+ *       server may define a type `struct wl_foo_interface`, the client may
+ *       define a `struct wl_interface wl_foo_interface`.
+ *
+ * \sa wl_message
+ * \sa wl_proxy
+ * \sa <a href="https://wayland.freedesktop.org/docs/html/ch04.html#sect-Protocol-Interfaces">Interfaces</a>
+ * \sa <a href="https://wayland.freedesktop.org/docs/html/ch04.html#sect-Protocol-Versioning">Versioning</a>
+ */
+struct wl_interface {
+	/** Interface name */
+	const char *name;
+	/** Interface version */
+	int version;
+	/** Number of methods (requests) */
+	int method_count;
+	/** Method (request) signatures */
+	const struct wl_message *methods;
+	/** Number of events */
+	int event_count;
+	/** Event signatures */
+	const struct wl_message *events;
+};
+
 /** \class wl_list
  *
  * \brief Doubly-linked list
@@ -428,6 +489,221 @@ wl_list_insert_list(struct wl_list *list, struct wl_list *other);
 	     &pos->member != (head);					\
 	     pos = tmp,							\
 	     tmp = wl_container_of(pos->member.prev, tmp, member))
+
+/**
+ * \class wl_array
+ *
+ * Dynamic array
+ *
+ * A wl_array is a dynamic array that can only grow until released. It is
+ * intended for relatively small allocations whose size is variable or not known
+ * in advance. While construction of a wl_array does not require all elements to
+ * be of the same size, wl_array_for_each() does require all elements to have
+ * the same type and size.
+ *
+ */
+struct wl_array {
+	/** Array size */
+	size_t size;
+	/** Allocated space */
+	size_t alloc;
+	/** Array data */
+	void *data;
+};
+
+/**
+ * Initializes the array.
+ *
+ * \param array Array to initialize
+ *
+ * \memberof wl_array
+ */
+void
+wl_array_init(struct wl_array *array);
+
+/**
+ * Releases the array data.
+ *
+ * \note Leaves the array in an invalid state.
+ *
+ * \param array Array whose data is to be released
+ *
+ * \memberof wl_array
+ */
+void
+wl_array_release(struct wl_array *array);
+
+/**
+ * Increases the size of the array by \p size bytes.
+ *
+ * \param array Array whose size is to be increased
+ * \param size Number of bytes to increase the size of the array by
+ *
+ * \return A pointer to the beginning of the newly appended space, or NULL when
+ *         resizing fails.
+ *
+ * \memberof wl_array
+ */
+void *
+wl_array_add(struct wl_array *array, size_t size);
+
+/**
+ * Copies the contents of \p source to \p array.
+ *
+ * \param array Destination array to copy to
+ * \param source Source array to copy from
+ *
+ * \return 0 on success, or -1 on failure
+ *
+ * \memberof wl_array
+ */
+int
+wl_array_copy(struct wl_array *array, struct wl_array *source);
+
+/**
+ * Iterates over an array.
+ *
+ * This macro expresses a for-each iterator for wl_array. It assigns each
+ * element in the array to \p pos, which can then be referenced in a trailing
+ * code block. \p pos must be a pointer to the array element type, and all
+ * array elements must be of the same type and size.
+ *
+ * \param pos Cursor that each array element will be assigned to
+ * \param array Array to iterate over
+ *
+ * \relates wl_array
+ * \sa wl_list_for_each()
+ */
+#define wl_array_for_each(pos, array)					\
+	for (pos = (array)->data;					\
+	     (const char *) pos < ((const char *) (array)->data + (array)->size); \
+	     (pos)++)
+
+/**
+ * Fixed-point number
+ *
+ * A `wl_fixed_t` is a 24.8 signed fixed-point number with a sign bit, 23 bits
+ * of integer precision and 8 bits of decimal precision. Consider `wl_fixed_t`
+ * as an opaque struct with methods that facilitate conversion to and from
+ * `double` and `int` types.
+ */
+typedef int32_t wl_fixed_t;
+
+/**
+ * Converts a fixed-point number to a floating-point number.
+ *
+ * \param f Fixed-point number to convert
+ *
+ * \return Floating-point representation of the fixed-point argument
+ */
+static inline double
+wl_fixed_to_double(wl_fixed_t f)
+{
+	union {
+		double d;
+		int64_t i;
+	} u;
+
+	u.i = ((1023LL + 44LL) << 52) + (1LL << 51) + f;
+
+	return u.d - (3LL << 43);
+}
+
+/**
+ * Converts a floating-point number to a fixed-point number.
+ *
+ * \param d Floating-point number to convert
+ *
+ * \return Fixed-point representation of the floating-point argument
+ */
+static inline wl_fixed_t
+wl_fixed_from_double(double d)
+{
+	union {
+		double d;
+		int64_t i;
+	} u;
+
+	u.d = d + (3LL << (51 - 8));
+
+	return u.i;
+}
+
+/**
+ * Converts a fixed-point number to an integer.
+ *
+ * \param f Fixed-point number to convert
+ *
+ * \return Integer component of the fixed-point argument
+ */
+static inline int
+wl_fixed_to_int(wl_fixed_t f)
+{
+	return f / 256;
+}
+
+/**
+ * Converts an integer to a fixed-point number.
+ *
+ * \param i Integer to convert
+ *
+ * \return Fixed-point representation of the integer argument
+ */
+static inline wl_fixed_t
+wl_fixed_from_int(int i)
+{
+	return i * 256;
+}
+
+/**
+ * Protocol message argument data types
+ *
+ * This union represents all of the argument types in the Wayland protocol wire
+ * format. The protocol implementation uses wl_argument within its marshalling
+ * machinery for dispatching messages between a client and a compositor.
+ *
+ * \sa wl_message
+ * \sa wl_interface
+ * \sa <a href="https://wayland.freedesktop.org/docs/html/ch04.html#sect-Protocol-wire-Format">Wire Format</a>
+ */
+union wl_argument {
+	int32_t i;           /**< `int`    */
+	uint32_t u;          /**< `uint`   */
+	wl_fixed_t f;        /**< `fixed`  */
+	const char *s;       /**< `string` */
+	struct wl_object *o; /**< `object` */
+	uint32_t n;          /**< `new_id` */
+	struct wl_array *a;  /**< `array`  */
+	int32_t h;           /**< `fd`     */
+};
+
+/**
+ * Dispatcher function type alias
+ *
+ * A dispatcher is a function that handles the emitting of callbacks in client
+ * code. For programs directly using the C library, this is done by using
+ * libffi to call function pointers. When binding to languages other than C,
+ * dispatchers provide a way to abstract the function calling process to be
+ * friendlier to other function calling systems.
+ *
+ * A dispatcher takes five arguments: The first is the dispatcher-specific
+ * implementation associated with the target object. The second is the object
+ * upon which the callback is being invoked (either wl_proxy or wl_resource).
+ * The third and fourth arguments are the opcode and the wl_message
+ * corresponding to the callback. The final argument is an array of arguments
+ * received from the other process via the wire protocol.
+ *
+ * \param "const void *" Dispatcher-specific implementation data
+ * \param "void *" Callback invocation target (wl_proxy or `wl_resource`)
+ * \param uint32_t Callback opcode
+ * \param "const struct wl_message *" Callback message signature
+ * \param "union wl_argument *" Array of received arguments
+ *
+ * \return 0 on success, or -1 on failure
+ */
+typedef int (*wl_dispatcher_func_t)(const void *, void *, uint32_t,
+				    const struct wl_message *,
+				    union wl_argument *);
 
 /**
  * Log function type alias

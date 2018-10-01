@@ -26,7 +26,11 @@
   "scripts": {
     "test": "mocha ./test/*.js --timeout 10000"
   },
+  "dependencies": {
+    "westfield-native": "file:./native/"
+  },
   "devDependencies": {
+    "epoll": "^2.0.1",
     "mocha": "^5.2.0",
     "sinon": "^6.3.4",
     "standard": "^12.0.1"
