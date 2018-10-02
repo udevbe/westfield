@@ -75,7 +75,7 @@ struct wl_client {
     struct wl_connection *connection;
     struct wl_event_source *source;
     struct wl_display *display;
-    void* user_data;
+    void *user_data;
     wl_connection_wire_message_t wire_message_cb;
     struct wl_list link;
     struct wl_priv_signal destroy_signal;
@@ -85,6 +85,7 @@ struct wl_client {
 
 struct wl_display {
     struct wl_event_loop *loop;
+    void* user_data;
     int run;
 
     struct wl_list socket_list;
@@ -200,23 +201,35 @@ wl_client_flush(struct wl_client *client) {
     wl_connection_flush(client->connection);
 }
 
+/** Get the display object for the given client
+ *
+ * \param client The client object
+ * \return The display object the client is associated with.
+ *
+ * \memberof wl_client
+ */
+WL_EXPORT struct wl_display *
+wl_client_get_display(struct wl_client *client) {
+    return client->display;
+}
+
 void
 wl_client_set_wire_message_cb(struct wl_client *client, wl_connection_wire_message_t wire_message_cb) {
     client->wire_message_cb = wire_message_cb;
 }
 
 void
-wl_client_set_user_data(struct wl_client* client, void* data) {
+wl_client_set_user_data(struct wl_client *client, void *data) {
     client->user_data = data;
 }
 
-void*
-wl_client_get_user_data(struct wl_client* client) {
+void *
+wl_client_get_user_data(struct wl_client *client) {
     return client->user_data;
 }
 
-struct wl_connection*
-wl_client_get_connection(struct wl_client* client) {
+struct wl_connection *
+wl_client_get_connection(struct wl_client *client) {
     return client->connection;
 }
 
@@ -406,6 +419,16 @@ wl_display_create(void) {
     return display;
 }
 
+void
+wl_display_set_user_data(struct wl_display *display, void* user_data) {
+    display->user_data = user_data;
+}
+
+void*
+wl_display_get_user_data(struct wl_display *display) {
+    return display->user_data;
+}
+
 static void
 wl_socket_destroy(struct wl_socket *s) {
     if (s->source)
@@ -468,8 +491,7 @@ wl_display_destroy(struct wl_display *display) {
 }
 
 WL_EXPORT struct wl_event_loop *
-wl_display_get_event_loop(struct wl_display *display)
-{
+wl_display_get_event_loop(struct wl_display *display) {
     return display->loop;
 }
 
@@ -812,8 +834,7 @@ wl_display_add_socket(struct wl_display *display, const char *name) {
 
 WL_EXPORT void
 wl_display_add_destroy_listener(struct wl_display *display,
-                                struct wl_listener *listener)
-{
+                                struct wl_listener *listener) {
     wl_priv_signal_add(&display->destroy_signal, listener);
 }
 

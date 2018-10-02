@@ -37,10 +37,10 @@ extern "C" {
 #endif
 
 enum {
-	WL_EVENT_READABLE = 0x01,
-	WL_EVENT_WRITABLE = 0x02,
-	WL_EVENT_HANGUP   = 0x04,
-	WL_EVENT_ERROR    = 0x08
+    WL_EVENT_READABLE = 0x01,
+    WL_EVENT_WRITABLE = 0x02,
+    WL_EVENT_HANGUP = 0x04,
+    WL_EVENT_ERROR = 0x08
 };
 
 /** File descriptor dispatch function type
@@ -105,9 +105,9 @@ wl_event_loop_destroy(struct wl_event_loop *loop);
 
 struct wl_event_source *
 wl_event_loop_add_fd(struct wl_event_loop *loop,
-		     int fd, uint32_t mask,
-		     wl_event_loop_fd_func_t func,
-		     void *data);
+                     int fd, uint32_t mask,
+                     wl_event_loop_fd_func_t func,
+                     void *data);
 
 int
 wl_event_source_fd_update(struct wl_event_source *source, uint32_t mask);
@@ -134,6 +134,12 @@ wl_display_destroy(struct wl_display *display);
 struct wl_event_loop *
 wl_display_get_event_loop(struct wl_display *display);
 
+void
+wl_display_set_user_data(struct wl_display *display, void* user_data);
+
+void*
+wl_display_get_user_data(struct wl_display *display);
+
 int
 wl_display_add_socket(struct wl_display *display, const char *name);
 
@@ -157,16 +163,20 @@ wl_display_destroy_clients(struct wl_display *display);
 
 struct wl_client;
 
-typedef void (*wl_connection_wire_message_t)(struct wl_client* client, int32_t * wire_message, size_t wire_message_length, int* fds_in, size_t fds_in_count);
+typedef void (*wl_connection_wire_message_t)(struct wl_client *client, int32_t *wire_message,
+                                             size_t wire_message_length, int *fds_in, size_t fds_in_count);
 
 void
-wl_client_set_user_data(struct wl_client* client, void* data);
+wl_client_set_user_data(struct wl_client *client, void *data);
 
-void*
-wl_client_get_user_data(struct wl_client* client);
+void *
+wl_client_get_user_data(struct wl_client *client);
 
-struct wl_connection*
-wl_client_get_connection(struct wl_client* client);
+struct wl_connection *
+wl_client_get_connection(struct wl_client *client);
+
+struct wl_display *
+wl_client_get_display(struct wl_client *client);
 
 void
 wl_display_add_destroy_listener(struct wl_display *display,
@@ -174,13 +184,13 @@ wl_display_add_destroy_listener(struct wl_display *display,
 
 void
 wl_display_add_client_created_listener(struct wl_display *display,
-					struct wl_listener *listener);
+                                       struct wl_listener *listener);
 
 struct wl_client *
 wl_client_create(struct wl_display *display, int fd);
 
 void
-wl_client_set_wire_message_cb(struct wl_client* client, wl_connection_wire_message_t wire_message_cb);
+wl_client_set_wire_message_cb(struct wl_client *client, wl_connection_wire_message_t wire_message_cb);
 
 struct wl_list *
 wl_display_get_client_list(struct wl_display *display);
@@ -192,10 +202,10 @@ struct wl_client *
 wl_client_from_link(struct wl_list *link);
 
 /** Iterate over a list of clients. */
-#define wl_client_for_each(client, list)				\
-	for (client = wl_client_from_link((list)->next);	\
-	     wl_client_get_link(client) != (list);			\
-	     client = wl_client_from_link(wl_client_get_link(client)->next))
+#define wl_client_for_each(client, list)                \
+    for (client = wl_client_from_link((list)->next);    \
+         wl_client_get_link(client) != (list);            \
+         client = wl_client_from_link(wl_client_get_link(client)->next))
 
 void
 wl_client_destroy(struct wl_client *client);
@@ -205,18 +215,18 @@ wl_client_flush(struct wl_client *client);
 
 void
 wl_client_get_credentials(struct wl_client *client,
-			  pid_t *pid, uid_t *uid, gid_t *gid);
+                          pid_t *pid, uid_t *uid, gid_t *gid);
 
 int
 wl_client_get_fd(struct wl_client *client);
 
 void
 wl_client_add_destroy_listener(struct wl_client *client,
-			       struct wl_listener *listener);
+                               struct wl_listener *listener);
 
 struct wl_listener *
 wl_client_get_destroy_listener(struct wl_client *client,
-			       wl_notify_func_t notify);
+                               wl_notify_func_t notify);
 
 void
 wl_client_post_no_memory(struct wl_client *client);
@@ -269,8 +279,8 @@ wl_client_post_no_memory(struct wl_client *client);
  * \sa wl_signal
  */
 struct wl_listener {
-	struct wl_list link;
-	wl_notify_func_t notify;
+    struct wl_list link;
+    wl_notify_func_t notify;
 };
 
 /** \class wl_signal
@@ -287,7 +297,7 @@ struct wl_listener {
  * \sa wl_listener for more information on using wl_signal
  */
 struct wl_signal {
-	struct wl_list listener_list;
+    struct wl_list listener_list;
 };
 
 /** Initialize a new \ref wl_signal for use.
@@ -297,9 +307,8 @@ struct wl_signal {
  * \memberof wl_signal
  */
 static inline void
-wl_signal_init(struct wl_signal *signal)
-{
-	wl_list_init(&signal->listener_list);
+wl_signal_init(struct wl_signal *signal) {
+    wl_list_init(&signal->listener_list);
 }
 
 /** Emits this signal, notifying all registered listeners.
@@ -310,12 +319,10 @@ wl_signal_init(struct wl_signal *signal)
  * \memberof wl_signal
  */
 static inline void
-wl_signal_emit(struct wl_signal *signal, void *data)
-{
-	struct wl_listener *l, *next;
+wl_signal_emit(struct wl_signal *signal, void *data) {
+    struct wl_listener *l, *next;
 
-	wl_list_for_each_safe(l, next, &signal->listener_list, link)
-		l->notify(l, data);
+    wl_list_for_each_safe(l, next, &signal->listener_list, link) l->notify(l, data);
 }
 
 #ifdef  __cplusplus

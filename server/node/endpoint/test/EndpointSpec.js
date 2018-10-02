@@ -6,7 +6,7 @@ const execFile = util.promisify(require('child_process').execFile)
 
 const {Epoll} = require('epoll')
 
-const CompositorEndPoint = require('../src/CompositorEndpoint')
+const CompositorEndPoint = require('../src/Endpoint')
 
 describe('CompositorEndpoint', () => {
   describe('display lifecycle', () => {

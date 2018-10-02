@@ -2,6 +2,7 @@
 #include <node/node_api.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "wayland-util.h"
 #include "wayland-server-core.h"
@@ -11,8 +12,7 @@
   { name, 0, func, 0, 0, 0, napi_default, 0 }
 
 struct js_cb {
-    napi_env env;
-    napi_value cb;
+    napi_ref cb_ref;
 };
 
 struct client_creation_listener {
@@ -30,25 +30,43 @@ struct display_destruction_listener {
     struct client_creation_listener *client_creation_listener;
 };
 
+static void
+check_status(napi_env env, napi_status status) {
+    if (status != napi_ok && status != napi_pending_exception) {
+        const napi_extended_error_info *result;
+        assert(napi_get_last_error_info(env, &result) == napi_ok);
+        printf("%s\n", result->error_message);
+        assert(0);
+    }
+}
+
 void
 on_wire_message(struct wl_client *client, int32_t *wire_message, size_t wire_message_count, int *fds_in,
                 size_t fds_in_count) {
     struct client_creation_listener *listener_w_context = wl_client_get_user_data(client);
     struct js_cb js_on_client_wire_message = listener_w_context->js_cb[2];
-    napi_value wire_message_value, fds_value, client_value, global, cb_result;
+    napi_value wire_message_value, fds_value, client_value, global, cb_result, cb;
     napi_status status;
+    napi_env env;
 
-    napi_create_arraybuffer(js_on_client_wire_message.env, sizeof(int32_t) * wire_message_count,
+    env = *(napi_env *) wl_display_get_user_data(wl_client_get_display(client));
+
+    napi_create_arraybuffer(env, sizeof(int32_t) * wire_message_count,
                             (void **) &wire_message, &wire_message_value);
-    napi_create_arraybuffer(js_on_client_wire_message.env, sizeof(int) * fds_in_count, (void **) &fds_in, &fds_value);
-    napi_create_external(js_on_client_wire_message.env, client, NULL, NULL, &client_value);
+    napi_create_arraybuffer(env, sizeof(int) * fds_in_count, (void **) &fds_in, &fds_value);
+    napi_create_external(env, client, NULL, NULL, &client_value);
 
-    status = napi_get_global(js_on_client_wire_message.env, &global);
-    assert(status == napi_ok);
+    status = napi_get_global(env, &global);
+    check_status(env, status);
     napi_value argv[3] = {client_value, wire_message_value, fds_value};
-    status = napi_call_function(js_on_client_wire_message.env, global, js_on_client_wire_message.cb, 3, argv,
+
+    status = napi_get_reference_value(env,
+                                      js_on_client_wire_message.cb_ref,
+                                      &cb);
+    check_status(env, status);
+    status = napi_call_function(env, global, cb, 3, argv,
                                 &cb_result);
-    assert(status == napi_ok);
+    check_status(env, status);
 }
 
 void
@@ -56,16 +74,22 @@ on_client_destroyed(struct wl_listener *listener, void *data) {
     struct wl_client *client = data;
     struct client_destruction_listener *destruction_listener = (struct client_destruction_listener *) listener;
     struct js_cb js_on_client_destroyed = destruction_listener->js_cb;
-    napi_value client_value, global, cb_result;
+    napi_value client_value, global, cb_result, cb;
     napi_status status;
+    napi_env env;
 
-    napi_create_external(js_on_client_destroyed.env, client, NULL, NULL, &client_value);
+    env = *(napi_env *) wl_display_get_user_data(wl_client_get_display(client));
 
-    status = napi_get_global(js_on_client_destroyed.env, &global);
-    assert(status == napi_ok);
+    napi_create_external(env, client, NULL, NULL, &client_value);
+
+    status = napi_get_global(env, &global);
+    check_status(env, status);
     napi_value argv[1] = {client_value};
-    status = napi_call_function(js_on_client_destroyed.env, global, js_on_client_destroyed.cb, 1, argv, &cb_result);
-    assert(status == napi_ok);
+
+    status = napi_get_reference_value(env, js_on_client_destroyed.cb_ref, &cb);
+    check_status(env, status);
+    status = napi_call_function(env, global, cb, 1, argv, &cb_result);
+    check_status(env, status);
 
     free(destruction_listener);
 }
@@ -75,8 +99,11 @@ on_client_created(struct wl_listener *listener, void *data) {
     struct wl_client *client = data;
     struct client_creation_listener *creation_listener = (struct client_creation_listener *) listener;
     struct js_cb js_on_client_created = creation_listener->js_cb[0];
-    napi_value client_value, global, cb_result;
+    napi_value client_value, global, cb_result, cb;
     napi_status status;
+    napi_env env;
+
+    env = *(napi_env *) wl_display_get_user_data(wl_client_get_display(client));
 
     struct client_destruction_listener *destruction_listener = malloc(sizeof(struct client_destruction_listener));
     destruction_listener->listener.notify = on_client_destroyed;
@@ -86,17 +113,26 @@ on_client_created(struct wl_listener *listener, void *data) {
     wl_client_set_user_data(client, creation_listener);
     wl_client_set_wire_message_cb(client, on_wire_message);
 
-    napi_create_external(js_on_client_created.env, client, NULL, NULL, &client_value);
-    status = napi_get_global(js_on_client_created.env, &global);
-    assert(status == napi_ok);
+    napi_create_external(env, client, NULL, NULL, &client_value);
+    status = napi_get_global(env, &global);
+    check_status(env, status);
     napi_value argv[1] = {client_value};
-    status = napi_call_function(js_on_client_created.env, global, js_on_client_created.cb, 1, argv, &cb_result);
-    assert(status == napi_ok);
+    status = napi_get_reference_value(env, js_on_client_created.cb_ref, &cb);
+    check_status(env, status);
+    status = napi_call_function(env, global, cb, 1, argv, &cb_result);
+    check_status(env, status);
 }
 
 void
 on_display_destroyed(struct wl_listener *listener, void *data) {
+    struct wl_display *display = data;
     struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) listener;
+    napi_env env = *(napi_env *) wl_display_get_user_data(display);
+
+    for (int i = 0; i < 3; ++i) {
+        napi_delete_reference(env, display_destruction_listener->client_creation_listener->js_cb[i].cb_ref);
+    }
+
     free(display_destruction_listener->client_creation_listener);
     free(display_destruction_listener);
 }
@@ -111,20 +147,21 @@ napi_value
 createDisplay(napi_env env, napi_callback_info info) {
     napi_status status;
     size_t argc = 3;
-    napi_value argv[argc], display_value;
+    napi_value argv[argc], display_value, async_name;
     struct client_creation_listener *client_creation_listener;
     struct display_destruction_listener *display_destruction_listener;
 
+
     status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    assert(status == napi_ok);
+    check_status(env, status);
 
     client_creation_listener = malloc(sizeof(struct client_creation_listener));
     client_creation_listener->listener.notify = on_client_created;
 
+
     for (int i = 0; i < argc; ++i) {
-        client_creation_listener->js_cb[i].env = env;
-        // TODO assert argv[i] is a js function
-        client_creation_listener->js_cb[i].cb = argv[i];
+        status = napi_create_reference(env, argv[i], 1, &client_creation_listener->js_cb[i].cb_ref);
+        check_status(env, status);
     }
 
     display_destruction_listener = malloc(sizeof(struct display_destruction_listener));
@@ -136,6 +173,7 @@ createDisplay(napi_env env, napi_callback_info info) {
     wl_display_add_client_created_listener(display, &client_creation_listener->listener);
 
     napi_create_external(env, display, NULL, NULL, &display_value);
+
     return display_value;
 }
 
@@ -151,7 +189,7 @@ addSocketAuto(napi_env env, napi_callback_info info) {
     struct wl_display *display;
 
     status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    assert(status == napi_ok);
+    check_status(env, status);
 
     display_value = argv[0];
     napi_get_value_external(env, display_value, (void **) &display);
@@ -174,14 +212,16 @@ destroyDisplay(napi_env env, napi_callback_info info) {
     struct wl_display *display;
 
     status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    assert(status == napi_ok);
+    check_status(env, status);
 
     display_value = argv[0];
     napi_get_value_external(env, display_value, (void **) &display);
 
+    wl_display_set_user_data(display, env);
     wl_display_terminate(display);
     wl_display_destroy_clients(display);
     wl_display_destroy(display);
+    wl_display_set_user_data(display, NULL);
 }
 
 // expected arguments in order:
@@ -194,14 +234,18 @@ destroyClient(napi_env env, napi_callback_info info) {
     size_t argc = 1;
     napi_value argv[argc], client_value;
     struct wl_client *client;
+    struct wl_display *display;
 
     status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    assert(status == napi_ok);
+    check_status(env, status);
 
     client_value = argv[0];
     napi_get_value_external(env, client_value, (void **) &client);
 
+    display = wl_client_get_display(client);
+    wl_display_set_user_data(display, env);
     wl_client_destroy(client);
+    wl_display_set_user_data(display, NULL);
 }
 
 // expected arguments in order:
@@ -223,7 +267,7 @@ sendEvents(napi_env env, napi_callback_info info) {
 
 
     status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    assert(status == napi_ok);
+    check_status(env, status);
 
     client_value = argv[0];
     napi_get_value_external(env, client_value, (void **) &client);
@@ -254,12 +298,14 @@ dispatchRequests(napi_env env, napi_callback_info info) {
     struct wl_display *display;
 
     status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    assert(status == napi_ok);
+    check_status(env, status);
 
     display_value = argv[0];
     napi_get_value_external(env, display_value, (void **) &display);
 
+    wl_display_set_user_data(display, &env);
     wl_event_loop_dispatch(wl_display_get_event_loop(display), 0);
+    wl_display_set_user_data(display, NULL);
 }
 
 // expected arguments in order:
@@ -274,12 +320,14 @@ flushEvents(napi_env env, napi_callback_info info) {
     struct wl_display *display;
 
     status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    assert(status == napi_ok);
+    check_status(env, status);
 
     display_value = argv[0];
     napi_get_value_external(env, display_value, (void **) &display);
 
+    wl_display_set_user_data(display, &env);
     wl_display_flush_clients(display);
+    wl_display_set_user_data(display, NULL);
 }
 
 // expected arguments in order:
@@ -295,7 +343,7 @@ getFd(napi_env env, napi_callback_info info) {
     int fd;
 
     status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    assert(status == napi_ok);
+    check_status(env, status);
 
     display_value = argv[0];
     napi_get_value_external(env, display_value, (void **) &display);
@@ -303,7 +351,7 @@ getFd(napi_env env, napi_callback_info info) {
     fd = wl_event_loop_get_fd(wl_display_get_event_loop(display));
 
     status = napi_create_int32(env, fd, &fd_value);
-    assert(status == napi_ok);
+    check_status(env, status);
 
     return fd_value;
 }
@@ -323,7 +371,7 @@ init(napi_env env, napi_value exports) {
     };
 
     status = napi_define_properties(env, exports, 8, desc);
-    assert(status == napi_ok);
+    check_status(env, status);
 
     return exports;
 }

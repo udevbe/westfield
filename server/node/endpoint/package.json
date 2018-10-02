@@ -1,0 +1,38 @@
+{
+  "name": "westfield-endpoint",
+  "version": "0.1.0",
+  "main": "index.js",
+  "description": "Wayland HTML5 runtime for Node.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/udevbe/westfield.git"
+  },
+  "keywords": [
+    "wayland",
+    "html5",
+    "weboscket",
+    "compositor",
+    "browser",
+    "javascript",
+    "ipc"
+  ],
+  "author": "Erik De Rijcke",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/udevbe/westfield/issues"
+  },
+  "homepage": "https://github.com/udevbe/westfield#readme",
+  "contributors": [],
+  "scripts": {
+    "test": "mocha ./test/*.js --timeout 10000"
+  },
+  "dependencies": {
+    "westfield-native": "file:./native/"
+  },
+  "devDependencies": {
+    "epoll": "^2.0.1",
+    "mocha": "^5.2.0",
+    "sinon": "^6.3.4",
+    "standard": "^12.0.1"
+  }
+}

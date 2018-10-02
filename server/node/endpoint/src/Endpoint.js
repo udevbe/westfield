@@ -26,12 +26,12 @@ SOFTWARE.
 
 const westfieldNative = require('westfield-native')
 
-class CompositorEndpoint {
+class Endpoint {
   /**
-   * @returns {CompositorEndpoint}
+   * @returns {Endpoint}
    */
   static create () {
-    return new CompositorEndpoint()
+    return new Endpoint()
   }
 
   /**
@@ -98,4 +98,4 @@ class CompositorEndpoint {
   }
 }
 
-module.exports = CompositorEndpoint
+module.exports = Endpoint
