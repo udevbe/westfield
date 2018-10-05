@@ -48,6 +48,7 @@ find_package(LibFFI REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
         src/wayland-server/protocol/wayland-server-protocol.h
+        src/wayland-server/protocol/wayland-protocol.c
         src/westfield-native.c
         src/connection.h
         src/wayland-server/connection.c

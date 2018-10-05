@@ -1028,9 +1028,9 @@ struct wl_compositor_interface {
 
 /**
  * @ingroup iface_wl_shm_pool
- * @struct wl_shm_pool_interface_
+ * @struct wl_shm_pool_interface
  */
-struct wl_shm_pool_interface_ {
+struct wl_shm_pool_interface {
 	/**
 	 * create a buffer from the pool
 	 *
