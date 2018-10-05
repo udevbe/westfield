@@ -37,6 +37,7 @@ describe('CompositorEndpoint', () => {
         const opcode = uint32Messages[1] & 0x0000FFFF
 
         console.log(objectId, size, opcode)
+        return 0
       }
       const endpoint = EndPoint.create()
       const wlDisplay = endpoint.createDisplay(onClientCreated, onClientDestroyed, onWireMessage)
