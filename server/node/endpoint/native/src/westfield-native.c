@@ -385,10 +385,29 @@ createMemoryMappedFile(napi_env env, napi_callback_info info) {
     return fd_value;
 }
 
+// expected arguments in order:
+// - Object display
+// return:
+// - void
+napi_value
+initShm(napi_env env, napi_callback_info info) {
+    napi_status status;
+    size_t argc = 1;
+    napi_value argv[argc], display_value;
+    struct wl_display *display;
+
+    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
+    check_status(env, status);
+
+    display_value = argv[0];
+    napi_get_value_external(env, display_value, (void **) &display);
+    wl_display_init_shm(display);
+}
+
 napi_value
 init(napi_env env, napi_value exports) {
     napi_status status;
-    napi_property_descriptor desc[9] = {
+    napi_property_descriptor desc[10] = {
             DECLARE_NAPI_METHOD("createDisplay", createDisplay),
             DECLARE_NAPI_METHOD("destroyDisplay", destroyDisplay),
             DECLARE_NAPI_METHOD("addSocketAuto", addSocketAuto),
@@ -397,10 +416,11 @@ init(napi_env env, napi_value exports) {
             DECLARE_NAPI_METHOD("sendEvents", sendEvents),
             DECLARE_NAPI_METHOD("dispatchRequests", dispatchRequests),
             DECLARE_NAPI_METHOD("flushEvents", flushEvents),
-            DECLARE_NAPI_METHOD("createMemoryMappedFile", createMemoryMappedFile)
+            DECLARE_NAPI_METHOD("createMemoryMappedFile", createMemoryMappedFile),
+            DECLARE_NAPI_METHOD("initShm", initShm)
     };
 
-    status = napi_define_properties(env, exports, 9, desc);
+    status = napi_define_properties(env, exports, 10, desc);
     check_status(env, status);
 
     return exports;
