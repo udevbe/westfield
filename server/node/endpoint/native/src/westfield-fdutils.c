@@ -1,6 +1,6 @@
 /*
- * Copyright © 2008-2011 Kristian Høgsberg
- * Copyright © 2011 Intel Corporation
+ * Copyright © 2012 Collabora, Ltd.
+ * Copyright © 2018 Erik De Rijcke
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,56 +24,61 @@
  * SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
+#define _GNU_SOURCE
+
+#include <sys/types.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <string.h>
-#include <stdarg.h>
+#include <stdlib.h>
 
-#include "wayland-util.h"
-#include "wayland-private.h"
+#include "westfield-fdutils.h"
 
-WL_EXPORT void
-wl_list_init(struct wl_list *list)
-{
-	list->prev = list;
-	list->next = list;
+static int
+create_tmpfile_cloexec(char *tmpname) {
+    int fd;
+    fd = mkostemp(tmpname, O_CLOEXEC);
+    if (fd >= 0)
+        unlink(tmpname);
+
+    return fd;
 }
 
-WL_EXPORT void
-wl_list_insert(struct wl_list *list, struct wl_list *elm)
-{
-	elm->prev = list;
-	elm->next = list->next;
-	list->next = elm;
-	elm->next->prev = elm;
+int
+os_create_anonymous_file(off_t size) {
+    static const char template[] = "/wayland-shared-XXXXXX";
+    const char *path;
+    char *name;
+    int fd;
+    int ret;
+
+    path = getenv("XDG_RUNTIME_DIR");
+    if (!path) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    name = malloc(strlen(path) + sizeof(template));
+    if (!name)
+        return -1;
+
+    strcpy(name, path);
+    strcat(name, template);
+
+    fd = create_tmpfile_cloexec(name);
+
+    free(name);
+
+    if (fd < 0)
+        return -1;
+
+    ret = posix_fallocate(fd, 0, size);
+    if (ret != 0) {
+        close(fd);
+        errno = ret;
+        return -1;
+    }
+
+    return fd;
 }
-
-WL_EXPORT void
-wl_list_remove(struct wl_list *elm)
-{
-	elm->prev->next = elm->next;
-	elm->next->prev = elm->prev;
-	elm->next = NULL;
-	elm->prev = NULL;
-}
-
-WL_EXPORT int
-wl_list_empty(const struct wl_list *list)
-{
-	return list->next == list;
-}
-
-WL_EXPORT void
-wl_list_insert_list(struct wl_list *list, struct wl_list *other)
-{
-	if (wl_list_empty(other))
-		return;
-
-	other->next->prev = list;
-	other->prev->next = list->next;
-	list->next->prev = other->prev;
-	list->next = other->next;
-}
-
-/** \endcond */

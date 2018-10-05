@@ -22,7 +22,7 @@ function(PARSE_CMAKEJS_PROPERTIES)
                 ARGS print-configure --debug
                 OUTPUT_VARIABLE CMAKE_JS_OUTPUT
                 )
-    else()
+    else ()
         exec_program(cmake-js ${CMAKE_CURRENT_SOURCE_DIR}
                 ARGS print-configure
                 OUTPUT_VARIABLE CMAKE_JS_OUTPUT
@@ -37,24 +37,35 @@ function(PARSE_CMAKEJS_PROPERTIES)
 
 endfunction(PARSE_CMAKEJS_PROPERTIES)
 
-project (westfield-native C)
+project(westfield-native C)
 set(CMAKE_BUILD_TYPE "debug")
 
 parse_cmakejs_properties()
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
 
-include_directories(${CMAKE_JS_INC} "/home/erik/.nvm/versions/node/v10.10.0/include")
+find_package(LibFFI REQUIRED)
+
 add_library(${PROJECT_NAME} SHARED
+        src/wayland-server/protocol/wayland-server-protocol.h
         src/westfield-native.c
         src/connection.h
-        src/connection.c
-        src/event-loop.c
-        src/wayland-os.h
-        src/wayland-os.c
-        src/wayland-server.h
-        src/wayland-server.c
-        src/wayland-util.h
-        src/wayland-util.c)
+        src/wayland-server/connection.c
+        src/wayland-server/event-loop.c
+        src/wayland-server/wayland-os.h
+        src/wayland-server/wayland-os.c
+        src/wayland-server/wayland-private.h
+        src/wayland-server/wayland-server.h
+        src/wayland-server/wayland-server.c
+        src/wayland-server/wayland-server-core.h
+        src/wayland-server/wayland-shm.c
+        src/wayland-server/wayland-util.h
+        src/wayland-server/wayland-util.c
+        src/westfield-fdutils.c
+        src/westfield-fdutils.h
+        src/wayland-server-core-extensions.h)
+target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/src/wayland-server/protocol")
+target_include_directories(${PROJECT_NAME} PRIVATE "/home/erik/.nvm/versions/node/v10.10.0/include")
+
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
-target_link_libraries(${PROJECT_NAME} ${CMAKE_JS_LIB})
+target_link_libraries(${PROJECT_NAME} ${CMAKE_JS_LIB} ${LIBFFI_LIBRARIES})

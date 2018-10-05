@@ -1,12 +1,11 @@
 const assert = require('assert')
 const sinon = require('sinon')
 
-const util = require('util')
-const execFile = util.promisify(require('child_process').execFile)
+const childProcess = require('child_process')
 
 const {Epoll} = require('epoll')
 
-const CompositorEndPoint = require('../src/Endpoint')
+const EndPoint = require('../src/Endpoint')
 
 describe('CompositorEndpoint', () => {
   describe('display lifecycle', () => {
@@ -15,7 +14,7 @@ describe('CompositorEndpoint', () => {
       const onClientCreated = sinon.fake()
       const onClientDestroyed = sinon.fake()
       const onWireMessage = sinon.fake()
-      const compositorEndpoint = CompositorEndPoint.create()
+      const compositorEndpoint = EndPoint.create()
 
       // when
       const wlDisplay = compositorEndpoint.createDisplay(onClientCreated, onClientDestroyed, onWireMessage)
@@ -29,41 +28,70 @@ describe('CompositorEndpoint', () => {
   describe('client lifecycle', () => {
     it('should be able to handle incoming client connections', async () => {
       // given
-      const onClientCreated = (wlClient) => {
-        console.log(wlClient)
-      }
-      const onClientDestroyed = (wlClient) => {
-        console.log(wlClient)
-      }
-      const onWireMessage = (wlClient, message, fdsIn) => {
-        console.log(wlClient, message, fdsIn)
-      }
-      const compositorEndpoint = CompositorEndPoint.create()
-      const wlDisplay = compositorEndpoint.createDisplay(onClientCreated, onClientDestroyed, onWireMessage)
-      const wlDislayName = compositorEndpoint.addSocketAuto(wlDisplay)
-      const wlDisplayFd = compositorEndpoint.getFd(wlDisplay)
+      const onClientCreated = sinon.fake()
+      const onClientDestroyed = sinon.fake()
+      const onWireMessage = (wlClient, messages, fdsIn) => {
+        const uint32Messages = new Uint32Array(messages)
+        const objectId = uint32Messages[0]
+        const size = uint32Messages[1] >>> 16
+        const opcode = uint32Messages[1] & 0x0000FFFF
 
-      const fdWatcher = new Epoll((err, fd, events) => {
-        if (err) {
-          throw new Error(err)
-        } else {
-          compositorEndpoint.dispatchRequests(wlDisplay)
-        }
+        console.log(objectId, size, opcode)
+      }
+      const endpoint = EndPoint.create()
+      const wlDisplay = endpoint.createDisplay(onClientCreated, onClientDestroyed, onWireMessage)
+      const wlDislayName = endpoint.addSocketAuto(wlDisplay)
+      const wlDisplayFd = endpoint.getFd(wlDisplay)
+
+      const fdWatcher = new Epoll((err) => {
+        assert(err == null)
+        endpoint.dispatchRequests(wlDisplay)
       })
-      fdWatcher.add(wlDisplayFd, Epoll.EPOLLPRI | Epoll.EPOLLIN | Epoll.EPOLLERR)
+      try {
+        fdWatcher.add(wlDisplayFd, Epoll.EPOLLPRI | Epoll.EPOLLIN | Epoll.EPOLLERR)
 
-      const childEnv = {}
-      Object.assign(childEnv, process.env)
-      childEnv.WAYLAND_DISPLAY = wlDislayName
+        const childEnv = {}
+        Object.assign(childEnv, process.env)
+        childEnv.WAYLAND_DISPLAY = wlDislayName
+        childEnv.WAYLAND_DEBUG = 'client'
 
-      // when
-      // TODO create a client
-      const {stdout, stderr} = await execFile('/usr/bin/weston-terminal', [], {env: childEnv})
-      console.log(stdout)
-      console.error(stderr)
+        // when
+        // a client is connecting
+        // TODO ideally a separate test client with feedback would be nice
+        const child = childProcess.execFile('/usr/bin/weston-terminal', [], {env: childEnv}, (stdout, stderr) => {
+          console.log(stdout)
+          console.error(stderr)
+        })
 
-      // then
-      assert(wlDisplay)
+        // then
+        // client creation callback is called
+        await new Promise((resolve) => {
+          setTimeout(resolve, 100)
+        })
+
+        assert(wlDisplay)
+        assert(onClientCreated.calledOnce)
+
+        await new Promise((resolve) => {
+          setTimeout(resolve, 100)
+        })
+
+        // assert(onWireMessage.called)
+
+        //and when
+        // a client is destroyed
+        child.kill()
+
+        // then
+        // destroy callback is called
+        await new Promise((resolve) => {
+          setTimeout(resolve, 100)
+        })
+        assert(onClientDestroyed.called)
+      }
+      finally {
+        fdWatcher.remove(wlDisplayFd)
+      }
     })
   })
 })

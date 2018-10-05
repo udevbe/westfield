@@ -4,9 +4,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "wayland-util.h"
-#include "wayland-server-core.h"
+#include "wayland-server-core-extensions.h"
 #include "connection.h"
+
+#include "westfield-fdutils.h"
 
 #define DECLARE_NAPI_METHOD(name, func)                          \
   { name, 0, func, 0, 0, 0, napi_default, 0 }
@@ -40,20 +41,21 @@ check_status(napi_env env, napi_status status) {
     }
 }
 
-void
+int
 on_wire_message(struct wl_client *client, int32_t *wire_message, size_t wire_message_count, int *fds_in,
                 size_t fds_in_count) {
     struct client_creation_listener *listener_w_context = wl_client_get_user_data(client);
     struct js_cb js_on_client_wire_message = listener_w_context->js_cb[2];
+    uint32_t cb_result_consumed;
     napi_value wire_message_value, fds_value, client_value, global, cb_result, cb;
     napi_status status;
     napi_env env;
 
     env = *(napi_env *) wl_display_get_user_data(wl_client_get_display(client));
 
-    napi_create_arraybuffer(env, sizeof(int32_t) * wire_message_count,
-                            (void **) &wire_message, &wire_message_value);
-    napi_create_arraybuffer(env, sizeof(int) * fds_in_count, (void **) &fds_in, &fds_value);
+    napi_create_external_arraybuffer(env, wire_message, sizeof(int32_t) * wire_message_count, NULL, NULL,
+                                     &wire_message_value);
+    napi_create_external_arraybuffer(env, fds_in, sizeof(int) * fds_in_count, NULL, NULL, &fds_value);
     napi_create_external(env, client, NULL, NULL, &client_value);
 
     status = napi_get_global(env, &global);
@@ -67,6 +69,9 @@ on_wire_message(struct wl_client *client, int32_t *wire_message, size_t wire_mes
     status = napi_call_function(env, global, cb, 3, argv,
                                 &cb_result);
     check_status(env, status);
+
+    napi_get_value_uint32(env, cb_result, &cb_result_consumed);
+    return cb_result_consumed;
 }
 
 void
@@ -147,7 +152,7 @@ napi_value
 createDisplay(napi_env env, napi_callback_info info) {
     napi_status status;
     size_t argc = 3;
-    napi_value argv[argc], display_value, async_name;
+    napi_value argv[argc], display_value;
     struct client_creation_listener *client_creation_listener;
     struct display_destruction_listener *display_destruction_listener;
 
@@ -356,10 +361,34 @@ getFd(napi_env env, napi_callback_info info) {
     return fd_value;
 }
 
+// expected arguments in order:
+// - number size
+// return:
+// - number
+napi_value
+createMemoryMappedFile(napi_env env, napi_callback_info info) {
+    napi_status status;
+    size_t argc = 1, size;
+    napi_value argv[argc], size_value, fd_value;
+    int fd;
+
+    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
+    check_status(env, status);
+
+    size_value = argv[0];
+    napi_get_value_uint32(env, size_value, (uint32_t *) &size);
+
+    fd = os_create_anonymous_file(size);
+    status = napi_create_int32(env, fd, &fd_value);
+    check_status(env, status);
+
+    return fd_value;
+}
+
 napi_value
 init(napi_env env, napi_value exports) {
     napi_status status;
-    napi_property_descriptor desc[8] = {
+    napi_property_descriptor desc[9] = {
             DECLARE_NAPI_METHOD("createDisplay", createDisplay),
             DECLARE_NAPI_METHOD("destroyDisplay", destroyDisplay),
             DECLARE_NAPI_METHOD("addSocketAuto", addSocketAuto),
@@ -367,10 +396,11 @@ init(napi_env env, napi_value exports) {
             DECLARE_NAPI_METHOD("destroyClient", destroyClient),
             DECLARE_NAPI_METHOD("sendEvents", sendEvents),
             DECLARE_NAPI_METHOD("dispatchRequests", dispatchRequests),
-            DECLARE_NAPI_METHOD("flushEvents", flushEvents)
+            DECLARE_NAPI_METHOD("flushEvents", flushEvents),
+            DECLARE_NAPI_METHOD("createMemoryMappedFile", createMemoryMappedFile)
     };
 
-    status = napi_define_properties(env, exports, 8, desc);
+    status = napi_define_properties(env, exports, 9, desc);
     check_status(env, status);
 
     return exports;
