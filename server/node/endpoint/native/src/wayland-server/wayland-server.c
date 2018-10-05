@@ -353,19 +353,23 @@ wl_client_connection_data(int fd, uint32_t mask, void *data) {
         if (len < size)
             break;
 
+        if (client->wire_message_cb) {
+            int32_t buffer[size / sizeof(int32_t)];
+            wl_connection_copy(connection, buffer, (size_t) size);
 
-        int32_t buffer[size / sizeof(int32_t)];
-        wl_connection_copy(connection, buffer, (size_t) size);
+            fds_in_count = wl_connection_fds_in_count(connection);
+            int *fds_in = NULL;
+            if (fds_in_count) {
+                int fds_in_temp[fds_in_count];
+                wl_connection_copy_fds_in(connection, fds_in_temp);
+                fds_in = fds_in_temp;
+            }
 
-        fds_in_count = wl_connection_fds_in_count(connection);
-        int fds_in[fds_in_count];
-        wl_connection_copy_fds_in(connection, fds_in);
-
-        if (client->wire_message_cb &&
-            client->wire_message_cb(client, buffer, (size_t) size, fds_in, fds_in_count)) {
-            wl_connection_consume(connection, (size_t) size);
-            len = wl_connection_pending_input(connection);
-            continue;
+            if (client->wire_message_cb(client, buffer, (size_t) size, fds_in, fds_in_count)) {
+                wl_connection_consume(connection, (size_t) size);
+                len = wl_connection_pending_input(connection);
+                continue;
+            }
         }
 
         resource = wl_map_lookup(&client->objects, p[0]);

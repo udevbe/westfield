@@ -1339,31 +1339,14 @@ wl_closure_destroy(struct wl_closure *closure)
 
 size_t
 wl_connection_fds_in_count(struct wl_connection *connection) {
-	size_t count = 0;
-	uint32_t tail = connection->fds_in.tail;
-	while (tail != connection->fds_in.head) {
-		count++;
-		tail += sizeof(int);
-	}
-	return count;
+    size_t byte_count = connection->fds_in.head - connection->fds_in.tail;
+    return byte_count / sizeof(int);
 }
 
 void
-wl_connection_copy_fds_in(struct wl_connection *connection, int *fds_in){
-	uint32_t tail = connection->fds_in.tail, i = 0;
-	while (tail != connection->fds_in.head) {
-		fds_in[i++] = tail;
-		tail += sizeof(int);
-	}
-}
-
-int
-wl_connection_read_next_fd_in(struct wl_connection *connection, int* fd) {
-	if (connection->fds_in.tail == connection->fds_in.head) {
-		return -1;
-	}
-
-	wl_buffer_copy(&connection->fds_in, fd, sizeof(int));
-	connection->fds_in.tail += sizeof(int);
-	return 0;
+wl_connection_copy_fds_in(struct wl_connection *connection, int *fds_in) {
+    size_t byte_count = connection->fds_in.head - connection->fds_in.tail;
+    if(byte_count){
+        wl_buffer_copy(&connection->fds_in, fds_in, byte_count);
+    }
 }
