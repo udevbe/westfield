@@ -250,7 +250,7 @@ class Client extends DisplayRequests {
 
   /**
    * Handle a received message from a client.
-   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} incomingWireMessages
+   * @param {{buffer: ArrayBuffer, fds: Array<number>}} incomingWireMessages
    * @return {Promise<void>}
    * @throws Error If an illegal client request is received ie. bad length or missing file descriptor.
    */
@@ -259,6 +259,8 @@ class Client extends DisplayRequests {
       // client destroyed
       return
     }
+
+    incomingWireMessages.bufferOffset = 0
 
     this._inMessages.push(incomingWireMessages)
     if (this._inMessages.length > 1) {
@@ -272,12 +274,12 @@ class Client extends DisplayRequests {
       while (wireMessages.bufferOffset < wireMessages.buffer.byteLength) {
         const id = new Uint32Array(wireMessages.buffer, wireMessages.bufferOffset)[0]
         const bufu16 = new Uint16Array(wireMessages.buffer, wireMessages.bufferOffset + 4)
-        wireMessages.size = bufu16[0]
+        wireMessages.size = bufu16[1]
         if (wireMessages.size > wireMessages.buffer.byteLength) {
           throw new Error('Request buffer too small')
         }
 
-        const opcode = bufu16[1]
+        const opcode = bufu16[0]
         const resource = this._resources[id]
         if (resource) {
           wireMessages.bufferOffset += 8

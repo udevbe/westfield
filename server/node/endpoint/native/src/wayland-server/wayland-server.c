@@ -80,7 +80,6 @@ struct wl_client {
     struct ucred ucred;
     int error;
     struct wl_priv_signal resource_created_signal;
-    void *user_data;
     wl_connection_wire_message_t wire_message_cb;
 };
 
@@ -104,7 +103,6 @@ struct wl_display {
 
     wl_display_global_filter_func_t global_filter;
     void *global_filter_data;
-    void *user_data;
 };
 
 struct wl_global {
@@ -312,7 +310,8 @@ wl_client_connection_data(int fd, uint32_t mask, void *data) {
     uint32_t p[2];
     uint32_t resource_flags;
     int opcode, size, since, len;
-    size_t fds_in_count;
+    size_t fds_in_size;
+    int32_t * buffer;
 
     if (mask & WL_EVENT_HANGUP) {
         wl_client_destroy(client);
@@ -354,18 +353,17 @@ wl_client_connection_data(int fd, uint32_t mask, void *data) {
             break;
 
         if (client->wire_message_cb) {
-            int32_t buffer[size / sizeof(int32_t)];
+            buffer = malloc((size_t) size);
             wl_connection_copy(connection, buffer, (size_t) size);
 
-            fds_in_count = wl_connection_fds_in_count(connection);
+            fds_in_size = wl_connection_fds_in_size(connection);
             int *fds_in = NULL;
-            if (fds_in_count) {
-                int fds_in_temp[fds_in_count];
-                wl_connection_copy_fds_in(connection, fds_in_temp);
-                fds_in = fds_in_temp;
+            if (fds_in_size) {
+                fds_in = malloc(fds_in_size);
+                wl_connection_copy_fds_in(connection, fds_in);
             }
 
-            if (client->wire_message_cb(client, buffer, (size_t) size, fds_in, fds_in_count)) {
+            if (client->wire_message_cb(client, buffer, (size_t) size, fds_in, fds_in_size)) {
                 wl_connection_consume(connection, (size_t) size);
                 len = wl_connection_pending_input(connection);
                 continue;
@@ -1185,16 +1183,6 @@ wl_display_get_serial(struct wl_display *display) {
     return display->serial;
 }
 
-WL_EXPORT void
-wl_display_set_user_data(struct wl_display *display, void *user_data) {
-    display->user_data = user_data;
-}
-
-WL_EXPORT void *
-wl_display_get_user_data(struct wl_display *display) {
-    return display->user_data;
-}
-
 WL_EXPORT struct wl_connection *
 wl_client_get_connection(struct wl_client *client) {
     return client->connection;
@@ -1878,16 +1866,6 @@ wl_client_for_each_resource(struct wl_client *client,
     };
 
     wl_map_for_each(&client->objects, resource_iterator_helper, &context);
-}
-
-WL_EXPORT void
-wl_client_set_user_data(struct wl_client *client, void *data) {
-    client->user_data = data;
-}
-
-WL_EXPORT void *
-wl_client_get_user_data(struct wl_client *client) {
-    return client->user_data;
 }
 
 WL_EXPORT void

@@ -28,26 +28,34 @@ const westfieldNative = require('westfield-native')
 
 class Endpoint {
   /**
-   * @returns {Endpoint}
+   * @param {function(wlClient: Object):void}onClientCreated
+   * @returns {Object} A started wayland display endpoint
    */
-  static create () {
-    return new Endpoint()
+  static createDisplay (onClientCreated) {
+    return westfieldNative.createDisplay(onClientCreated)
   }
 
   /**
-   * @param {function(wlClient: Object):void}onClientCreated
+   * @param {Object}wlClient
    * @param {function(wlClient: Object):void}onClientDestroyed
-   * @param {function(wlClient: Object, wireMessages:ArrayBuffer, fdsIn: ArrayBuffer):void}onWireMessage
-   * @returns {Object} A started wayland display endpoint
    */
-  createDisplay (onClientCreated, onClientDestroyed, onWireMessage) {
-    return westfieldNative.createDisplay(onClientCreated, onClientDestroyed, onWireMessage)
+  static setClientDestroyedCallback (wlClient, onClientDestroyed) {
+    westfieldNative.setClientDestroyedCallback(wlClient, onClientDestroyed)
+  }
+
+  /**
+   *
+   * @param {Object}wlClient
+   * @param {function(wlClient: Object, wireMessages:ArrayBuffer, fdsIn: ArrayBuffer):number}onWireMessage
+   */
+  static setWireMessageCallback (wlClient, onWireMessage) {
+    westfieldNative.setWireMessageCallback(wlClient, onWireMessage)
   }
 
   /**
    * @param {Object} wlDisplay The previously started wayland display endpoint.
    */
-  destroyDisplay (wlDisplay) {
+  static destroyDisplay (wlDisplay) {
     westfieldNative.destroyDisplay(wlDisplay)
   }
 
@@ -55,14 +63,14 @@ class Endpoint {
    * @param {Object}wlDisplay
    * @returns {string}
    */
-  addSocketAuto (wlDisplay) {
+  static addSocketAuto (wlDisplay) {
     return westfieldNative.addSocketAuto(wlDisplay)
   }
 
   /**
    * @param {Object}wlClient A previously created wayland client.
    */
-  destroyClient (wlClient) {
+  static destroyClient (wlClient) {
     westfieldNative.destroyClient(wlClient)
   }
 
@@ -71,21 +79,21 @@ class Endpoint {
    * @param {ArrayBuffer}wireMessages
    * @param {ArrayBuffer}fdsOut
    */
-  sendEvents (wlClient, wireMessages, fdsOut) {
+  static sendEvents (wlClient, wireMessages, fdsOut) {
     westfieldNative.sendEvents(wlClient, wireMessages, fdsOut)
   }
 
   /**
    * @param {Object}wlDisplay
    */
-  dispatchRequests (wlDisplay) {
+  static dispatchRequests (wlDisplay) {
     westfieldNative.dispatchRequests(wlDisplay)
   }
 
   /**
    * @param {Object}wlDisplay
    */
-  flushEvents (wlDisplay) {
+  static flushEvents (wlDisplay) {
     westfieldNative.flushEvents(wlDisplay)
   }
 
@@ -93,8 +101,15 @@ class Endpoint {
    * @param {Object}wlDisplay
    * @returns {number}
    */
-  getFd (wlDisplay) {
+  static getFd (wlDisplay) {
     return westfieldNative.getFd(wlDisplay)
+  }
+
+  /**
+   * @param {Object}wlDisplay
+   */
+  static initShm (wlDisplay) {
+    return westfieldNative.initShm(wlDsiplay)
   }
 }
 

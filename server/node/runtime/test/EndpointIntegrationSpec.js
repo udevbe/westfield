@@ -1,38 +1,47 @@
+const Display = require('../src/Display')
+const {Endpoint} = require('westfield-endpoint')
+const {Epoll} = require('epoll')
+const childProcess = require('child_process')
 const assert = require('assert')
 const sinon = require('sinon')
 
-const childProcess = require('child_process')
-
-const {Epoll} = require('epoll')
-
-const Endpoint = require('../src/Endpoint')
-
-describe('CompositorEndpoint', () => {
-  describe('display lifecycle', () => {
-    it('should be able to start and stop a compositor endpoint using the underlying wl_display struct', () => {
+describe('EndpointIntegration', () => {
+  describe('endpoint display requests', () => {
+    it('Should invoke the correct predefined display request implementations.', async () => {
       // given
-      const onClientCreated = sinon.fake()
+      const display = new Display()
+      let client = null
+      /**
+       * @param {Object}wlClient
+       * @param {ArrayBuffer}messages
+       * @param {ArrayBuffer}fdsIn
+       * @returns {number}
+       */
+      const onWireMessage = (wlClient, messages, fdsIn) => {
+        const fds = []
+        if (fdsIn) {
+          new Int32Array(fdsIn).forEach((fd) => {
+            fds.push(fd)
+          })
+        }
 
-      // when
-      const wlDisplay = Endpoint.createDisplay(onClientCreated)
-      Endpoint.destroyDisplay(wlDisplay)
-
-      // then
-      assert(wlDisplay)
-    })
-  })
-
-  describe('client lifecycle', () => {
-    it('should be able to handle incoming client connections', async () => {
-      // given
+        client.message({
+          buffer: messages,
+          fds: fds
+        })
+        return 1
+      }
 
       const onClientDestroyed = sinon.fake()
+
       const onClientCreated = sinon.spy((wlClient) => {
+        client = display.createClient()
+        Endpoint.setWireMessageCallback(wlClient, onWireMessage)
         Endpoint.setClientDestroyedCallback(wlClient, onClientDestroyed)
       })
 
       const wlDisplay = Endpoint.createDisplay(onClientCreated)
-      const wlDislayName = Endpoint.addSocketAuto(wlDisplay)
+      const wlDisplayName = Endpoint.addSocketAuto(wlDisplay)
       const wlDisplayFd = Endpoint.getFd(wlDisplay)
 
       const fdWatcher = new Epoll((err) => {
@@ -44,7 +53,7 @@ describe('CompositorEndpoint', () => {
 
         const childEnv = {}
         Object.assign(childEnv, process.env)
-        childEnv.WAYLAND_DISPLAY = wlDislayName
+        childEnv.WAYLAND_DISPLAY = wlDisplayName
         childEnv.WAYLAND_DEBUG = 'client'
 
         // when

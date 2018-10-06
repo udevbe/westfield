@@ -1338,9 +1338,8 @@ wl_closure_destroy(struct wl_closure *closure)
 }
 
 size_t
-wl_connection_fds_in_count(struct wl_connection *connection) {
-    size_t byte_count = connection->fds_in.head - connection->fds_in.tail;
-    return byte_count / sizeof(int);
+wl_connection_fds_in_size(struct wl_connection *connection) {
+    return connection->fds_in.head - connection->fds_in.tail;
 }
 
 void

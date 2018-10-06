@@ -12,16 +12,27 @@
 #define DECLARE_NAPI_METHOD(name, func)                          \
   { name, 0, func, 0, 0, 0, napi_default, 0 }
 
-struct display_destruction_listener {
+struct js_cb {
+    napi_ref cb_ref;
+};
+
+struct client_creation_listener {
     struct wl_listener listener;
-    napi_env env;
-    napi_ref client_creation_cb_ref;
+    struct js_cb js_cb[3];
 };
 
 struct client_destruction_listener {
     struct wl_listener listener;
-    napi_ref destroy_cb_ref;
-    napi_ref wire_message_cb_ref;
+    struct js_cb js_cb;
+};
+
+struct display_destruction_listener {
+    struct wl_listener listener;
+    struct client_creation_listener *client_creation_listener;
+};
+
+struct client_westfield_data {
+    struct client_creation_listener creation_listener;
     napi_ref js_object;
 };
 
@@ -40,86 +51,45 @@ finalize_cb(napi_env env, void *finalize_data, void *finalize_hint) {
     free(finalize_data);
 }
 
-void
-on_display_destroyed(struct wl_listener *listener, void *data) {
-    struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) listener;
-    napi_env env = display_destruction_listener->env;
-
-    napi_delete_reference(env, display_destruction_listener->client_creation_cb_ref);
-}
-
-void
-on_client_destroyed(struct wl_listener *listener, void *data) {
-    struct client_destruction_listener *destruction_listener = (struct client_destruction_listener *) listener;
-    if (destruction_listener->destroy_cb_ref) {
-        struct wl_client *client = data;
-        struct display_destruction_listener *display_destruction_listener;
-        napi_value global, client_value, cb_result, cb;
-        napi_status status;
-
-        display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
-                wl_client_get_display(client), on_display_destroyed);
-
-        status = napi_get_reference_value(display_destruction_listener->env, destruction_listener->js_object,
-                                          &client_value);
-        check_status(display_destruction_listener->env, status);
-        napi_value argv[1] = {client_value};
-
-        status = napi_get_reference_value(display_destruction_listener->env, destruction_listener->destroy_cb_ref, &cb);
-        check_status(display_destruction_listener->env, status);
-        status = napi_get_global(display_destruction_listener->env, &global);
-        check_status(display_destruction_listener->env, status);
-        status = napi_call_function(display_destruction_listener->env, global, cb, 1, argv, &cb_result);
-        check_status(display_destruction_listener->env, status);
-
-        free(destruction_listener);
-        napi_delete_reference(display_destruction_listener->env, destruction_listener->js_object);
-        napi_delete_reference(display_destruction_listener->env, destruction_listener->destroy_cb_ref);
-    }
-}
-
 int
-on_wire_message(struct wl_client *client,
-                int32_t *wire_message, size_t wire_message_size,
-                int *fds_in, size_t fds_in_size) {
-    struct client_destruction_listener *destruction_listener = (struct client_destruction_listener *) wl_client_get_destroy_listener(
-            client, on_client_destroyed);
-    if (destruction_listener->wire_message_cb_ref) {
-        struct display_destruction_listener *display_destruction_listener;
+on_wire_message(struct wl_client *client, int32_t *wire_message, size_t wire_message_size, int *fds_in,
+                size_t fds_in_size) {
+    struct client_westfield_data *client_westfield_data = wl_client_get_user_data(client);
+    struct js_cb js_on_client_wire_message = client_westfield_data->creation_listener.js_cb[2];
+    if (js_on_client_wire_message.cb_ref) {
         uint32_t cb_result_consumed;
         napi_value wire_message_value, client_value, fds_value = NULL, global, cb_result, cb;
         napi_status status;
+        napi_env env;
 
-        display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
-                wl_client_get_display(client), on_display_destroyed);
+        env = *(napi_env *) wl_display_get_user_data(wl_client_get_display(client));
 
-        status = napi_create_external_arraybuffer(display_destruction_listener->env, wire_message, wire_message_size,
-                                                  finalize_cb, NULL,
+        status = napi_create_external_arraybuffer(env, wire_message, wire_message_size, finalize_cb, NULL,
                                                   &wire_message_value);
-        check_status(display_destruction_listener->env, status);
+        check_status(env, status);
 
         if (fds_in_size) {
-            status = napi_create_external_arraybuffer(display_destruction_listener->env, fds_in, fds_in_size,
-                                                      finalize_cb, NULL, &fds_value);
-            check_status(display_destruction_listener->env, status);
+            status = napi_create_external_arraybuffer(env, fds_in, fds_in_size, finalize_cb, NULL, &fds_value);
+            check_status(env, status);
         } else {
-            napi_get_null(display_destruction_listener->env, &fds_value);
+            napi_get_null(env, &fds_value);
         }
 
-        status = napi_get_global(display_destruction_listener->env, &global);
-        check_status(display_destruction_listener->env, status);
-        status = napi_get_reference_value(display_destruction_listener->env, destruction_listener->js_object,
-                                          &client_value);
-        check_status(display_destruction_listener->env, status);
+        status = napi_get_global(env, &global);
+        check_status(env, status);
+        status = napi_get_reference_value(env, client_westfield_data->js_object, &client_value);
+        check_status(env, status);
         napi_value argv[3] = {client_value, wire_message_value, fds_value};
 
-        status = napi_get_reference_value(display_destruction_listener->env, destruction_listener->wire_message_cb_ref,
+        status = napi_get_reference_value(env,
+                                          js_on_client_wire_message.cb_ref,
                                           &cb);
-        check_status(display_destruction_listener->env, status);
-        status = napi_call_function(display_destruction_listener->env, global, cb, 3, argv, &cb_result);
-        check_status(display_destruction_listener->env, status);
+        check_status(env, status);
+        status = napi_call_function(env, global, cb, 3, argv,
+                                    &cb_result);
+        check_status(env, status);
 
-        napi_get_value_uint32(display_destruction_listener->env, cb_result, &cb_result_consumed);
+        napi_get_value_uint32(env, cb_result, &cb_result_consumed);
         return cb_result_consumed;
     } else {
         return 0;
@@ -127,67 +97,84 @@ on_wire_message(struct wl_client *client,
 }
 
 void
+on_client_destroyed(struct wl_listener *listener, void *data) {
+    struct wl_client *client = data;
+    struct client_destruction_listener *destruction_listener = (struct client_destruction_listener *) listener;
+    struct js_cb js_on_client_destroyed = destruction_listener->js_cb;
+    napi_value global, client_value, cb_result, cb;
+    struct client_westfield_data *client_westfield_data;
+    napi_status status;
+    napi_env env;
+
+    env = *(napi_env *) wl_display_get_user_data(wl_client_get_display(client));
+
+    client_westfield_data = wl_client_get_user_data(client);
+    status = napi_get_reference_value(env, client_westfield_data->js_object, &client_value);
+    check_status(env, status);
+    napi_value argv[1] = {client_value};
+
+    status = napi_get_reference_value(env, js_on_client_destroyed.cb_ref, &cb);
+    check_status(env, status);
+    status = napi_get_global(env, &global);
+    check_status(env, status);
+    status = napi_call_function(env, global, cb, 1, argv, &cb_result);
+    check_status(env, status);
+
+    free(destruction_listener);
+    napi_reference_unref(env, client_westfield_data->js_object, 0);
+    napi_reference_unref(env, client_westfield_data->creation_listener.js_cb[2].cb_ref, 0);
+    wl_client_set_user_data(client, NULL);
+    free(client_westfield_data);
+}
+
+void
 on_client_created(struct wl_listener *listener, void *data) {
     struct wl_client *client = data;
-    struct display_destruction_listener *display_destruction_listener;
+    struct client_westfield_data *client_westfield_data = (struct client_westfield_data *) listener;
+    struct js_cb js_on_client_created = client_westfield_data->creation_listener.js_cb[0];
     napi_value client_value, global, cb_result, cb;
     napi_ref client_ref;
     napi_status status;
+    napi_env env;
 
-    display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
-            wl_client_get_display(client), on_display_destroyed);
+    env = *(napi_env *) wl_display_get_user_data(wl_client_get_display(client));
 
     struct client_destruction_listener *destruction_listener = malloc(sizeof(struct client_destruction_listener));
     destruction_listener->listener.notify = on_client_destroyed;
-    destruction_listener->wire_message_cb_ref = NULL;
-    destruction_listener->destroy_cb_ref = NULL;
+    destruction_listener->js_cb = client_westfield_data->creation_listener.js_cb[1];
     wl_client_add_destroy_listener(client, &destruction_listener->listener);
 
+    wl_client_set_user_data(client, client_westfield_data);
     wl_client_set_wire_message_cb(client, on_wire_message);
 
-    status = napi_create_external(display_destruction_listener->env, client, NULL, NULL, &client_value);
-    check_status(display_destruction_listener->env, status);
-    status = napi_create_reference(display_destruction_listener->env, client_value, 1, &client_ref);
-    check_status(display_destruction_listener->env, status);
-    destruction_listener->js_object = client_ref;
-
-    status = napi_get_global(display_destruction_listener->env, &global);
-    check_status(display_destruction_listener->env, status);
-    napi_value argv[1] = {client_value};
-    status = napi_get_reference_value(display_destruction_listener->env,
-                                      display_destruction_listener->client_creation_cb_ref, &cb);
-    check_status(display_destruction_listener->env, status);
-    status = napi_call_function(display_destruction_listener->env, global, cb, 1, argv, &cb_result);
-    check_status(display_destruction_listener->env, status);
-}
-
-// expected arguments in order:
-// - Object client
-// - onWireMessage(Object client, ArrayBuffer wireMessage, ArrayBuffer fdsIn):void
-// return:
-napi_value
-setClientDestroyedCallback(napi_env env, napi_callback_info info) {
-    napi_status status;
-    size_t argc = 2;
-    napi_value argv[argc], client_value, js_cb;
-    napi_ref js_cb_ref;
-    struct wl_client *client;
-    struct client_destruction_listener *destruction_listener;
-
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
+    status = napi_create_external(env, client, NULL, NULL, &client_value);
     check_status(env, status);
+    status = napi_create_reference(env, client_value, 1, &client_ref);
+    check_status(env, status);
+    client_westfield_data->js_object = client_ref;
 
-    client_value = argv[0];
-    napi_get_value_external(env, client_value, (void **) &client);
-
-    js_cb = argv[1];
-    napi_create_reference(env, js_cb, 1, &js_cb_ref);
-
-    destruction_listener = (struct client_destruction_listener *) wl_client_get_destroy_listener(client,
-                                                                                                 on_client_destroyed);
-    destruction_listener->destroy_cb_ref = js_cb_ref;
+    status = napi_get_global(env, &global);
+    check_status(env, status);
+    napi_value argv[1] = {client_value};
+    status = napi_get_reference_value(env, js_on_client_created.cb_ref, &cb);
+    check_status(env, status);
+    status = napi_call_function(env, global, cb, 1, argv, &cb_result);
+    check_status(env, status);
 }
 
+void
+on_display_destroyed(struct wl_listener *listener, void *data) {
+    struct wl_display *display = data;
+    struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) listener;
+    napi_env env = *(napi_env *) wl_display_get_user_data(display);
+
+    for (int i = 0; i < 3; ++i) {
+        napi_delete_reference(env, display_destruction_listener->client_creation_listener->js_cb[i].cb_ref);
+    }
+
+    free(display_destruction_listener->client_creation_listener);
+    free(display_destruction_listener);
+}
 
 // expected arguments in order:
 // - Object client
@@ -200,7 +187,6 @@ setWireMessageCallback(napi_env env, napi_callback_info info) {
     napi_value argv[argc], client_value, js_cb;
     napi_ref js_cb_ref;
     struct wl_client *client;
-    struct client_destruction_listener *destruction_listener;
 
     status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
     check_status(env, status);
@@ -211,44 +197,46 @@ setWireMessageCallback(napi_env env, napi_callback_info info) {
     js_cb = argv[1];
     napi_create_reference(env, js_cb, 1, &js_cb_ref);
 
-    destruction_listener = (struct client_destruction_listener *) wl_client_get_destroy_listener(client,
-                                                                                                 on_client_destroyed);
-    destruction_listener->wire_message_cb_ref = js_cb_ref;
+    struct client_westfield_data *client_westfield_data = wl_client_get_user_data(client);
+    client_westfield_data->creation_listener.js_cb[2].cb_ref = js_cb_ref;
 }
-
-//TODO setClientDestroyedCallback
 
 // expected arguments in order:
 // - onClientCreated(Object client):void
+// - onClientDestroyed(Object client):void
 // return:
 // - Object display
 napi_value
 createDisplay(napi_env env, napi_callback_info info) {
     napi_status status;
-    size_t argc = 1;
+    size_t argc = 2;
     napi_value argv[argc], display_value;
-    struct wl_listener *client_creation_listener;
+    struct client_westfield_data *client_westfield_data;
     struct display_destruction_listener *display_destruction_listener;
+
 
     status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
     check_status(env, status);
 
-    client_creation_listener = malloc(sizeof(struct wl_listener));
-    client_creation_listener->notify = on_client_created;
+    client_westfield_data = malloc(sizeof(struct client_westfield_data));
+    client_westfield_data->creation_listener.listener.notify = on_client_created;
+
+
+    for (int i = 0; i < argc; ++i) {
+        status = napi_create_reference(env, argv[i], 1, &client_westfield_data->creation_listener.js_cb[i].cb_ref);
+        check_status(env, status);
+    }
 
     display_destruction_listener = malloc(sizeof(struct display_destruction_listener));
     display_destruction_listener->listener.notify = on_display_destroyed;
-    display_destruction_listener->env = env;
-    status = napi_create_reference(env, argv[0], 1, &display_destruction_listener->client_creation_cb_ref);
-    check_status(env, status);
+    display_destruction_listener->client_creation_listener = &client_westfield_data->creation_listener;
 
     struct wl_display *display = wl_display_create();
     wl_display_add_destroy_listener(display, &display_destruction_listener->listener);
-    wl_display_add_client_created_listener(display, client_creation_listener);
+    wl_display_add_client_created_listener(display, (struct wl_listener *) client_westfield_data);
 
     napi_create_external(env, display, NULL, NULL, &display_value);
 
-    display_destruction_listener->env = NULL;
     return display_value;
 }
 
@@ -268,14 +256,10 @@ addSocketAuto(napi_env env, napi_callback_info info) {
 
     display_value = argv[0];
     napi_get_value_external(env, display_value, (void **) &display);
-    struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
-            display, on_display_destroyed);
-    display_destruction_listener->env = env;
 
     const char *display_name = wl_display_add_socket_auto(display);
     napi_create_string_latin1(env, display_name, NAPI_AUTO_LENGTH, &display_name_value);
 
-    display_destruction_listener->env = NULL;
     return display_name_value;
 }
 
@@ -296,13 +280,11 @@ destroyDisplay(napi_env env, napi_callback_info info) {
     display_value = argv[0];
     napi_get_value_external(env, display_value, (void **) &display);
 
-    struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
-            display, on_display_destroyed);
-    display_destruction_listener->env = env;
+    wl_display_set_user_data(display, env);
     wl_display_terminate(display);
     wl_display_destroy_clients(display);
     wl_display_destroy(display);
-    display_destruction_listener->env = NULL;
+    wl_display_set_user_data(display, NULL);
 }
 
 // expected arguments in order:
@@ -324,11 +306,9 @@ destroyClient(napi_env env, napi_callback_info info) {
     napi_get_value_external(env, client_value, (void **) &client);
 
     display = wl_client_get_display(client);
-    struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
-            display, on_display_destroyed);
-    display_destruction_listener->env = env;
+    wl_display_set_user_data(display, env);
     wl_client_destroy(client);
-    display_destruction_listener->env = NULL;
+    wl_display_set_user_data(display, NULL);
 }
 
 // expected arguments in order:
@@ -386,11 +366,9 @@ dispatchRequests(napi_env env, napi_callback_info info) {
     display_value = argv[0];
     napi_get_value_external(env, display_value, (void **) &display);
 
-    struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
-            display, on_display_destroyed);
-    display_destruction_listener->env = env;
+    wl_display_set_user_data(display, &env);
     wl_event_loop_dispatch(wl_display_get_event_loop(display), 0);
-    display_destruction_listener->env = NULL;
+    wl_display_set_user_data(display, NULL);
 }
 
 // expected arguments in order:
@@ -410,11 +388,9 @@ flushEvents(napi_env env, napi_callback_info info) {
     display_value = argv[0];
     napi_get_value_external(env, display_value, (void **) &display);
 
-    struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
-            display, on_display_destroyed);
-    display_destruction_listener->env = env;
+    wl_display_set_user_data(display, &env);
     wl_display_flush_clients(display);
-    display_destruction_listener->env = NULL;
+    wl_display_set_user_data(display, NULL);
 }
 
 // expected arguments in order:
@@ -489,7 +465,7 @@ initShm(napi_env env, napi_callback_info info) {
 napi_value
 init(napi_env env, napi_value exports) {
     napi_status status;
-    napi_property_descriptor desc[12] = {
+    napi_property_descriptor desc[10] = {
             DECLARE_NAPI_METHOD("createDisplay", createDisplay),
             DECLARE_NAPI_METHOD("destroyDisplay", destroyDisplay),
             DECLARE_NAPI_METHOD("addSocketAuto", addSocketAuto),
@@ -499,12 +475,10 @@ init(napi_env env, napi_value exports) {
             DECLARE_NAPI_METHOD("dispatchRequests", dispatchRequests),
             DECLARE_NAPI_METHOD("flushEvents", flushEvents),
             DECLARE_NAPI_METHOD("createMemoryMappedFile", createMemoryMappedFile),
-            DECLARE_NAPI_METHOD("initShm", initShm),
-            DECLARE_NAPI_METHOD("setWireMessageCallback", setWireMessageCallback),
-            DECLARE_NAPI_METHOD("setClientDestroyedCallback", setClientDestroyedCallback),
+            DECLARE_NAPI_METHOD("initShm", initShm)
     };
 
-    status = napi_define_properties(env, exports, 12, desc);
+    status = napi_define_properties(env, exports, 10, desc);
     check_status(env, status);
 
     return exports;
