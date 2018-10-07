@@ -91,10 +91,10 @@ class Endpoint {
   }
 
   /**
-   * @param {Object}wlDisplay
+   * @param {Object}wlClient
    */
-  static flushEvents (wlDisplay) {
-    westfieldNative.flushEvents(wlDisplay)
+  static flush (wlClient) {
+    westfieldNative.flush(wlClient)
   }
 
   /**
@@ -109,7 +109,7 @@ class Endpoint {
    * @param {Object}wlDisplay
    */
   static initShm (wlDisplay) {
-    return westfieldNative.initShm(wlDsiplay)
+    return westfieldNative.initShm(wlDisplay)
   }
 }
 

@@ -72,9 +72,13 @@ on_client_destroyed(struct wl_listener *listener, void *data) {
         status = napi_call_function(display_destruction_listener->env, global, cb, 1, argv, &cb_result);
         check_status(display_destruction_listener->env, status);
 
-        free(destruction_listener);
         napi_delete_reference(display_destruction_listener->env, destruction_listener->js_object);
-        napi_delete_reference(display_destruction_listener->env, destruction_listener->destroy_cb_ref);
+        if (destruction_listener->destroy_cb_ref) {
+            napi_delete_reference(display_destruction_listener->env, destruction_listener->destroy_cb_ref);
+        }
+        if (destruction_listener->wire_message_cb_ref) {
+            napi_delete_reference(display_destruction_listener->env, destruction_listener->wire_message_cb_ref);
+        }
     }
 }
 
@@ -394,26 +398,28 @@ dispatchRequests(napi_env env, napi_callback_info info) {
 }
 
 // expected arguments in order:
-// - Object display
+// - Object client
 // return:
 // - void
 napi_value
-flushEvents(napi_env env, napi_callback_info info) {
+flush(napi_env env, napi_callback_info info) {
     napi_status status;
     size_t argc = 1;
-    napi_value argv[argc], display_value;
+    napi_value argv[argc], client_value;
+    struct wl_client *client;
     struct wl_display *display;
 
     status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
     check_status(env, status);
 
-    display_value = argv[0];
-    napi_get_value_external(env, display_value, (void **) &display);
+    client_value = argv[0];
+    napi_get_value_external(env, client_value, (void **) &client);
 
+    display = wl_client_get_display(client);
     struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
             display, on_display_destroyed);
     display_destruction_listener->env = env;
-    wl_display_flush_clients(display);
+    wl_connection_flush(wl_client_get_connection(client));
     display_destruction_listener->env = NULL;
 }
 
@@ -497,7 +503,7 @@ init(napi_env env, napi_value exports) {
             DECLARE_NAPI_METHOD("destroyClient", destroyClient),
             DECLARE_NAPI_METHOD("sendEvents", sendEvents),
             DECLARE_NAPI_METHOD("dispatchRequests", dispatchRequests),
-            DECLARE_NAPI_METHOD("flushEvents", flushEvents),
+            DECLARE_NAPI_METHOD("flush", flush),
             DECLARE_NAPI_METHOD("createMemoryMappedFile", createMemoryMappedFile),
             DECLARE_NAPI_METHOD("initShm", initShm),
             DECLARE_NAPI_METHOD("setWireMessageCallback", setWireMessageCallback),

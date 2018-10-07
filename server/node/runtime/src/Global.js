@@ -26,7 +26,7 @@ SOFTWARE.
 
 class Global {
   /**
-   *
+   * Use Registry.createGlobal(..) instead.
    * @param {Registry}registry
    * @param {Object}implementation
    * @param {string} interface_

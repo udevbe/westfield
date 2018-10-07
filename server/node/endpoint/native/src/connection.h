@@ -39,3 +39,6 @@ wl_connection_put_fd(struct wl_connection *connection, int32_t fd);
 int
 wl_connection_write(struct wl_connection *connection,
                     const void *data, size_t count);
+
+int
+wl_connection_flush(struct wl_connection *connection);

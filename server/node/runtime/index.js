@@ -32,5 +32,4 @@ module.exports = {
   Display: require('./src/Display'),
   Fixed: require('./src/Fixed'),
   Global: require('./src/Global'),
-  CompsitorEndpoint: require('./src/CompositorEndpoint')
 }
