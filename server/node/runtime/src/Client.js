@@ -368,8 +368,8 @@ class Client extends DisplayRequests {
     const bufu32 = new Uint32Array(wireMsg.buffer)
     const bufu16 = new Uint16Array(wireMsg.buffer)
     bufu32[0] = id
-    bufu16[2] = size
-    bufu16[3] = opcode
+    bufu16[2] = opcode
+    bufu16[3] = size
     wireMsg.bufferOffset = 8
 
     argsArray.forEach((arg) => {

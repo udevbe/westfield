@@ -48,7 +48,7 @@ class SyncCallbackResource extends Resource {
    *
    */
   done (callbackData) {
-    this.client.marshall(this.id, 1, [uint(callbackData)])
+    this.client.marshall(this.id, 0, [uint(callbackData)])
   }
 }
 

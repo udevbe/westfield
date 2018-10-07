@@ -24,6 +24,7 @@ class ClientSession {
        */
         (wireMessages) => {
         wireMessages.forEach((wireMessage) => {
+          // TODO check the wire message for any registry GLOBAL events, if detected, we need also need to advertise the globals stored in the native wayland library.
           const fds = new Uint32Array(wireMessage.fds).buffer
           Endpoint.sendEvents(wlClient, wireMessage.buffer, fds)
         })
@@ -61,6 +62,8 @@ class ClientSession {
    * @returns {number}
    */
   async onWireMessage (wlClient, messages, fdsIn) {
+    // TODO analyse wire message to check for registry requests & track the registry id.
+
     const fds = []
     if (fdsIn) {
       new Int32Array(fdsIn).forEach((fd) => {
