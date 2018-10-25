@@ -29,10 +29,12 @@ const westfieldNative = require('westfield-native')
 class Endpoint {
   /**
    * @param {function(wlClient: Object):void}onClientCreated
+   * @param {function(globalName: number):void}onGlobalCreated
+   * @param {function(globalName: number):void}onGlobalDestroyed
    * @returns {Object} A started wayland display endpoint
    */
-  static createDisplay (onClientCreated) {
-    return westfieldNative.createDisplay(onClientCreated)
+  static createDisplay (onClientCreated, onGlobalCreated, onGlobalDestroyed) {
+    return westfieldNative.createDisplay(onClientCreated, onGlobalCreated, onGlobalDestroyed)
   }
 
   /**
@@ -110,6 +112,21 @@ class Endpoint {
    */
   static initShm (wlDisplay) {
     return westfieldNative.initShm(wlDisplay)
+  }
+
+  /**
+   * @param {Object}wlClient
+   * @param {function(wlRegistry:Object, registryId:number):void}onRegistryCreated
+   */
+  static setRegistryCreatedCallback (wlClient, onRegistryCreated) {
+    westfieldNative.setRegistryCreatedCallback(wlClient, onRegistryCreated)
+  }
+
+  /**
+   * @param {Object}wlRegistry
+   */
+  static emitGlobals (wlRegistry) {
+    westfieldNative.emitGlobals(wlRegistry)
   }
 }
 

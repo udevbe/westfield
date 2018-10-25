@@ -81,6 +81,7 @@ struct wl_client {
     int error;
     struct wl_priv_signal resource_created_signal;
     wl_connection_wire_message_t wire_message_cb;
+    wl_registry_created_t registry_created_cb;
 };
 
 struct wl_display {
@@ -103,6 +104,9 @@ struct wl_display {
 
     wl_display_global_filter_func_t global_filter;
     void *global_filter_data;
+
+    wl_global_cb_t global_created_cb;
+    wl_global_cb_t global_destroyed_cb;
 };
 
 struct wl_global {
@@ -311,7 +315,7 @@ wl_client_connection_data(int fd, uint32_t mask, void *data) {
     uint32_t resource_flags;
     int opcode, size, since, len;
     size_t fds_in_size;
-    int32_t * buffer;
+    int32_t *buffer;
 
     if (mask & WL_EVENT_HANGUP) {
         wl_client_destroy(client);
@@ -366,6 +370,7 @@ wl_client_connection_data(int fd, uint32_t mask, void *data) {
             if (client->wire_message_cb(client, buffer, (size_t) size, fds_in, fds_in_size)) {
                 wl_connection_consume(connection, (size_t) size);
                 len = wl_connection_pending_input(connection);
+                // TODO close fds?
                 continue;
             }
         }
@@ -913,7 +918,6 @@ display_get_registry(struct wl_client *client,
                      struct wl_resource *resource, uint32_t id) {
     struct wl_display *display = resource->data;
     struct wl_resource *registry_resource;
-    struct wl_global *global;
 
     registry_resource =
             wl_resource_create(client, &wl_registry_interface, 1, id);
@@ -929,12 +933,9 @@ display_get_registry(struct wl_client *client,
     wl_list_insert(&display->registry_resource_list,
                    &registry_resource->link);
 
-    wl_list_for_each(global, &display->global_list, link) if (wl_global_is_visible(client, global))
-            wl_resource_post_event(registry_resource,
-                                   WL_REGISTRY_GLOBAL,
-                                   global->name,
-                                   global->interface->name,
-                                   global->version);
+    if (client->registry_created_cb) {
+        client->registry_created_cb(client, registry_resource, id);
+    }
 }
 
 static const struct wl_display_interface display_interface = {
@@ -1138,6 +1139,10 @@ wl_global_create(struct wl_display *display,
     global->bind = bind;
     wl_list_insert(display->global_list.prev, &global->link);
 
+    if (display->global_created_cb) {
+        display->global_created_cb(display, global->name);
+    }
+
     wl_list_for_each(resource, &display->registry_resource_list, link) wl_resource_post_event(resource,
                                                                                               WL_REGISTRY_GLOBAL,
                                                                                               global->name,
@@ -1151,6 +1156,10 @@ WL_EXPORT void
 wl_global_destroy(struct wl_global *global) {
     struct wl_display *display = global->display;
     struct wl_resource *resource;
+
+    if (display->global_destroyed_cb) {
+        display->global_destroyed_cb(display, global->name);
+    }
 
     wl_list_for_each(resource, &display->registry_resource_list, link) wl_resource_post_event(resource,
                                                                                               WL_REGISTRY_GLOBAL_REMOVE,
@@ -1871,6 +1880,35 @@ wl_client_for_each_resource(struct wl_client *client,
 WL_EXPORT void
 wl_client_set_wire_message_cb(struct wl_client *client, wl_connection_wire_message_t wire_message_cb) {
     client->wire_message_cb = wire_message_cb;
+}
+
+WL_EXPORT void
+wl_registry_emit_globals(struct wl_resource *registry_resource) {
+    struct wl_global *global;
+    struct wl_client *client = registry_resource->client;
+    struct wl_display *display = client->display;
+
+    wl_list_for_each(global, &display->global_list, link) if (wl_global_is_visible(client, global))
+            wl_resource_post_event(registry_resource,
+                                   WL_REGISTRY_GLOBAL,
+                                   global->name,
+                                   global->interface->name,
+                                   global->version);
+}
+
+WL_EXPORT void
+wl_client_set_registry_created_cb(struct wl_client *client, wl_registry_created_t registry_created_cb) {
+    client->registry_created_cb = registry_created_cb;
+}
+
+WL_EXPORT void
+wl_display_set_global_created_cb(struct wl_display *display, wl_global_cb_t global_created_cb){
+    display->global_created_cb = global_created_cb;
+}
+
+WL_EXPORT void
+wl_display_set_global_destroyed_cb(struct wl_display *display, wl_global_cb_t global_destroyed_cb){
+    display->global_destroyed_cb = global_destroyed_cb;
 }
 
 /** \cond INTERNAL */

@@ -28,8 +28,12 @@ SOFTWARE.
  * @type {{namespace: Object, Client: Client, Display: Display, Fixed: Fixed, Global: Global, CompositorEndpoint: CompositorEndpoint}}
  */
 module.exports = {
+  private: {
+    WireFormat: require('./src/WireFormat'),
+    Resource: require('./src/Resource')
+  },
   Client: require('./src/Client'),
   Display: require('./src/Display'),
   Fixed: require('./src/Fixed'),
-  Global: require('./src/Global'),
+  Global: require('./src/Global')
 }

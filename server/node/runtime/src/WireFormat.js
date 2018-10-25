@@ -84,7 +84,7 @@ class WireFormat {
     return {
       value: arg,
       type: 'h',
-      size: 4,
+      size: 0, // file descriptors are not added to the message size because they are not part of the unix socket message buffer.
       optional: false,
       /**
        *
@@ -107,7 +107,7 @@ class WireFormat {
     return {
       value: arg,
       type: 'h',
-      size: 4,
+      size: 0, // file descriptors are not added to the message size because they are not part of the unix socket message buffer.
       optional: true,
       /**
        *

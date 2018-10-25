@@ -29,6 +29,5 @@ SOFTWARE.
  */
 module.exports = {
   Display: require('./src/Display'),
-  Fixed: require('./src/Fixed'),
-  WireFormat: require('./src/WireFormat')
+  Fixed: require('./src/Fixed')
 }

@@ -18,13 +18,13 @@ function(PARSE_CMAKEJS_PROPERTIES)
 
     string(TOLOWER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_LOWER)
     if (CMAKE_BUILD_TYPE_LOWER STREQUAL "debug")
-        exec_program(cmake-js ${CMAKE_CURRENT_SOURCE_DIR}
-                ARGS print-configure --debug
+        execute_process(COMMAND "cmake-js" "print-configure" "--debug"
+                ${CMAKE_CURRENT_SOURCE_DIR}
                 OUTPUT_VARIABLE CMAKE_JS_OUTPUT
                 )
     else ()
-        exec_program(cmake-js ${CMAKE_CURRENT_SOURCE_DIR}
-                ARGS print-configure
+        execute_process(COMMAND "cmake-js" "print-configure"
+                ${CMAKE_CURRENT_SOURCE_DIR}
                 OUTPUT_VARIABLE CMAKE_JS_OUTPUT
                 )
     endif ()
@@ -40,7 +40,7 @@ endfunction(PARSE_CMAKEJS_PROPERTIES)
 project(westfield-native C)
 set(CMAKE_BUILD_TYPE "debug")
 
-parse_cmakejs_properties()
+PARSE_CMAKEJS_PROPERTIES()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
 
@@ -65,8 +65,11 @@ add_library(${PROJECT_NAME} SHARED
         src/westfield-fdutils.c
         src/westfield-fdutils.h
         src/wayland-server-core-extensions.h)
-target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/src/wayland-server/protocol")
-target_include_directories(${PROJECT_NAME} PRIVATE "/home/erik/.nvm/versions/node/v10.10.0/include")
+
+target_include_directories(${PROJECT_NAME}
+    PRIVATE ${CMAKE_JS_INC}
+    PRIVATE "${CMAKE_SOURCE_DIR}/src/wayland-server/protocol"
+    )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
 target_link_libraries(${PROJECT_NAME} ${CMAKE_JS_LIB} ${LIBFFI_LIBRARIES})

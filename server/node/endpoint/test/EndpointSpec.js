@@ -12,9 +12,11 @@ describe('CompositorEndpoint', () => {
     it('should be able to start and stop a compositor endpoint using the underlying wl_display struct', () => {
       // given
       const onClientCreated = sinon.fake()
+      const onGlobalCreated = sinon.fake()
+      const onGlobalDestroyed = sinon.fake()
 
       // when
-      const wlDisplay = Endpoint.createDisplay(onClientCreated)
+      const wlDisplay = Endpoint.createDisplay(onClientCreated, onGlobalCreated, onGlobalDestroyed)
       Endpoint.destroyDisplay(wlDisplay)
 
       // then
@@ -27,11 +29,14 @@ describe('CompositorEndpoint', () => {
       // given
 
       const onClientDestroyed = sinon.fake()
+      const onGlobalCreated = sinon.fake()
+      const onGlobalDestroyed = sinon.fake()
+
       const onClientCreated = sinon.spy((wlClient) => {
         Endpoint.setClientDestroyedCallback(wlClient, onClientDestroyed)
       })
 
-      const wlDisplay = Endpoint.createDisplay(onClientCreated)
+      const wlDisplay = Endpoint.createDisplay(onClientCreated, onGlobalCreated, onGlobalDestroyed)
       const wlDislayName = Endpoint.addSocketAuto(wlDisplay)
       const wlDisplayFd = Endpoint.getFd(wlDisplay)
 

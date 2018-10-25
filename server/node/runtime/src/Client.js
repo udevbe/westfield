@@ -170,8 +170,6 @@ class Client extends DisplayRequests {
    * @returns {number}
    */
   h (wireMsg) { // file descriptor {number}
-    const argSize = 4
-    Client._checkMessageSize(wireMsg, argSize)
     if (wireMsg.fds.length) {
       return wireMsg.fds.shift()
     } else {
@@ -485,7 +483,7 @@ class Client extends DisplayRequests {
      */
     this._outMessages = []
     /**
-     * @type {Array<{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}>}
+     * @type {Array<{buffer: ArrayBuffer, fds: Array<number>}>}
      * @private
      */
     this._inMessages = []
