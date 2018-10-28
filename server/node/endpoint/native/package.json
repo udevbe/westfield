@@ -1,7 +1,7 @@
 {
   "name": "westfield-native",
   "version": "0.1.0",
-  "main": "./build/Debug/westfield-native.node",
+  "main": "./build/build/Debug/westfield-native.node",
   "scripts": {
     "prepare": "cmake-js",
     "postinstall": "cmake-js"

@@ -81,6 +81,7 @@ struct wl_client {
     int error;
     struct wl_priv_signal resource_created_signal;
     wl_connection_wire_message_t wire_message_cb;
+    wl_connection_wire_message_end_t wire_message_end_cb;
     wl_registry_created_t registry_created_cb;
 };
 
@@ -356,27 +357,20 @@ wl_client_connection_data(int fd, uint32_t mask, void *data) {
         if (len < size)
             break;
 
+        resource = wl_map_lookup(&client->objects, p[0]);
+        resource_flags = wl_map_lookup_flags(&client->objects, p[0]);
+
         if (client->wire_message_cb) {
             buffer = malloc((size_t) size);
             wl_connection_copy(connection, buffer, (size_t) size);
 
-            fds_in_size = wl_connection_fds_in_size(connection);
-            int *fds_in = NULL;
-            if (fds_in_size) {
-                fds_in = malloc(fds_in_size);
-                wl_connection_copy_fds_in(connection, fds_in);
-            }
-
-            if (client->wire_message_cb(client, buffer, (size_t) size, fds_in, fds_in_size)) {
+            if (client->wire_message_cb(client, buffer, (size_t) size, p[0], opcode, resource != NULL)) {
                 wl_connection_consume(connection, (size_t) size);
                 len = wl_connection_pending_input(connection);
-                // TODO close fds?
                 continue;
             }
         }
 
-        resource = wl_map_lookup(&client->objects, p[0]);
-        resource_flags = wl_map_lookup_flags(&client->objects, p[0]);
         if (resource == NULL) {
             wl_resource_post_error(client->display_resource,
                                    WL_DISPLAY_ERROR_INVALID_OBJECT,
@@ -450,6 +444,18 @@ wl_client_connection_data(int fd, uint32_t mask, void *data) {
     if (client->error) {
         destroy_client_with_error(client,
                                   "error in client communication");
+    }
+
+    if (client->wire_message_end_cb) {
+        fds_in_size = wl_connection_fds_in_size(connection);
+        int *fds_in = NULL;
+        if (fds_in_size) {
+            fds_in = malloc(fds_in_size);
+            wl_connection_copy_fds_in(connection, fds_in);
+        }
+
+        // TODO when to close fds?
+        client->wire_message_end_cb(client, fds_in, fds_in_size);
     }
 
     return 1;
@@ -1883,6 +1889,11 @@ wl_client_set_wire_message_cb(struct wl_client *client, wl_connection_wire_messa
 }
 
 WL_EXPORT void
+wl_client_set_wire_message_end_cb(struct wl_client *client, wl_connection_wire_message_end_t wire_message_end_cb) {
+    client->wire_message_end_cb = wire_message_end_cb;
+}
+
+WL_EXPORT void
 wl_registry_emit_globals(struct wl_resource *registry_resource) {
     struct wl_global *global;
     struct wl_client *client = registry_resource->client;
@@ -1902,12 +1913,12 @@ wl_client_set_registry_created_cb(struct wl_client *client, wl_registry_created_
 }
 
 WL_EXPORT void
-wl_display_set_global_created_cb(struct wl_display *display, wl_global_cb_t global_created_cb){
+wl_display_set_global_created_cb(struct wl_display *display, wl_global_cb_t global_created_cb) {
     display->global_created_cb = global_created_cb;
 }
 
 WL_EXPORT void
-wl_display_set_global_destroyed_cb(struct wl_display *display, wl_global_cb_t global_destroyed_cb){
+wl_display_set_global_destroyed_cb(struct wl_display *display, wl_global_cb_t global_destroyed_cb) {
     display->global_destroyed_cb = global_destroyed_cb;
 }
 

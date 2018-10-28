@@ -59,8 +59,8 @@ function mockRawWireMessages (targetResource, resourceArg) {
   const int32Buffer = new Int32Array(buffer)
 
   uint32Buffer[0] = targetResource.id // object id
-  uint16Buffer[2] = 32 // size
-  uint16Buffer[3] = 0 // opcode
+  uint16Buffer[2] = 0 // opcode
+  uint16Buffer[3] = 32 // size
   uint32Buffer[2] = 234 // u
   uint32Buffer[3] = Fixed.parse(123.45)._raw // f
   uint32Buffer[4] = 567 // n - 16
@@ -68,8 +68,8 @@ function mockRawWireMessages (targetResource, resourceArg) {
   uint32Buffer[6] = 10 //a[0]
   uint32Buffer[7] = 11 //a[1]
   uint32Buffer[8] = targetResource.id
-  uint16Buffer[18] = 28 // size (24 buffer + 4 fd)
-  uint16Buffer[19] = 1 // opcode
+  uint16Buffer[18] = 1 // opcode
+  uint16Buffer[19] = 28 // size (24 buffer + 4 fd)
   int32Buffer[10] = -987 // i
   uint32Buffer[11] = resourceArg.id // o
   uint32Buffer[12] = 4 // s byte size

@@ -29,7 +29,6 @@ class CompositorSession {
 
     const fdWatcher = new Epoll((err) => {
       Endpoint.dispatchRequests(compositorSession.wlDisplay)
-      compositorSession.flushClients()
     })
     fdWatcher.add(compositorSession.wlDisplayFd, Epoll.EPOLLPRI | Epoll.EPOLLIN | Epoll.EPOLLERR)
 
@@ -59,7 +58,7 @@ class CompositorSession {
     /**
      * @type {Array<ClientSession>}
      */
-    this.clients = []
+    this.clientSessions = []
     /**
      * List of globals created on the native machine by 3rd party protocol implementations.
      * @type {Array<number>}
@@ -75,18 +74,12 @@ class CompositorSession {
     // TODO keep track of clients
     const client = this.display.createClient()
     const clientSession = ClientSession.create(wlClient, client, this)
-    this.clients.push(clientSession)
+    this.clientSessions.push(clientSession)
     clientSession.onDestroy().then(() => {
-      const idx = this.clients.indexOf(clientSession)
+      const idx = this.clientSessions.indexOf(clientSession)
       if (idx > -1) {
-        this.clients.splice(idx, 1)
+        this.clientSessions.splice(idx, 1)
       }
-    })
-  }
-
-  flushClients () {
-    this.clients.forEach((client) => {
-      client.flush()
     })
   }
 

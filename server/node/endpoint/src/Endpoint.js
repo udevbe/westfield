@@ -48,10 +48,19 @@ class Endpoint {
   /**
    *
    * @param {Object}wlClient
-   * @param {function(wlClient: Object, wireMessages:ArrayBuffer, fdsIn: ArrayBuffer):number}onWireMessage
+   * @param {function(wlClient: Object, wireMessages:ArrayBuffer, objectId: number, opcode:number, hasNativeResource: boolean):number}onWireMessage
    */
   static setWireMessageCallback (wlClient, onWireMessage) {
     westfieldNative.setWireMessageCallback(wlClient, onWireMessage)
+  }
+
+  /**
+   *
+   * @param {Object}wlClient
+   * @param {function(wlClient: Object, fdsIn:ArrayBuffer):void}onWireMessageEnd
+   */
+  static setWireMessageEndCallback (wlClient, onWireMessageEnd) {
+    westfieldNative.setWireMessageEndCallback(wlClient, onWireMessageEnd)
   }
 
   /**

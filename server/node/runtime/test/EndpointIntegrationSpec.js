@@ -1,6 +1,5 @@
 const childProcess = require('child_process')
 const assert = require('assert')
-const {Endpoint} = require('westfield-endpoint')
 
 const CompositorSession = require('./CompositorSession')
 
@@ -30,7 +29,7 @@ describe('EndpointIntegration', () => {
         setTimeout(resolve, 100)
       })
 
-      assert(compositorSession.clients.length === 1)
+      assert(compositorSession.clientSessions.length === 1)
 
       await new Promise((resolve) => {
         setTimeout(resolve, 100)

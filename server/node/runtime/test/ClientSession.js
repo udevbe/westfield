@@ -1,4 +1,4 @@
-const {Endpoint} = require('westfield-endpoint')
+const { Endpoint } = require('westfield-endpoint')
 
 class ClientSession {
   /**
@@ -8,26 +8,15 @@ class ClientSession {
    * @returns {ClientSession}
    */
   static create (wlClient, client, compositorSession) {
-    const destroyPromise = new Promise((resolve) => {
-      Endpoint.setClientDestroyedCallback(wlClient, () => {
-        resolve()
-      })
-    })
+    const destroyPromise = new Promise(resolve => Endpoint.setClientDestroyedCallback(wlClient, () => resolve()))
 
     const clientSession = new ClientSession(wlClient, client, compositorSession, destroyPromise)
-    Endpoint.setWireMessageCallback(wlClient, (wlClient, messages, fdsIn) => {
-      return clientSession.onWireMessageRequest(wlClient, messages, fdsIn)
-    })
+    Endpoint.setWireMessageCallback(wlClient, (wlClient, message, objectId, opcode, hasNativeResource) => clientSession.onWireMessageRequest(wlClient, message, objectId, opcode, hasNativeResource))
+    Endpoint.setWireMessageEndCallback(wlClient, (wlClient, fdsIn) => clientSession.onWireMessageEnd(wlClient, fdsIn))
 
-    client.onFlush = (wireMessages) => {
-      // Here the client would use a network channel to send the wire messages
-      return clientSession.onWireMessageEvents(wireMessages)
-    }
+    client.onFlush = wireMessages => clientSession.onWireMessageEvents(wireMessages)
 
-    Endpoint.setRegistryCreatedCallback(wlClient,
-      (wlRegistry, registryId) => {
-        return clientSession.onRegistryCreated(wlRegistry, registryId)
-      })
+    Endpoint.setRegistryCreatedCallback(wlClient, (wlRegistry, registryId) => clientSession.onRegistryCreated(wlRegistry, registryId))
 
     return clientSession
   }
@@ -63,8 +52,6 @@ class ClientSession {
      */
     this._pendingWireMessages = []
     this._pendingMessageBufferSize = 0
-    this._pendingFds = []
-
     /**
      * @type {Object.<number, Object>}
      * @private
@@ -81,19 +68,19 @@ class ClientSession {
       if (!localGlobalsEmitted) {
         localGlobalsEmitted = this._emitLocalGlobals(wireMessage.buffer)
       }
-      const fds = new Uint32Array(wireMessage.fds).buffer
+      const fds = Uint32Array.from(wireMessage.fds).buffer
       Endpoint.sendEvents(this.wlClient, wireMessage.buffer, fds)
     })
     Endpoint.flush(this.wlClient)
   }
 
   /**
-   * @param {ArrayBuffer}wireMessageBuffer
+   * @param {Uint32Array}wireMessageBuffer
    * @returns {boolean}
    * @private
    */
   _emitLocalGlobals (wireMessageBuffer) {
-    const id = new Uint32Array(wireMessageBuffer)[0]
+    const id = wireMessageBuffer[0]
     const wlRegistry = this._wlRegistries[id]
     if (wlRegistry) {
       const messageOpcode = bufu16[0]
@@ -108,53 +95,59 @@ class ClientSession {
 
   /**
    *
+   * @param {number}id
+   * @param {number}opcode
    * @param {ArrayBuffer}message
    * @private
    */
-  _isLocalGlobalBind (message) {
-    const id = new Uint32Array(message)[0]
+  _isRemoteGlobalBind (id, opcode, message) {
     const wlRegistry = this._wlRegistries[id]
-    let isLocalGlobal = false
+    let isRemoteGlobal = false
     if (wlRegistry) {
-      const messageOpcode = bufu16[0]
       const bindOpcode = 0
-      if (messageOpcode === bindOpcode) {
+      if (opcode === bindOpcode) {
         const args = this.parse(id, bindOpcode, 'usun', message)
         const globalName = args[0]
-        isLocalGlobal = this._compositorSession.localGlobalNames.includes(globalName)
+        isRemoteGlobal = !this._compositorSession.localGlobalNames.includes(globalName)
       }
     }
-    return isLocalGlobal
+    return isRemoteGlobal
   }
 
   /**
    * @param {Object}wlClient
    * @param {ArrayBuffer}message
-   * @param {ArrayBuffer}allFdsIn
+   * @param {number}objectId
+   * @param {number}opcode
+   * @param {boolean}hasNativeResource
    * @returns {number}
    */
-  onWireMessageRequest (wlClient, message, allFdsIn) {
+  onWireMessageRequest (wlClient, message, objectId, opcode, hasNativeResource) {
+    // If the resource exist locally, we don't want to delegate it to the browser. Except:
+    //  - If the resource is 'display' and the request is 'get_registry', then the request should be happen
+    // both locally & in the browser.
+    //  - If the resource is 'display' and the request is 'sync', then the request should be happen both locally & in the browser.
+    //  - If a bind request happens on a registry resource for a locally created global, then don't delegate to the browser.
+    // If none of the above applies, delegate to browser.
+
+    // by default, always consume the message & delegate to browser
     let consumed = 1
-    // if wire message is a bind to a locally created global, then delegate the message and don't send it to the remote compositor.
-    if (this._isLocalGlobalBind(message)) {
-      // return early, no need to delegate this message to the browser
-      return 0
+
+    // if there is a native resource and the request is not a bind to a remote global, then there are some special cases that apply.
+    if (hasNativeResource &&
+      !this._isSync(objectId, opcode) &&
+      !this._isRemoteGlobalBind(objectId, opcode, message)) {
+      if (this._isGetRegistry(objectId, opcode)) {
+        // if the resource is 'display' and the request is 'get_registry', then the request should be happen
+        // both locally & in the browser.
+        consumed = 0
+      } else {
+        // if none of the above conditions apply, then let the local resource implementation handle the request
+        return 0
+      }
     }
 
-    if (this._isGetRegistry(message)) {
-      // make sure the local registry is created, don't consume the message
-      consumed = 0
-    }
     // TODO analyse wire message to check for compositor requests & track the surface id.
-
-    // We can't get the file descriptors per message, only all of them at once. So we just add all of them for each
-    // message. This will result in us sending too much file descriptors on flush, however this is functionally not a
-    // problem.
-    if (allFdsIn) {
-      new Int32Array(allFdsIn).forEach((fd) => {
-        this._pendingFds.push(fd)
-      })
-    }
 
     this._pendingMessageBufferSize += message.byteLength
     this._pendingWireMessages.push(message)
@@ -162,26 +155,37 @@ class ClientSession {
     return consumed
   }
 
-  flush () {
-    const sendBuffer = new Uint8Array(this._pendingMessageBufferSize)
-    this._pendingMessageBufferSize = 0
-
+  /**
+   * @param {Object}wlClient
+   * @param {ArrayBuffer}fdsIn
+   */
+  onWireMessageEnd (wlClient, fdsIn) {
+    const fdsBufferSize = Uint32Array.BYTES_PER_ELEMENT + (fdsIn ? fdsIn.byteLength : 0)
+    const sendBuffer = new Uint32Array(new ArrayBuffer(fdsBufferSize + this._pendingMessageBufferSize))
     let offset = 0
-    this._pendingWireMessages.forEach((wireMessage) => {
-      sendBuffer.set(new Uint8Array(wireMessage), offset)
-      offset += wireMessage.byteLength
-    })
-    this._pendingWireMessages = []
+    sendBuffer[0] = fdsIn ? fdsIn.byteLength / Uint32Array.BYTES_PER_ELEMENT : 0
+    offset += 1
 
-    const messageFds = this._pendingFds.slice()
-    this._pendingFds = []
+    if (fdsIn) {
+      const fdsArray = new Uint32Array(fdsIn)
+      sendBuffer.set(fdsArray)
+      offset += fdsArray.length
+    }
 
-    // here we would use a network channel to send the data to the browser, while
-    // on the receiving end of the network channel we would call client.message(..)
-    this.client.message({
-      buffer: sendBuffer.buffer,
-      fds: messageFds
+    this._pendingWireMessages.forEach(value => {
+      const wireMessage = new Uint32Array(value)
+      sendBuffer.set(wireMessage, offset)
+      offset += wireMessage.length
     })
+    // send sendBuffer.buffer over data channel
+
+    // read buffer from data Channel
+    const receiveBuffer = new Uint32Array(sendBuffer.buffer)
+    const fdsInCount = receiveBuffer[0]
+    const fds = receiveBuffer.subarray(1, 1 + fdsInCount)
+    const buffer = receiveBuffer.subarray(1 + fdsInCount)
+
+    this.client.message({ buffer, fds })
   }
 
   /**
@@ -229,26 +233,31 @@ class ClientSession {
   onRegistryCreated (wlRegistry, registryId) {
     this._wlRegistries[registryId] = wlRegistry
 
-
     Endpoint.emitGlobals(wlRegistry)
   }
 
   /**
-   * @param {ArrayBuffer}message
+   * @param {number}objectId
+   * @param {number}opcode
    * @returns {boolean}
    * @private
    */
-  _isGetRegistry (message) {
-    let isGetRegistry = false
+  _isGetRegistry (objectId, opcode) {
+    const displayId = 1
+    const getRegistryOpcode = 1
+    return objectId === displayId && opcode === getRegistryOpcode
+  }
 
-    const id = new Uint32Array(message)[0]
-    if (id === 1) {
-      const bufu16 = new Uint16Array(message, 4)
-      const messageOpcode = bufu16[0]
-      const getRegistryOpcode = 1
-      isGetRegistry = messageOpcode === getRegistryOpcode
-    }
-    return isGetRegistry
+  /**
+   * @param {number}objectId
+   * @param {number}opcode
+   * @returns {boolean}
+   * @private
+   */
+  _isSync (objectId, opcode) {
+    const displayId = 1
+    const syncOpcode = 0
+    return objectId === displayId && opcode === syncOpcode
   }
 }
 
