@@ -63,14 +63,51 @@ class ClientSession {
    * @param {Array<{buffer: ArrayBuffer, fds: Array<number>}>}wireMessages
    */
   onWireMessageEvents (wireMessages) {
-    let localGlobalsEmitted = false
-    wireMessages.forEach((wireMessage) => {
-      if (!localGlobalsEmitted) {
-        localGlobalsEmitted = this._emitLocalGlobals(wireMessage.buffer)
-      }
-      const fds = Uint32Array.from(wireMessage.fds).buffer
-      Endpoint.sendEvents(this.wlClient, wireMessage.buffer, fds)
+    // convert to arraybuffer so it can be send over a data channel.
+    const messagesSize = wireMessages.reduce((previousValue, currentValue) => {
+      previousValue += Uint32Array.BYTES_PER_ELEMENT + (currentValue.fds * Uint32Array.BYTES_PER_ELEMENT) + currentValue.buffer.byteLength
+      return previousValue
+    }, 0)
+
+    const sendBuffer = new Uint32Array(new ArrayBuffer(messagesSize))
+
+    let offset = 0
+    wireMessages.forEach(value => {
+      const fds = Uint32Array.from(value.fds)
+      const message = new Uint32Array(value.buffer)
+      sendBuffer[offset++] = fds.length
+      sendBuffer.set(fds, offset)
+      offset += fds.length
+      sendBuffer.set(message, offset)
+      offset += message.length
     })
+    // send over data channel
+
+    // receive from data channel
+    const receiveBuffer = new Uint32Array(sendBuffer.buffer)
+    let readOffset = 0
+    let localGlobalsEmitted = false
+    while (readOffset < receiveBuffer.length) {
+      const fdsCount = receiveBuffer[readOffset++]
+      const fdsBuffer = receiveBuffer.subarray(readOffset, readOffset + fdsCount)
+      readOffset += fdsCount
+      const sizeOpcode = receiveBuffer[readOffset + 1]
+      const size = sizeOpcode >>> 16
+      const length = size / Uint32Array.BYTES_PER_ELEMENT
+      const messageBuffer = receiveBuffer.subarray(readOffset, readOffset + length)
+      readOffset += length
+
+      if (!localGlobalsEmitted) {
+        localGlobalsEmitted = this._emitLocalGlobals(messageBuffer)
+      }
+
+      Endpoint.sendEvents(
+        this.wlClient,
+        messageBuffer.buffer.slice(messageBuffer.byteOffset, messageBuffer.byteOffset + messageBuffer.byteLength),
+        fdsBuffer.buffer.slice(fdsBuffer.byteOffset, fdsBuffer.byteOffset + fdsBuffer.byteLength)
+      )
+    }
+
     Endpoint.flush(this.wlClient)
   }
 
@@ -83,7 +120,8 @@ class ClientSession {
     const id = wireMessageBuffer[0]
     const wlRegistry = this._wlRegistries[id]
     if (wlRegistry) {
-      const messageOpcode = bufu16[0]
+      const sizeOpcode = wireMessageBuffer[1]
+      const messageOpcode = sizeOpcode & 0x0000FFFF
       const globalOpcode = 0
       if (messageOpcode === globalOpcode) {
         Endpoint.emitGlobals(wlRegistry)
@@ -133,7 +171,7 @@ class ClientSession {
     // by default, always consume the message & delegate to browser
     let consumed = 1
 
-    // if there is a native resource and the request is not a bind to a remote global, then there are some special cases that apply.
+    // if there is a native resource and the request is not a bind to a remote global or a sync, then there are some special cases that apply.
     if (hasNativeResource &&
       !this._isSync(objectId, opcode) &&
       !this._isRemoteGlobalBind(objectId, opcode, message)) {

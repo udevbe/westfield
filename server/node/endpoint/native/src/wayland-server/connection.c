@@ -285,7 +285,7 @@ decode_cmsg(struct wl_buffer *buffer, struct msghdr *msg)
 	return 0;
 }
 
-int
+WL_EXPORT int
 wl_connection_flush(struct wl_connection *connection)
 {
 	struct iovec iov[2];
@@ -374,7 +374,7 @@ wl_connection_read(struct wl_connection *connection)
 	return wl_connection_pending_input(connection);
 }
 
-int
+WL_EXPORT int
 wl_connection_write(struct wl_connection *connection,
 		    const void *data, size_t count)
 {
@@ -426,7 +426,7 @@ wl_connection_get_fd(struct wl_connection *connection)
 	return connection->fd;
 }
 
-static int
+WL_EXPORT int
 wl_connection_put_fd(struct wl_connection *connection, int32_t fd)
 {
 	if (wl_buffer_size(&connection->fds_out) == MAX_FDS_OUT * sizeof fd) {
@@ -1337,12 +1337,12 @@ wl_closure_destroy(struct wl_closure *closure)
 	free(closure);
 }
 
-size_t
+WL_EXPORT size_t
 wl_connection_fds_in_size(struct wl_connection *connection) {
     return connection->fds_in.head - connection->fds_in.tail;
 }
 
-void
+WL_EXPORT void
 wl_connection_copy_fds_in(struct wl_connection *connection, int *fds_in) {
     size_t byte_count = connection->fds_in.head - connection->fds_in.tail;
     if(byte_count){
