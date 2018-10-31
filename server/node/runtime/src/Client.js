@@ -266,6 +266,9 @@ class Client extends DisplayRequests {
       }
       this._inMessages.shift()
     }
+
+    // TODO in wayland-server the wait-for-message & flush order is reversed. Find out why.
+    this.flush()
   }
 
   close () {
