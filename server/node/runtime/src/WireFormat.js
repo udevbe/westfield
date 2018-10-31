@@ -290,11 +290,12 @@ class WireFormat {
    */
   static string (arg) {
     return {
-      value: arg,
+      value: `${arg}\0`,
       type: 's',
       size: 4 + (function () {
         // fancy logic to calculate size with padding to a multiple of 4 bytes (int).
-        return (arg.length + 3) & ~3
+        // length+1 for null terminator
+        return (arg.length + 1 + 3) & ~3
       })(),
       optional: false,
       /**
@@ -322,14 +323,15 @@ class WireFormat {
    */
   static stringOptional (arg) {
     return {
-      value: arg,
+      value: `${arg}\0`,
       type: 's',
       size: 4 + (function () {
         if (arg === null) {
           return 0
         } else {
           // fancy logic to calculate size with padding to a multiple of 4 bytes (int).
-          return (arg.length + 3) & ~3
+          // length+1 for null terminator
+          return (arg.length + 1 + 3) & ~3
         }
       })(),
       optional: true,

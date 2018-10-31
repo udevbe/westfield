@@ -120,9 +120,10 @@ class Client extends DisplayRequests {
     } else {
       const alignedSize = ((stringSize + 3) & ~3)
       Client._checkMessageSize(message, alignedSize)
-      const byteArray = new Uint8Array(message.buffer.buffer, message.buffer.byteOffset + (message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT), stringSize)
+      // size -1 to eliminate null byte
+      const byteArray = new Uint8Array(message.buffer.buffer, message.buffer.byteOffset + (message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT), stringSize - 1)
       message.bufferOffset += alignedSize
-      return String.fromCharCode.apply(null, byteArray)
+      return String.fromCharCode(...byteArray)
     }
   }
 
