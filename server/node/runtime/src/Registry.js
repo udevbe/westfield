@@ -84,7 +84,7 @@ class Registry extends RegistryRequests {
    * @param {RegistryResource} registryResource
    */
   publishGlobals (registryResource) {
-    Object.entries(this._globals).forEach((global, name) => registryResource.global(name, global.interface_, global.version))
+    Object.entries(this._globals).forEach(([name, global]) => registryResource.global(Number.parseInt(name), global.interface_, global.version))
   }
 
   /**
