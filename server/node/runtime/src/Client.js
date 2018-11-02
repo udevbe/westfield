@@ -122,7 +122,7 @@ class Client extends DisplayRequests {
       Client._checkMessageSize(message, alignedSize)
       // size -1 to eliminate null byte
       const byteArray = new Uint8Array(message.buffer.buffer, message.buffer.byteOffset + (message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT), stringSize - 1)
-      message.bufferOffset += alignedSize
+      message.bufferOffset += (alignedSize / 4)
       return String.fromCharCode(...byteArray)
     }
   }
@@ -268,7 +268,6 @@ class Client extends DisplayRequests {
       this._inMessages.shift()
     }
 
-    // TODO in wayland-server the wait-for-message & flush order is reversed. Find out why.
     this.flush()
   }
 
