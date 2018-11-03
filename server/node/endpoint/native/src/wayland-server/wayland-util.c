@@ -271,13 +271,8 @@ wl_map_reserve_new(struct wl_map *map, uint32_t i)
 
 	count = entries->size / sizeof *start;
 
-	while (count < i) {
-        wl_array_add(entries, sizeof *start);
-        start = entries->data;
-        start[i].data = NULL;
-
-        count = entries->size / sizeof *start;
-    }
+	if (count < i)
+		return -1;
 
 	if (count == i) {
 		wl_array_add(entries, sizeof *start);
