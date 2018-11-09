@@ -90,7 +90,7 @@ class ProtocolParser {
     out.write(`\tasync [${opcode}] (message) {\n`)
     const evSig = ProtocolParser._parseRequestSignature(ev)
     if (evSig.length) {
-      out.write(`\t\tconst args = this.client._unmarshallArgs(message,'${evSig}')\n`)
+      out.write(`\t\tconst args = this.client.unmarshallArgs(message,'${evSig}')\n`)
       out.write(`\t\tawait this.implementation.${evName}(this, ...args)\n`)
     } else {
       out.write(`\t\tawait this.implementation.${evName}(this)\n`)

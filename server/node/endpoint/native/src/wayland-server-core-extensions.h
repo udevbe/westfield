@@ -30,7 +30,7 @@ struct wl_connection *
 wl_client_get_connection(struct wl_client *client);
 
 typedef int (*wl_connection_wire_message_t)(struct wl_client *client, int32_t *wire_message,
-                                            size_t wire_message_size, int object_id, int opcode, int has_native_resource);
+                                            size_t wire_message_size, int object_id, int opcode);
 
 void
 wl_client_set_wire_message_cb(struct wl_client *client, wl_connection_wire_message_t wire_message_cb);
@@ -55,3 +55,6 @@ wl_display_set_global_created_cb(struct wl_display *display, wl_global_cb_t glob
 
 void
 wl_display_set_global_destroyed_cb(struct wl_display *display, wl_global_cb_t global_destroyed_cb);
+
+void
+wl_resource_destroy_silently(struct wl_resource *resource);

@@ -37,7 +37,19 @@ check_status(napi_env env, napi_status status) {
         printf("%s\n", result->error_message);
         assert(0);
     }
+    if (status == napi_pending_exception) {
+        napi_value exception = NULL;
+
+        status = napi_get_and_clear_last_exception(env,
+                                                   &exception);
+        check_status(env, status);
+        if (exception) {
+            status = napi_throw(env, exception);
+            check_status(env, status);
+        }
+    }
 }
+
 
 void
 finalize_cb(napi_env env, void *finalize_data, void *finalize_hint) {
@@ -93,13 +105,13 @@ on_client_destroyed(struct wl_listener *listener, void *data) {
 
 int
 on_wire_message(struct wl_client *client, int32_t *wire_message,
-                size_t wire_message_size, int object_id, int opcode, int has_native_resource) {
+                size_t wire_message_size, int object_id, int opcode) {
     struct client_destruction_listener *destruction_listener = (struct client_destruction_listener *) wl_client_get_destroy_listener(
             client, on_client_destroyed);
     if (destruction_listener->wire_message_cb_ref) {
         struct display_destruction_listener *display_destruction_listener;
         uint32_t cb_result_consumed;
-        napi_value wire_message_value, client_value, object_id_value, opcode_value, has_native_resource_value, global, cb_result, cb;
+        napi_value wire_message_value, client_value, object_id_value, opcode_value, global, cb_result, cb;
         napi_status status;
 
         display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
@@ -116,16 +128,12 @@ on_wire_message(struct wl_client *client, int32_t *wire_message,
         napi_create_uint32(display_destruction_listener->env, (uint32_t) opcode, &opcode_value);
         check_status(display_destruction_listener->env, status);
 
-        napi_get_boolean(display_destruction_listener->env, (bool) has_native_resource, &has_native_resource_value);
-        check_status(display_destruction_listener->env, status);
-
         status = napi_get_global(display_destruction_listener->env, &global);
         check_status(display_destruction_listener->env, status);
         status = napi_get_reference_value(display_destruction_listener->env, destruction_listener->js_object,
                                           &client_value);
         check_status(display_destruction_listener->env, status);
-        napi_value argv[5] = {client_value, wire_message_value, object_id_value, opcode_value,
-                              has_native_resource_value};
+        napi_value argv[4] = {client_value, wire_message_value, object_id_value, opcode_value};
 
         status = napi_get_reference_value(display_destruction_listener->env, destruction_listener->wire_message_cb_ref,
                                           &cb);
@@ -276,7 +284,7 @@ setClientDestroyedCallback(napi_env env, napi_callback_info info) {
 
 // expected arguments in order:
 // - Object client
-// - onWireMessage(Object client, ArrayBuffer wireMessage, number objectId, number opcode, boolean hasNativeResource):void
+// - onWireMessage(Object client, ArrayBuffer wireMessage, number objectId, number opcode):void
 // return:
 napi_value
 setWireMessageCallback(napi_env env, napi_callback_info info) {
@@ -407,7 +415,6 @@ createDisplay(napi_env env, napi_callback_info info) {
     wl_display_set_global_destroyed_cb(display, on_global_destroyed);
 
     napi_create_external(env, display, NULL, NULL, &display_value);
-
     display_destruction_listener->env = NULL;
     return display_value;
 }
@@ -434,7 +441,6 @@ addSocketAuto(napi_env env, napi_callback_info info) {
 
     const char *display_name = wl_display_add_socket_auto(display);
     napi_create_string_latin1(env, display_name, NAPI_AUTO_LENGTH, &display_name_value);
-
     display_destruction_listener->env = NULL;
     return display_name_value;
 }
@@ -620,7 +626,7 @@ createMemoryMappedFile(napi_env env, napi_callback_info info) {
     check_status(env, status);
 
     size_value = argv[0];
-    napi_get_value_uint32(env, size_value, (uint32_t *) &size);
+    napi_get_value_uint32(env, size_value, (uint32_t * ) & size);
 
     fd = os_create_anonymous_file(size);
     status = napi_create_int32(env, fd, &fd_value);
@@ -698,9 +704,155 @@ emitGlobals(napi_env env, napi_callback_info info) {
 }
 
 napi_value
+createWlMessage(napi_env env, napi_callback_info info) {
+    napi_status status;
+    size_t argc = 3, name_size = 64, signature_size = 16;
+    napi_value argv[argc], name_value, signature_value, types_value, type_value, message_value;
+    char *name, *signature;
+    size_t length;
+    const struct wl_interface **types;
+    struct wl_message *message;
+
+    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
+    check_status(env, status);
+
+    name_value = argv[0];
+    signature_value = argv[1];
+    types_value = argv[2];
+
+    // TODO do we care about copied length for strings?
+    name = malloc(name_size);
+    signature = malloc(signature_size);
+    status = napi_get_value_string_latin1(env, name_value, name, name_size, &length);
+    check_status(env, status);
+    status = napi_get_value_string_latin1(env, signature_value, name, signature_size, &length);
+    check_status(env, status);
+    napi_get_array_length(env, types_value, (uint32_t *) &length);
+    types = malloc(length * sizeof(struct wl_interface *));
+    for (int i = 0; i < length; ++i) {
+        napi_get_element(env, types_value, i, &type_value);
+        napi_get_value_external(env, type_value, (void **) (types + i));
+    }
+
+    message = malloc(sizeof(struct wl_message));
+    message->name = name;
+    message->signature = signature;
+    message->types = types;
+
+    napi_create_external(env, message, NULL, NULL, &message_value);
+    check_status(env, status);
+
+    return message_value;
+}
+
+napi_value
+createWlInterface(napi_env env, napi_callback_info info) {
+    napi_status status;
+    size_t argc = 4, name_size = 64, length;
+    napi_value argv[argc], name_value, version_value, requests_value, events_value, request_value, event_value, interface_value;
+    struct wl_interface *interface = malloc(sizeof(struct wl_interface));
+    int version;
+    char *name;
+    uint32_t method_count, event_count;
+    struct wl_message *methods, *events, *message;
+
+    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
+    check_status(env, status);
+
+    name_value = argv[0];
+    version_value = argv[1];
+    requests_value = argv[2];
+    events_value = argv[3];
+
+    // TODO do we care about copied length for strings?
+    name = malloc(name_size);
+    status = napi_get_value_string_latin1(env, name_value, name, name_size, &length);
+    check_status(env, status);
+    status = napi_get_value_int32(env, version_value, &version);
+    check_status(env, status);
+    napi_get_array_length(env, requests_value, &method_count);
+    check_status(env, status);
+    methods = malloc(length * sizeof(struct wl_message));
+    for (int i = 0; i < method_count; ++i) {
+        napi_get_element(env, requests_value, i, &request_value);
+        napi_get_value_external(env, request_value, (void **) &message);
+        methods[i] = *message;
+    }
+    napi_get_array_length(env, requests_value, &event_count);
+    check_status(env, status);
+    events = malloc(length * sizeof(struct wl_message));
+    for (int i = 0; i < event_count; ++i) {
+        napi_get_element(env, events_value, i, &event_value);
+        napi_get_value_external(env, event_value, (void **) &message);
+        events[i] = *message;
+    }
+
+    interface->name = name;
+    interface->version = version;
+    interface->method_count = method_count;
+    interface->methods = methods;
+    interface->event_count = event_count;
+    interface->events = events;
+
+    napi_create_external(env, interface, NULL, NULL, &interface_value);
+    check_status(env, status);
+
+    return interface_value;
+}
+
+napi_value
+createWlResource(napi_env env, napi_callback_info info) {
+    napi_status status;
+    size_t argc = 4;
+    napi_value argv[argc], interface_value, client_value, version_value, id_value, resource_value;
+    struct wl_client *client;
+    int id, version;
+    struct wl_interface *interface;
+    struct wl_resource *resource;
+
+    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
+    check_status(env, status);
+
+    client_value = argv[0];
+    id_value = argv[1];
+    version_value = argv[2];
+    interface_value = argv[3];
+
+    napi_get_value_external(env, client_value, (void **) &client);
+    check_status(env, status);
+    napi_get_value_int32(env, id_value, &id);
+    check_status(env, status);
+    napi_get_value_int32(env, version_value, &version);
+    check_status(env, status);
+    napi_get_value_external(env, interface_value, (void **) &interface);
+    check_status(env, status);
+
+    resource = wl_resource_create(client, interface, version, id);
+    napi_create_external(env, resource, NULL, NULL, &resource_value);
+    check_status(env, status);
+
+    return resource_value;
+}
+
+napi_value
+destroyWlResourceSilently(napi_env env, napi_callback_info info) {
+    napi_status status;
+    size_t argc = 1;
+    napi_value argv[argc], resource_value;
+    struct wl_resource *resource;
+
+    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
+    check_status(env, status);
+
+    resource_value = argv[0];
+    napi_get_value_external(env, resource_value, (void **) &resource);
+    wl_resource_destroy_silently(resource);
+}
+
+napi_value
 init(napi_env env, napi_value exports) {
     napi_status status;
-    napi_property_descriptor desc[15] = {
+    napi_property_descriptor desc[19] = {
             DECLARE_NAPI_METHOD("createDisplay", createDisplay),
             DECLARE_NAPI_METHOD("destroyDisplay", destroyDisplay),
             DECLARE_NAPI_METHOD("addSocketAuto", addSocketAuto),
@@ -715,7 +867,11 @@ init(napi_env env, napi_value exports) {
             DECLARE_NAPI_METHOD("setWireMessageEndCallback", setWireMessageEndCallback),
             DECLARE_NAPI_METHOD("setClientDestroyedCallback", setClientDestroyedCallback),
             DECLARE_NAPI_METHOD("setRegistryCreatedCallback", setRegistryCreatedCallback),
-            DECLARE_NAPI_METHOD("emitGlobals", emitGlobals)
+            DECLARE_NAPI_METHOD("emitGlobals", emitGlobals),
+            DECLARE_NAPI_METHOD("createWlMessage", createWlMessage),
+            DECLARE_NAPI_METHOD("createWlInterface", createWlInterface),
+            DECLARE_NAPI_METHOD("createWlResource", createWlResource),
+            DECLARE_NAPI_METHOD("destroyWlResourceSilently", destroyWlResourceSilently)
     };
 
     status = napi_define_properties(env, exports, 15, desc);

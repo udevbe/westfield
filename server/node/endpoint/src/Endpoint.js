@@ -48,7 +48,7 @@ class Endpoint {
   /**
    *
    * @param {Object}wlClient
-   * @param {function(wlClient: Object, wireMessages:ArrayBuffer, objectId: number, opcode:number, hasNativeResource: boolean):number}onWireMessage
+   * @param {function(wlClient: Object, wireMessages:ArrayBuffer, objectId: number, opcode:number):number}onWireMessage
    */
   static setWireMessageCallback (wlClient, onWireMessage) {
     westfieldNative.setWireMessageCallback(wlClient, onWireMessage)
@@ -136,6 +136,45 @@ class Endpoint {
    */
   static emitGlobals (wlRegistry) {
     westfieldNative.emitGlobals(wlRegistry)
+  }
+
+  /**
+   * @param {string}name
+   * @param {string}signature
+   * @param {Array<Object>}wlInterfaces
+   * @return {Object}
+   */
+  static createWlMessage (name, signature, wlInterfaces) {
+    return westfieldNative.createWlMessage(name, signature, wlInterfaces)
+  }
+
+  /**
+   * @param {string}name
+   * @param {number}version
+   * @param {Array<Object>}wlMessageRequests
+   * @param {Array<Object>}wlMessageEvents
+   * @return {Object}
+   */
+  static createWlInterface (name, version, wlMessageRequests, wlMessageEvents) {
+    return westfieldNative.createWlInterface(name, version, wlMessageRequests, wlMessageEvents)
+  }
+
+  /**
+   * @param {Object}wlClient
+   * @param {number}id
+   * @param {number}version
+   * @param {Object}wlInterface
+   * @return {Object}
+   */
+  static createWlResource (wlClient, id, version, wlInterface) {
+    return westfieldNative.createWlResource(wlClient, id, version, wlInterface)
+  }
+
+  /**
+   * @param {Object}wlResource
+   */
+  static destroyWlResourceSilently (wlResource) {
+    westfieldNative.destroyWlResourceSilently(wlResource)
   }
 }
 

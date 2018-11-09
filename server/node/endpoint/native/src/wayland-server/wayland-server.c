@@ -364,7 +364,7 @@ wl_client_connection_data(int fd, uint32_t mask, void *data) {
             buffer = malloc((size_t) size);
             wl_connection_copy(connection, buffer, (size_t) size);
 
-            if (client->wire_message_cb(client, buffer, (size_t) size, p[0], opcode, resource != NULL)) {
+            if (client->wire_message_cb(client, buffer, (size_t) size, p[0], opcode)) {
                 wl_connection_consume(connection, (size_t) size);
                 len = wl_connection_pending_input(connection);
                 continue;
@@ -719,6 +719,23 @@ wl_resource_destroy(struct wl_resource *resource) {
             wl_resource_queue_event(client->display_resource,
                                     WL_DISPLAY_DELETE_ID, id);
         }
+        wl_map_insert_at(&client->objects, 0, id, NULL);
+    } else {
+        wl_map_remove(&client->objects, id);
+    }
+}
+
+WL_EXPORT void
+wl_resource_destroy_silently(struct wl_resource *resource) {
+    struct wl_client *client = resource->client;
+    uint32_t id;
+    uint32_t flags;
+
+    id = resource->object.id;
+    flags = wl_map_lookup_flags(&client->objects, id);
+    destroy_resource(resource, NULL, flags);
+
+    if (id < WL_SERVER_ID_START) {
         wl_map_insert_at(&client->objects, 0, id, NULL);
     } else {
         wl_map_remove(&client->objects, id);
