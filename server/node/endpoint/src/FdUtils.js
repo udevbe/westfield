@@ -29,7 +29,7 @@ const westfieldNative = require('westfield-native')
 class FdUtils {
   /**
    * @param {number}size
-   * @return number
+   * @return {number} a file descriptor
    */
   static createMemoryMappedFile (size) {
     return westfieldNative.createMemoryMappedFile(size)

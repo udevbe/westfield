@@ -32,10 +32,36 @@ const camelCase = require('camelcase')
 const ProtocolArguments = require('./EndpointProtocolArguments')
 
 class EndpointProtocolParser {
-  static _parseRequestSignature (itfRequest) {
+  static _parseMessageInterfaces (itfMessage) {
+    let argInterfaces = '['
+    if (itfMessage.hasOwnProperty('arg')) {
+      const evArgs = itfMessage.arg
+      for (let i = 0; i < evArgs.length; i++) {
+        const arg = evArgs[i]
+        const argType = arg.$.type
+        let interface_ = 'null'
+        if (argType === 'object' || argType === 'new_id') {
+          const argInterface = arg.$.interface
+          if (argInterface != null) {
+            interface_ = `require('./${argInterface}_interface')`
+          }
+        }
+
+        if (i !== 0) {
+          argInterfaces += ', '
+        }
+        argInterfaces += interface_
+      }
+    }
+    argInterfaces += ']'
+
+    return argInterfaces
+  }
+
+  static _parseMessageSignature (itfMessage) {
     let evSig = ''
-    if (itfRequest.hasOwnProperty('arg')) {
-      const evArgs = itfRequest.arg
+    if (itfMessage.hasOwnProperty('arg')) {
+      const evArgs = itfMessage.arg
       for (let i = 0; i < evArgs.length; i++) {
         const arg = evArgs[i]
 
@@ -55,7 +81,7 @@ class EndpointProtocolParser {
     if (protocolItf.$.name === 'wl_registry' && itfRequest.$.name === 'bind') {
       evSig = 'usun'
     } else {
-      evSig = EndpointProtocolParser._parseRequestSignature(itfRequest)
+      evSig = EndpointProtocolParser._parseMessageSignature(itfRequest)
     }
     const evName = camelCase(itfRequest.$.name)
     if (evSig.includes('n')) {
@@ -72,56 +98,94 @@ class EndpointProtocolParser {
    * @param {Object}protocolItf
    * @private
    */
-  _writeResource (jsonProtocol, outDir, protocolItf) {
+  _writeInterface (jsonProtocol, outDir, protocolItf) {
     const itfName = protocolItf.$.name
     let itfVersion = 1
-
     if (protocolItf.$.hasOwnProperty('version')) {
-      itfVersion = parseInt(protocolItf.$.version)
+      itfVersion = protocolItf.$.version
     }
 
-    console.log(`Processing interface ${itfName} v${itfVersion}`)
+    const resourceName = `${itfName}_interface`
+    const interfaceOut = fs.createWriteStream(path.join(outDir, `${resourceName}.js`))
+
+    interfaceOut.write(`const { Endpoint } = require('westfield-endpoint')\n\n`)
+    interfaceOut.write(`const requests = [\n`)
+    if (protocolItf.hasOwnProperty('request')) {
+      const itfRequests = protocolItf.request
+      for (let i = 0; i < itfRequests.length; i++) {
+        const itfRequest = itfRequests[i]
+        const messageName = itfRequest.$.name
+        const signature = EndpointProtocolParser._parseMessageSignature(itfRequest)
+        if (i !== 0) {
+          interfaceOut.write(', \n')
+        }
+        interfaceOut.write(`\tEndpoint.createWlMessage('${messageName}', '${signature}', ${EndpointProtocolParser._parseMessageInterfaces(itfRequest)})`)
+      }
+    }
+    interfaceOut.write(`\n]\n\n`)
+
+    interfaceOut.write(`const events = [\n`)
+    if (protocolItf.hasOwnProperty('event')) {
+      const itfEvents = protocolItf.event
+      for (let i = 0; i < itfEvents.length; i++) {
+        const itfEvent = itfEvents[i]
+        const messageName = itfEvent.$.name
+        const signature = EndpointProtocolParser._parseMessageSignature(itfEvent)
+        if (i !== 0) {
+          interfaceOut.write(', \n')
+        }
+        interfaceOut.write(`\tEndpoint.createWlMessage('${messageName}', '${signature}', ${EndpointProtocolParser._parseMessageInterfaces(itfEvent)})`)
+      }
+    }
+    interfaceOut.write(`\n]\n\n`)
+
+    interfaceOut.write(`module.export = Endpoint.createWlInterface('${itfName}', ${itfVersion}, requests, events)`)
+  }
+
+  /**
+   * @param {Object}jsonProtocol
+   * @param {string}outDir
+   * @param {Object}protocolItf
+   * @private
+   */
+  _writeInterceptor (jsonProtocol, outDir, protocolItf) {
+    const itfName = protocolItf.$.name
 
     const resourceName = `${itfName}_interceptor`
-    const resourceOut = fs.createWriteStream(path.join(outDir, `${resourceName}.js`))
+    const interceptorOut = fs.createWriteStream(path.join(outDir, `${resourceName}.js`))
 
-    resourceOut.write(`const { WireMessageUtil, Endpoint } = require('westfield-endpoint')\n\n`)
+    interceptorOut.write(`const { WireMessageUtil, Endpoint } = require('westfield-endpoint')\n\n`)
 
     // class
-    resourceOut.write(`class ${resourceName} {\n`)
+    interceptorOut.write(`class ${resourceName} {\n`)
 
     // constructor
-    resourceOut.write('\tconstructor (wlClient, interceptors, version, remoteResource) {\n')
-    resourceOut.write('\t\tthis.wlResource = remoteResource\n')
-    resourceOut.write('\t\tthis.handlers = {\n')
+    interceptorOut.write('\tconstructor (wlClient, interceptors, version, remoteResource) {\n')
+    interceptorOut.write('\t\tthis.wlResource = remoteResource\n')
+    interceptorOut.write('\t\tthis.handlers = {\n')
     const constructorRequests = this._getConstructorRequest(protocolItf)
     if (constructorRequests.length) {
-      this._generateFactoryInterceptionHandlers(resourceOut, constructorRequests, protocolItf)
+      this._generateFactoryInterceptionHandlers(interceptorOut, constructorRequests, protocolItf)
     }
 
     // TODO native endpoint lib must expose function to destroy resource without emitting id destroyed event
 
-    resourceOut.write('\t\t}\n')
-    resourceOut.write('\t}\n\n')
+    interceptorOut.write('\t\t}\n')
+    interceptorOut.write('\t}\n\n')
 
     // glue request functions
     if (protocolItf.hasOwnProperty('request')) {
       const itfRequests = protocolItf.request
       for (let j = 0; j < itfRequests.length; j++) {
         const itfRequest = itfRequests[j]
-        let since = '1'
-        if (itfRequest.$.hasOwnProperty('since')) {
-          since = itfRequest.$.since
-        }
-
-        EndpointProtocolParser._generateIfRequestGlue(resourceOut, itfRequest, j, protocolItf)
+        EndpointProtocolParser._generateIfRequestGlue(interceptorOut, itfRequest, j, protocolItf)
       }
     }
 
-    resourceOut.write('}\n')
+    interceptorOut.write('}\n')
 
-    resourceOut.write(`module.exports = ${resourceName}\n`)
-    resourceOut.end()
+    interceptorOut.write(`module.exports = ${resourceName}\n`)
+    interceptorOut.end()
   }
 
   /**
@@ -131,7 +195,14 @@ class EndpointProtocolParser {
    * @private
    */
   _parseInterface (jsonProtocol, outDir, protocolItf) {
-    this._writeResource(jsonProtocol, outDir, protocolItf)
+    let itfVersion = 1
+    if (protocolItf.$.hasOwnProperty('version')) {
+      itfVersion = parseInt(protocolItf.$.version)
+    }
+    console.log(`Processing interface ${protocolItf.$.name} v${itfVersion}`)
+
+    this._writeInterface(jsonProtocol, outDir, protocolItf)
+    this._writeInterceptor(jsonProtocol, outDir, protocolItf)
   }
 
   /**
@@ -231,12 +302,12 @@ class EndpointProtocolParser {
         resourceOut.write(`\t\t\t\t\treturn false\n`)
         resourceOut.write(`\t\t\t\t} else {\n`)
         resourceOut.write(`\t\t\t\t\tconst remoteResource = Endpoint.createWlResource(wlClient, id, version, require(\`./${resourceName}_interface\`))\n`)
-        resourceOut.write(`\t\t\t\t\tinterceptors[id] =  new require(\`./${resourceName}_interceptor\`)(wlClient, interceptors, version, remoteResource, id)\n`)
+        resourceOut.write(`\t\t\t\t\tinterceptors[id] =  new require(\`./${resourceName}_interceptor\`)(wlClient, interceptors, version, remoteResource)\n`)
         resourceOut.write(`\t\t\t\t\treturn true\n`)
         resourceOut.write(`\t\t\t\t}\n`)
       } else {
         resourceOut.write(`\t\t\t\t\tconst remoteResource = Endpoint.createWlResource(wlClient, id, version, require(\`./${resourceName}_interface\`))\n`)
-        resourceOut.write(`\t\t\t\t\tinterceptors[id] =  new require(\`./${resourceName}_interceptor\`)(wlClient, interceptors, version, remoteResource, id)\n`)
+        resourceOut.write(`\t\t\t\t\tinterceptors[id] =  new require(\`./${resourceName}_interceptor\`)(wlClient, interceptors, version, remoteResource)\n`)
         resourceOut.write(`\t\t\t\t\treturn true\n`)
       }
       resourceOut.write(`\t\t\t},\n`)

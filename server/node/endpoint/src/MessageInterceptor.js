@@ -2,13 +2,13 @@
 
 const { Endpoint } = require('westfield-native')
 
-class RequestInterceptors {
+class MessageInterceptor {
   /**
    * @param {wl_display_interceptor}wlDisplayInterceptor
-   * @returns {RequestInterceptors}
+   * @returns {MessageInterceptor}
    */
   static create (wlDisplayInterceptor) {
-    return new RequestInterceptors(wlDisplayInterceptor)
+    return new MessageInterceptor(wlDisplayInterceptor)
   }
 
   constructor (wlDisplayInterceptor) {

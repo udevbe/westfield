@@ -707,11 +707,14 @@ napi_value
 createWlMessage(napi_env env, napi_callback_info info) {
     napi_status status;
     size_t argc = 3, name_size = 64, signature_size = 16;
-    napi_value argv[argc], name_value, signature_value, types_value, type_value, message_value;
+    napi_value argv[argc], name_value, signature_value, types_value, type_value, message_value, null_value;
     char *name, *signature;
     size_t length;
     const struct wl_interface **types;
     struct wl_message *message;
+
+    status = napi_get_null(env, &null_value);
+    check_status(env, status);
 
     status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
     check_status(env, status);
@@ -727,11 +730,17 @@ createWlMessage(napi_env env, napi_callback_info info) {
     check_status(env, status);
     status = napi_get_value_string_latin1(env, signature_value, name, signature_size, &length);
     check_status(env, status);
-    napi_get_array_length(env, types_value, (uint32_t *) &length);
+    napi_get_array_length(env, types_value, (uint32_t * ) & length);
     types = malloc(length * sizeof(struct wl_interface *));
+
+
     for (int i = 0; i < length; ++i) {
         napi_get_element(env, types_value, i, &type_value);
-        napi_get_value_external(env, type_value, (void **) (types + i));
+        if (type_value == null_value) {
+            types[i] = NULL;
+        } else {
+            napi_get_value_external(env, type_value, (void **) (types + i));
+        }
     }
 
     message = malloc(sizeof(struct wl_message));
