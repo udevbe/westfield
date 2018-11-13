@@ -10,7 +10,7 @@ class WireMessageUtil {
    */
   static _checkMessageSize (wireMsg, consumption) {
     if (wireMsg.consumed + consumption > wireMsg.size) {
-      throw new Error(`Request too short.`)
+      throw new Error(`Request too short. Message max. size: ${size}, have: ${wireMsg.consumed + consumption}`)
     } else {
       wireMsg.consumed += consumption
     }
@@ -53,6 +53,7 @@ class WireMessageUtil {
   static f (wireMsg) { // float {number}
     const argSize = 4
     this._checkMessageSize(wireMsg, argSize)
+
     const arg = new Int32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0]
     wireMsg.bufferOffset += argSize
     return new Fixed(arg >> 0)
@@ -62,18 +63,15 @@ class WireMessageUtil {
    *
    * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @param {Boolean} optional
-   * @returns {Resource}
+   * @returns {number}
    */
   static o (wireMsg, optional) {
     const argSize = 4
     this._checkMessageSize(wireMsg, argSize)
+
     const arg = new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0]
     wireMsg.bufferOffset += argSize
-    if (optional && arg === 0) {
-      return null
-    } else {
-      return this._resources[arg]
-    }
+    return arg
   }
 
   /**
@@ -84,6 +82,7 @@ class WireMessageUtil {
   static n (wireMsg) {
     const argSize = 4
     this._checkMessageSize(wireMsg, argSize)
+
     const arg = new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0]
     wireMsg.bufferOffset += argSize
     return arg
@@ -98,6 +97,7 @@ class WireMessageUtil {
   static s (wireMsg, optional) { // {String}
     const argSize = 4
     this._checkMessageSize(wireMsg, argSize)
+
     const stringSize = new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0]
     wireMsg.bufferOffset += 4
     if (optional && stringSize === 0) {
@@ -105,7 +105,7 @@ class WireMessageUtil {
     } else {
       const alignedSize = ((stringSize + 3) & ~3)
       this._checkMessageSize(wireMsg, alignedSize)
-      const byteArray = new Uint8Array(wireMsg.buffer, wireMsg.bufferOffset, stringSize)
+      const byteArray = new Uint8Array(wireMsg.buffer, wireMsg.bufferOffset, stringSize - 1)
       wireMsg.bufferOffset += alignedSize
       return String.fromCharCode.apply(null, byteArray)
     }
@@ -120,6 +120,7 @@ class WireMessageUtil {
   static a (wireMsg, optional) {
     const argSize = 4
     this._checkMessageSize(wireMsg, argSize)
+
     const arraySize = new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0]
     wireMsg.bufferOffset += 4
     if (optional && arraySize === 0) {

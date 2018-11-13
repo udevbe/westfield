@@ -31,22 +31,11 @@ struct client_destruction_listener {
 
 static void
 check_status(napi_env env, napi_status status) {
-    if (status != napi_ok && status != napi_pending_exception) {
+    if (status != napi_ok) {
         const napi_extended_error_info *result;
         assert(napi_get_last_error_info(env, &result) == napi_ok);
         printf("%s\n", result->error_message);
         assert(0);
-    }
-    if (status == napi_pending_exception) {
-        napi_value exception = NULL;
-
-        status = napi_get_and_clear_last_exception(env,
-                                                   &exception);
-        check_status(env, status);
-        if (exception) {
-            status = napi_throw(env, exception);
-            check_status(env, status);
-        }
     }
 }
 
@@ -138,7 +127,7 @@ on_wire_message(struct wl_client *client, int32_t *wire_message,
         status = napi_get_reference_value(display_destruction_listener->env, destruction_listener->wire_message_cb_ref,
                                           &cb);
         check_status(display_destruction_listener->env, status);
-        status = napi_call_function(display_destruction_listener->env, global, cb, 5, argv, &cb_result);
+        status = napi_call_function(display_destruction_listener->env, global, cb, 4, argv, &cb_result);
         check_status(display_destruction_listener->env, status);
 
         napi_get_value_uint32(display_destruction_listener->env, cb_result, &cb_result_consumed);
@@ -712,6 +701,7 @@ createWlMessage(napi_env env, napi_callback_info info) {
     size_t length;
     const struct wl_interface **types;
     struct wl_message *message;
+    bool is_null;
 
     status = napi_get_null(env, &null_value);
     check_status(env, status);
@@ -724,11 +714,11 @@ createWlMessage(napi_env env, napi_callback_info info) {
     types_value = argv[2];
 
     // TODO do we care about copied length for strings?
-    name = malloc(name_size);
-    signature = malloc(signature_size);
+    name = calloc(1, name_size);
+    signature = calloc(1, signature_size);
     status = napi_get_value_string_latin1(env, name_value, name, name_size, &length);
     check_status(env, status);
-    status = napi_get_value_string_latin1(env, signature_value, name, signature_size, &length);
+    status = napi_get_value_string_latin1(env, signature_value, signature, signature_size, &length);
     check_status(env, status);
     napi_get_array_length(env, types_value, (uint32_t * ) & length);
     types = malloc(length * sizeof(struct wl_interface *));
@@ -736,7 +726,8 @@ createWlMessage(napi_env env, napi_callback_info info) {
 
     for (int i = 0; i < length; ++i) {
         napi_get_element(env, types_value, i, &type_value);
-        if (type_value == null_value) {
+        status = napi_strict_equals(env, type_value, null_value, &is_null);
+        if (is_null) {
             types[i] = NULL;
         } else {
             napi_get_value_external(env, type_value, (void **) (types + i));
@@ -763,7 +754,7 @@ createWlInterface(napi_env env, napi_callback_info info) {
     int version;
     char *name;
     uint32_t method_count, event_count;
-    struct wl_message *methods, *events, *message;
+    struct wl_message *methods = NULL, *events = NULL, *message;
 
     status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
     check_status(env, status);
@@ -774,26 +765,32 @@ createWlInterface(napi_env env, napi_callback_info info) {
     events_value = argv[3];
 
     // TODO do we care about copied length for strings?
-    name = malloc(name_size);
+    name = calloc(1, name_size);
     status = napi_get_value_string_latin1(env, name_value, name, name_size, &length);
     check_status(env, status);
     status = napi_get_value_int32(env, version_value, &version);
     check_status(env, status);
+
     napi_get_array_length(env, requests_value, &method_count);
     check_status(env, status);
-    methods = malloc(length * sizeof(struct wl_message));
-    for (int i = 0; i < method_count; ++i) {
-        napi_get_element(env, requests_value, i, &request_value);
-        napi_get_value_external(env, request_value, (void **) &message);
-        methods[i] = *message;
+    if (method_count) {
+        methods = malloc(method_count * sizeof(struct wl_message));
+        for (int i = 0; i < method_count; ++i) {
+            napi_get_element(env, requests_value, i, &request_value);
+            napi_get_value_external(env, request_value, (void **) &message);
+            methods[i] = *message;
+        }
     }
+
     napi_get_array_length(env, requests_value, &event_count);
     check_status(env, status);
-    events = malloc(length * sizeof(struct wl_message));
-    for (int i = 0; i < event_count; ++i) {
-        napi_get_element(env, events_value, i, &event_value);
-        napi_get_value_external(env, event_value, (void **) &message);
-        events[i] = *message;
+    if (event_count) {
+        events = malloc(event_count * sizeof(struct wl_message));
+        for (int i = 0; i < event_count; ++i) {
+            napi_get_element(env, events_value, i, &event_value);
+            napi_get_value_external(env, event_value, (void **) &message);
+            events[i] = *message;
+        }
     }
 
     interface->name = name;
@@ -883,7 +880,7 @@ init(napi_env env, napi_value exports) {
             DECLARE_NAPI_METHOD("destroyWlResourceSilently", destroyWlResourceSilently)
     };
 
-    status = napi_define_properties(env, exports, 15, desc);
+    status = napi_define_properties(env, exports, 19, desc);
     check_status(env, status);
 
     return exports;

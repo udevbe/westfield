@@ -364,7 +364,7 @@ wl_client_connection_data(int fd, uint32_t mask, void *data) {
             buffer = malloc((size_t) size);
             wl_connection_copy(connection, buffer, (size_t) size);
 
-            if (client->wire_message_cb(client, buffer, (size_t) size, p[0], opcode)) {
+            if (client->wire_message_cb(client, buffer, (size_t) size, p[0], opcode) == 0) {
                 wl_connection_consume(connection, (size_t) size);
                 len = wl_connection_pending_input(connection);
                 continue;

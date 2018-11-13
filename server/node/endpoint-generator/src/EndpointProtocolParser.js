@@ -274,6 +274,7 @@ class EndpointProtocolParser {
   _generateFactoryInterceptionHandlers (resourceOut, constructorRequests, protocolItf) {
     constructorRequests.forEach(itfRequest => {
       let resourceName = null
+      let resourceIdArgName = null
 
       const reqName = itfRequest.$.name
       resourceOut.write(`\t\t\t${camelCase(reqName)}: (`)
@@ -292,23 +293,29 @@ class EndpointProtocolParser {
           resourceOut.write(`${reqArg.$.name}`)
           if (reqArg.$.type === 'new_id') {
             resourceName = reqArg.$.interface
+            resourceIdArgName = reqArg.$.name
           }
         }
       }
 
       resourceOut.write(`) => {\n`)
       if (reqName === 'bind' && protocolItf.$.name === 'wl_registry') {
-        resourceOut.write(`\t\t\t\tif (require('westfield-endpoint').nativeGlobalNames.contains(interface_)) {\n`)
-        resourceOut.write(`\t\t\t\t\treturn false\n`)
+        resourceOut.write(`\t\t\t\tif (require('westfield-endpoint').nativeGlobalNames.includes(name)) {\n`)
+        resourceOut.write(`\t\t\t\t\treturn 1\n`)
         resourceOut.write(`\t\t\t\t} else {\n`)
         resourceOut.write(`\t\t\t\t\tconst remoteResource = Endpoint.createWlResource(wlClient, id, version, require(\`./${resourceName}_interface\`))\n`)
-        resourceOut.write(`\t\t\t\t\tinterceptors[id] =  new require(\`./${resourceName}_interceptor\`)(wlClient, interceptors, version, remoteResource)\n`)
-        resourceOut.write(`\t\t\t\t\treturn true\n`)
+        resourceOut.write(`\t\t\t\t\tinterceptors[id] =  new (require(\`./${resourceName}_interceptor\`))(wlClient, interceptors, version, remoteResource)\n`)
+        resourceOut.write(`\t\t\t\t\treturn 0\n`)
         resourceOut.write(`\t\t\t\t}\n`)
       } else {
-        resourceOut.write(`\t\t\t\t\tconst remoteResource = Endpoint.createWlResource(wlClient, id, version, require(\`./${resourceName}_interface\`))\n`)
-        resourceOut.write(`\t\t\t\t\tinterceptors[id] =  new require(\`./${resourceName}_interceptor\`)(wlClient, interceptors, version, remoteResource)\n`)
-        resourceOut.write(`\t\t\t\t\treturn true\n`)
+        if (reqName === 'get_registry' && protocolItf.$.name === 'wl_display') {
+          resourceOut.write(`\t\t\t\t\tinterceptors[${resourceIdArgName}] =  new (require(\`./${resourceName}_interceptor\`))(wlClient, interceptors, version, null)\n`)
+          resourceOut.write(`\t\t\t\t\treturn 2\n`)
+        } else {
+          resourceOut.write(`\t\t\t\t\tconst remoteResource = Endpoint.createWlResource(wlClient, ${resourceIdArgName}, version, require(\`./${resourceName}_interface\`))\n`)
+          resourceOut.write(`\t\t\t\t\tinterceptors[${resourceIdArgName}] =  new (require(\`./${resourceName}_interceptor\`))(wlClient, interceptors, version, remoteResource)\n`)
+          resourceOut.write(`\t\t\t\t\treturn 0\n`)
+        }
       }
       resourceOut.write(`\t\t\t},\n`)
     })

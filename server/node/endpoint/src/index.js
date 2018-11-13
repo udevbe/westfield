@@ -28,5 +28,6 @@ module.exports = {
   Endpoint: require('./Endpoint'),
   FdUtils: require('./FdUtils'),
   WireMessageUtil: require('./WireMessageUtil'),
-  nativeGlobalNames: require('./NativeGlobalNames')
+  nativeGlobalNames: require('./NativeGlobalNames'),
+  MessageInterceptor: require('./MessageInterceptor')
 }

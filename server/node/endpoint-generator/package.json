@@ -1,7 +1,7 @@
 {
   "name": "westfield-endpoint-generator",
   "version": "0.1.0",
-  "main": "src/index.js",
+  "bin": "src/index.js",
   "description": "Wayland HTML5 endpoint generator for Node.js",
   "repository": {
     "type": "git",

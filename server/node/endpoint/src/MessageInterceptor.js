@@ -4,18 +4,25 @@ const { Endpoint } = require('westfield-native')
 
 class MessageInterceptor {
   /**
-   * @param {wl_display_interceptor}wlDisplayInterceptor
+   * @param {Object}wlClient
+   * @param {Object}wlDisplay
+   * @param {wl_display_interceptor.constructor}wlDisplayInterceptorConstructor
    * @returns {MessageInterceptor}
    */
-  static create (wlDisplayInterceptor) {
-    return new MessageInterceptor(wlDisplayInterceptor)
+  static create (wlClient, wlDisplay, wlDisplayInterceptorConstructor) {
+    const interceptors = {}
+    interceptors[1] = new wlDisplayInterceptorConstructor(wlClient, interceptors, 1, wlDisplay)
+    return new MessageInterceptor(interceptors)
   }
 
-  constructor (wlDisplayInterceptor) {
+  /**
+   * @param {Object.<number, Object>}interceptors
+   */
+  constructor (interceptors) {
     /**
      * @type {Object.<number, Object>}
      */
-    this.interceptors = { 1: wlDisplayInterceptor }
+    this.interceptors = interceptors
   }
 
   /**
@@ -29,25 +36,29 @@ class MessageInterceptor {
       const interceptor = this.interceptors[deleteObjectId]
       Endpoint.destroyWlResourceSilently(interceptor.wlResource)
       delete this.interceptors[deleteObjectId]
+      return
     }
+
   }
 
   /**
    * @param {number}objectId
    * @param {number}opcode
-   * @param {ArrayBuffer}message
-   * @return {boolean} if message was consumed
+   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}}message
+   * @return {number} where the message should be send to. 0 = browser only, 1 native only, 2 both.
    */
   interceptRequest (objectId, opcode, message) {
     const interceptor = this.interceptors[objectId]
-    let consumed = false
+    let destination = 1
     if (interceptor) {
-      consumed = true
+      destination = 0
       const interception = interceptor[opcode]
       if (interception) {
-        consumed = interception(message)
+        destination = interception.call(interceptor, message)
       }
     }
-    return consumed
+    return destination
   }
 }
+
+module.exports = MessageInterceptor
