@@ -176,6 +176,20 @@ class Endpoint {
   static destroyWlResourceSilently (wlResource) {
     westfieldNative.destroyWlResourceSilently(wlResource)
   }
+
+  /**
+   * temp function.
+   *
+   * @deprecated do all encoding directly on the native side & return an h264/png/jpeg frame with meta-data. ie:
+   * const { buffer, type, width, height, stride } = Endpoint.encode(wlClient, this.userData.bufferResourceId, config) instead.
+   *
+   * @param {wlClient}wlClient
+   * @param {number}wlResourceId
+   * @return {{ buffer:ArrayBuffer, width:number, height:number, stride:number }}
+   */
+  static getShmBuffer (wlClient, wlResourceId) {
+    return westfieldNative.getShmBuffer(wlClient, wlResourceId)
+  }
 }
 
 module.exports = Endpoint

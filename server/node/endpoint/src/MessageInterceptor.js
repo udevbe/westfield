@@ -7,11 +7,12 @@ class MessageInterceptor {
    * @param {Object}wlClient
    * @param {Object}wlDisplay
    * @param {wl_display_interceptor.constructor}wlDisplayInterceptorConstructor
+   * @param {*}userData
    * @returns {MessageInterceptor}
    */
-  static create (wlClient, wlDisplay, wlDisplayInterceptorConstructor) {
+  static create (wlClient, wlDisplay, wlDisplayInterceptorConstructor, userData) {
     const interceptors = {}
-    interceptors[1] = new wlDisplayInterceptorConstructor(wlClient, interceptors, 1, wlDisplay)
+    interceptors[1] = new wlDisplayInterceptorConstructor(wlClient, interceptors, 1, wlDisplay, userData)
     return new MessageInterceptor(interceptors)
   }
 

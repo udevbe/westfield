@@ -160,8 +160,10 @@ class EndpointProtocolParser {
     interceptorOut.write(`class ${resourceName} {\n`)
 
     // constructor
-    interceptorOut.write('\tconstructor (wlClient, interceptors, version, remoteResource) {\n')
-    interceptorOut.write('\t\tthis.wlResource = remoteResource\n')
+    interceptorOut.write('\tconstructor (wlClient, interceptors, version, wlResource, userData) {\n')
+    interceptorOut.write('\t\tthis.wlClient = wlClient\n')
+    interceptorOut.write('\t\tthis.wlResource = wlResource\n')
+    interceptorOut.write('\t\tthis.userData = userData\n')
     interceptorOut.write('\t\tthis.handlers = {\n')
     const constructorRequests = this._getConstructorRequest(protocolItf)
     if (constructorRequests.length) {
@@ -304,16 +306,16 @@ class EndpointProtocolParser {
         resourceOut.write(`\t\t\t\t\treturn 1\n`)
         resourceOut.write(`\t\t\t\t} else {\n`)
         resourceOut.write(`\t\t\t\t\tconst remoteResource = Endpoint.createWlResource(wlClient, id, version, require(\`./${resourceName}_interface\`))\n`)
-        resourceOut.write(`\t\t\t\t\tinterceptors[id] =  new (require(\`./${resourceName}_interceptor\`))(wlClient, interceptors, version, remoteResource)\n`)
+        resourceOut.write(`\t\t\t\t\tinterceptors[id] =  new (require(\`./${resourceName}_interceptor\`))(wlClient, interceptors, version, remoteResource, userData)\n`)
         resourceOut.write(`\t\t\t\t\treturn 0\n`)
         resourceOut.write(`\t\t\t\t}\n`)
       } else {
         if (reqName === 'get_registry' && protocolItf.$.name === 'wl_display') {
-          resourceOut.write(`\t\t\t\t\tinterceptors[${resourceIdArgName}] =  new (require(\`./${resourceName}_interceptor\`))(wlClient, interceptors, version, null)\n`)
+          resourceOut.write(`\t\t\t\t\tinterceptors[${resourceIdArgName}] =  new (require(\`./${resourceName}_interceptor\`))(wlClient, interceptors, version, null, userData)\n`)
           resourceOut.write(`\t\t\t\t\treturn 2\n`)
         } else {
           resourceOut.write(`\t\t\t\t\tconst remoteResource = Endpoint.createWlResource(wlClient, ${resourceIdArgName}, version, require(\`./${resourceName}_interface\`))\n`)
-          resourceOut.write(`\t\t\t\t\tinterceptors[${resourceIdArgName}] =  new (require(\`./${resourceName}_interceptor\`))(wlClient, interceptors, version, remoteResource)\n`)
+          resourceOut.write(`\t\t\t\t\tinterceptors[${resourceIdArgName}] =  new (require(\`./${resourceName}_interceptor\`))(wlClient, interceptors, version, remoteResource, userData)\n`)
           resourceOut.write(`\t\t\t\t\treturn 0\n`)
         }
       }

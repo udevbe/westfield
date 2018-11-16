@@ -615,7 +615,7 @@ createMemoryMappedFile(napi_env env, napi_callback_info info) {
     check_status(env, status);
 
     size_value = argv[0];
-    napi_get_value_uint32(env, size_value, (uint32_t * ) & size);
+    napi_get_value_uint32(env, size_value, (uint32_t *) &size);
 
     fd = os_create_anonymous_file(size);
     status = napi_create_int32(env, fd, &fd_value);
@@ -720,7 +720,7 @@ createWlMessage(napi_env env, napi_callback_info info) {
     check_status(env, status);
     status = napi_get_value_string_latin1(env, signature_value, signature, signature_size, &length);
     check_status(env, status);
-    napi_get_array_length(env, types_value, (uint32_t * ) & length);
+    napi_get_array_length(env, types_value, (uint32_t *) &length);
     types = malloc(length * sizeof(struct wl_interface *));
 
 
@@ -856,9 +856,72 @@ destroyWlResourceSilently(napi_env env, napi_callback_info info) {
 }
 
 napi_value
+getShmBuffer(napi_env env, napi_callback_info info) {
+    napi_status status;
+    size_t argc = 2;
+    napi_value argv[argc], client_value, id_value, result;
+    uint32_t id;
+    struct wl_client *client;
+    struct wl_resource *resource;
+    struct wl_shm_buffer *shm_buffer;
+
+    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
+    check_status(env, status);
+
+    client_value = argv[0];
+    id_value = argv[1];
+
+    napi_get_value_external(env, client_value, (void **) &client);
+    check_status(env, status);
+    napi_get_value_uint32(env, id_value, &id);
+    check_status(env, status);
+
+    resource = wl_client_get_object(client, id);
+
+    shm_buffer = wl_shm_buffer_get(resource);
+    if (shm_buffer) {
+        napi_value data_value, width_value, height_value, stride_value, format_value;
+
+        const void *data = wl_shm_buffer_get_data(shm_buffer);
+        const int32_t width = wl_shm_buffer_get_width(shm_buffer);
+        const int32_t height = wl_shm_buffer_get_height(shm_buffer);
+        const int32_t stride = wl_shm_buffer_get_stride(shm_buffer);
+        const int32_t format = wl_shm_buffer_get_format(shm_buffer);
+
+        napi_create_arraybuffer(env, (size_t) (stride * height), (void **) &data, &data_value);
+        check_status(env, status);
+        napi_create_int32(env, width, &width_value);
+        check_status(env, status);
+        napi_create_int32(env, height, &height_value);
+        check_status(env, status);
+        napi_create_int32(env, stride, &stride_value);
+        check_status(env, status);
+        napi_create_int32(env, format, &format_value);
+        check_status(env, status);
+
+        const napi_property_descriptor properties[] = {
+                {"buffer", NULL, NULL, NULL, NULL, data_value,   napi_default, NULL},
+                {"format", NULL, NULL, NULL, NULL, format_value, napi_default, NULL},
+                {"width",  NULL, NULL, NULL, NULL, width_value,  napi_default, NULL},
+                {"height", NULL, NULL, NULL, NULL, height_value, napi_default, NULL},
+                {"stride", NULL, NULL, NULL, NULL, stride_value, napi_default, NULL},
+        };
+
+        napi_create_object(env, &result);
+        check_status(env, status);
+        napi_define_properties(env, result, sizeof(properties) / sizeof(napi_property_descriptor), properties);
+        check_status(env, status);
+        return result;
+    } else {
+        napi_get_null(env, &result);
+        return result;
+    }
+}
+
+napi_value
 init(napi_env env, napi_value exports) {
     napi_status status;
-    napi_property_descriptor desc[19] = {
+    napi_property_descriptor desc[] = {
             DECLARE_NAPI_METHOD("createDisplay", createDisplay),
             DECLARE_NAPI_METHOD("destroyDisplay", destroyDisplay),
             DECLARE_NAPI_METHOD("addSocketAuto", addSocketAuto),
@@ -877,10 +940,11 @@ init(napi_env env, napi_value exports) {
             DECLARE_NAPI_METHOD("createWlMessage", createWlMessage),
             DECLARE_NAPI_METHOD("createWlInterface", createWlInterface),
             DECLARE_NAPI_METHOD("createWlResource", createWlResource),
-            DECLARE_NAPI_METHOD("destroyWlResourceSilently", destroyWlResourceSilently)
+            DECLARE_NAPI_METHOD("destroyWlResourceSilently", destroyWlResourceSilently),
+            DECLARE_NAPI_METHOD("getShmBuffer", getShmBuffer),
     };
 
-    status = napi_define_properties(env, exports, 19, desc);
+    status = napi_define_properties(env, exports, sizeof(desc)/sizeof(napi_property_descriptor), desc);
     check_status(env, status);
 
     return exports;
