@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "wayland-server-core-extensions.h"
 #include "connection.h"
@@ -27,6 +28,7 @@ struct client_destruction_listener {
     napi_ref wire_message_cb_ref;
     napi_ref wire_message_end_cb_ref;
     napi_ref registry_created_cb_ref;
+    napi_ref buffer_created_cb_ref;
 };
 
 static void
@@ -88,6 +90,12 @@ on_client_destroyed(struct wl_listener *listener, void *data) {
         }
         if (destruction_listener->wire_message_end_cb_ref) {
             napi_delete_reference(display_destruction_listener->env, destruction_listener->wire_message_end_cb_ref);
+        }
+        if (destruction_listener->registry_created_cb_ref) {
+            napi_delete_reference(display_destruction_listener->env, destruction_listener->registry_created_cb_ref);
+        }
+        if (destruction_listener->buffer_created_cb_ref) {
+            napi_delete_reference(display_destruction_listener->env, destruction_listener->buffer_created_cb_ref);
         }
     }
 }
@@ -205,6 +213,38 @@ on_registry_created(struct wl_client *client, struct wl_resource *registry, uint
 }
 
 void
+on_resource_created(struct wl_listener *listener, void *data) {
+    struct wl_resource *resource = data;
+    struct wl_client *client = wl_resource_get_client(resource);
+    struct client_destruction_listener *client_destruction_listener
+            = (struct client_destruction_listener *) wl_client_get_destroy_listener(client, on_client_destroyed);
+    struct display_destruction_listener *display_destruction_listener
+            = (struct display_destruction_listener *) wl_display_get_destroy_listener(wl_client_get_display(client),
+                                                                                      on_display_destroyed);
+
+    const char *itf_name = wl_resource_get_class(resource);
+    if (strcmp(itf_name, "wl_buffer") == 0 && client_destruction_listener->buffer_created_cb_ref) {
+        napi_status status;
+        napi_value cb, global, cb_result, resource_id_value;
+
+        status = napi_get_reference_value(display_destruction_listener->env,
+                                          client_destruction_listener->buffer_created_cb_ref,
+                                          &cb);
+        check_status(display_destruction_listener->env, status);
+
+        status = napi_get_global(display_destruction_listener->env, &global);
+        check_status(display_destruction_listener->env, status);
+
+        napi_create_uint32(display_destruction_listener->env, wl_resource_get_id(resource), &resource_id_value);
+        check_status(display_destruction_listener->env, status);
+
+        napi_value argv[] = {resource_id_value};
+        status = napi_call_function(display_destruction_listener->env, global, cb, 1, argv, &cb_result);
+        check_status(display_destruction_listener->env, status);
+    }
+}
+
+void
 on_client_created(struct wl_listener *listener, void *data) {
     struct wl_client *client = data;
     struct display_destruction_listener *display_destruction_listener;
@@ -221,11 +261,16 @@ on_client_created(struct wl_listener *listener, void *data) {
     destruction_listener->wire_message_end_cb_ref = NULL;
     destruction_listener->registry_created_cb_ref = NULL;
     destruction_listener->destroy_cb_ref = NULL;
-    wl_client_add_destroy_listener(client, &destruction_listener->listener);
+    destruction_listener->buffer_created_cb_ref = NULL;
 
+    wl_client_add_destroy_listener(client, &destruction_listener->listener);
     wl_client_set_wire_message_cb(client, on_wire_message);
     wl_client_set_wire_message_end_cb(client, on_wire_message_end);
     wl_client_set_registry_created_cb(client, on_registry_created);
+
+    struct wl_listener *resource_listener = malloc(sizeof(struct wl_listener));
+    resource_listener->notify = on_resource_created;
+    wl_client_add_resource_created_listener(client, resource_listener);
 
     status = napi_create_external(display_destruction_listener->env, client, NULL, NULL, &client_value);
     check_status(display_destruction_listener->env, status);
@@ -667,14 +712,47 @@ setRegistryCreatedCallback(napi_env env, napi_callback_info info) {
     check_status(env, status);
 
     client_value = argv[0];
-    napi_get_value_external(env, client_value, (void **) &client);
+    status = napi_get_value_external(env, client_value, (void **) &client);
+    check_status(env, status);
 
     js_cb = argv[1];
-    napi_create_reference(env, js_cb, 1, &js_cb_ref);
+    status = napi_create_reference(env, js_cb, 1, &js_cb_ref);
+    check_status(env, status);
 
     destruction_listener = (struct client_destruction_listener *) wl_client_get_destroy_listener(client,
                                                                                                  on_client_destroyed);
     destruction_listener->registry_created_cb_ref = js_cb_ref;
+}
+
+// expected arguments in order:
+// - Object client
+// - onBufferCreated(Object client, number bufferId):void
+// return:
+napi_value
+setBufferCreatedCallback(napi_env env, napi_callback_info info) {
+    napi_status status;
+    size_t argc = 2;
+    napi_value argv[argc], client_value, js_cb;
+    napi_ref js_cb_ref;
+
+    struct wl_client *client;
+    struct wl_display *display;
+    struct client_destruction_listener *destruction_listener;
+
+    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
+    check_status(env, status);
+
+    client_value = argv[0];
+    status = napi_get_value_external(env, client_value, (void **) &client);
+    check_status(env, status);
+
+    js_cb = argv[1];
+    status = napi_create_reference(env, js_cb, 1, &js_cb_ref);
+    check_status(env, status);
+
+    destruction_listener = (struct client_destruction_listener *) wl_client_get_destroy_listener(client,
+                                                                                                 on_client_destroyed);
+    destruction_listener->buffer_created_cb_ref = js_cb_ref;
 }
 
 napi_value
@@ -855,6 +933,7 @@ destroyWlResourceSilently(napi_env env, napi_callback_info info) {
     wl_resource_destroy_silently(resource);
 }
 
+// temp method - to be replaced by general encoding function
 napi_value
 getShmBuffer(napi_env env, napi_callback_info info) {
     napi_status status;
@@ -942,9 +1021,10 @@ init(napi_env env, napi_value exports) {
             DECLARE_NAPI_METHOD("createWlResource", createWlResource),
             DECLARE_NAPI_METHOD("destroyWlResourceSilently", destroyWlResourceSilently),
             DECLARE_NAPI_METHOD("getShmBuffer", getShmBuffer),
+            DECLARE_NAPI_METHOD("setBufferCreatedCallback", setBufferCreatedCallback),
     };
 
-    status = napi_define_properties(env, exports, sizeof(desc)/sizeof(napi_property_descriptor), desc);
+    status = napi_define_properties(env, exports, sizeof(desc) / sizeof(napi_property_descriptor), desc);
     check_status(env, status);
 
     return exports;

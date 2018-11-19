@@ -93,7 +93,12 @@ class Client extends DisplayRequests {
     if (optional && arg === 0) {
       return null
     } else {
-      return this._resources[arg]
+      const resource = this._resources[arg]
+      if (resource) {
+        return resource
+      } else {
+        throw new Error(`Unknown object id ${arg}`)
+      }
     }
   }
 
@@ -217,6 +222,27 @@ class Client extends DisplayRequests {
    * @param {Array<{buffer: ArrayBuffer, fds: Array<number>}>}wireMessages
    */
   onFlush (wireMessages) {}
+
+  /**
+   * @param {ArrayBuffer}incomingMessage
+   */
+  outOfBandMessage (incomingMessage) {
+    const dataView = new DataView(incomingMessage)
+    const objectId = dataView.getUint32(0, true)
+    const opcode = dataView.getUint32(Uint32Array.BYTES_PER_ELEMENT, true)
+
+    const outOfBandHandlers = this._outOfBandListeners[objectId]
+    if (outOfBandHandlers) {
+      const handler = outOfBandHandlers[opcode]
+      if (handler) {
+        handler(incomingMessage)
+      } else {
+        throw new Error(`Out of band object id: ${objectId} does not have listener for opcode: ${opcode}.`)
+      }
+    } else {
+      throw new Error(`Out of band object id: ${objectId} using opcode: ${opcode} not found.`)
+    }
+  }
 
   /**
    * Handle a received message from a client.
@@ -418,6 +444,38 @@ class Client extends DisplayRequests {
   }
 
   /**
+   * @param {number}objectId
+   * @param {number}opcode
+   * @param {function(ArrayBuffer):void}listener
+   */
+  setOutOfBandListener (objectId, opcode, listener) {
+    let opcodeHandlers = this._outOfBandListeners[objectId]
+    if (!opcodeHandlers) {
+      opcodeHandlers = {}
+      this._outOfBandListeners[objectId] = opcodeHandlers
+    }
+    opcodeHandlers[opcode] = listener
+  }
+
+  /**
+   * @param {number}objectId
+   * @param {number}opcode
+   */
+  removeOutOfBandListener (objectId, opcode) {
+    const opcodeHandlers = this._outOfBandListeners[objectId]
+    if (opcodeHandlers) {
+      delete opcodeHandlers[opcode]
+    }
+  }
+
+  /**
+   * @param {number}objectId
+   */
+  removeAllOutOfBandListeners (objectId) {
+    delete this._outOfBandListeners[objectId]
+  }
+
+  /**
    *
    * @param {Display} display
    */
@@ -465,6 +523,12 @@ class Client extends DisplayRequests {
      * @private
      */
     this._inMessages = []
+    /**
+     * Out of band listeners. Allows for messages & listeners not part of the ordinary wayland protocol.
+     * @type {Object.<number, Object.<number, function(ArrayBuffer):void>>}
+     * @private
+     */
+    this._outOfBandListeners = {}
   }
 }
 

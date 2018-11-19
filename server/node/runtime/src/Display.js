@@ -58,7 +58,7 @@ class Display {
   /**
    *
    * Invoked when a client binds to this global. Subclasses implement this method so they can instantiate a
-   * corresponding wfs.Resource subtype.
+   * corresponding Resource subtype.
    * @return {Client}
    */
   createClient () {

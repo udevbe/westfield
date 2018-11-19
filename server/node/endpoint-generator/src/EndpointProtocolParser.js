@@ -139,7 +139,7 @@ class EndpointProtocolParser {
     }
     interfaceOut.write(`\n]\n\n`)
 
-    interfaceOut.write(`module.export = Endpoint.createWlInterface('${itfName}', ${itfVersion}, requests, events)`)
+    interfaceOut.write(`module.exports = Endpoint.createWlInterface('${itfName}', ${itfVersion}, requests, events)\n`)
   }
 
   /**
