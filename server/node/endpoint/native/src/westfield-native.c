@@ -961,13 +961,13 @@ getShmBuffer(napi_env env, napi_callback_info info) {
     if (shm_buffer) {
         napi_value data_value, width_value, height_value, stride_value, format_value;
 
-        const void *data = wl_shm_buffer_get_data(shm_buffer);
+        void *data = wl_shm_buffer_get_data(shm_buffer);
         const int32_t width = wl_shm_buffer_get_width(shm_buffer);
         const int32_t height = wl_shm_buffer_get_height(shm_buffer);
         const int32_t stride = wl_shm_buffer_get_stride(shm_buffer);
         const int32_t format = wl_shm_buffer_get_format(shm_buffer);
 
-        napi_create_arraybuffer(env, (size_t) (stride * height), (void **) &data, &data_value);
+        napi_create_external_arraybuffer(env, data, (size_t) (stride * height), NULL, NULL, &data_value);
         check_status(env, status);
         napi_create_int32(env, width, &width_value);
         check_status(env, status);
