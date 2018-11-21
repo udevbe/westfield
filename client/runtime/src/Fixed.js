@@ -52,7 +52,7 @@ class Fixed {
   }
 
   /**
-   * use parseFixed instead
+   * use parse(..) instead
    * @param {number}raw
    */
   constructor (raw) {

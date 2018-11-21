@@ -282,10 +282,10 @@ class ProtocolParser {
     const importLines = []
     const codeLines = []
 
-    importLines.push('const {Proxy, WireFormat} = require(\'westfield-runtime-client\')\n')
-    importLines.push('const {parseFixed, uint, uintOptional, int, intOptional, fixed, \n' +
+    importLines.push('const { Proxy, WireFormat } = require(\'westfield-runtime-client\')\n')
+    importLines.push('const { uint, uintOptional, int, intOptional, fixed, \n' +
       '\tfixedOptional, object, objectOptional, newObject, string, \n' +
-      '\tstringOptional, array, arrayOptional} = WireFormat\n')
+      '\tstringOptional, array, arrayOptional } = WireFormat\n')
 
     // class docs
     const description = protocolItf.description
