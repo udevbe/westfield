@@ -48,7 +48,7 @@ class Registry extends RegistryRequests {
      * @type {number}
      * @private
      */
-    this._nextGlobalName = 0
+    this._nextGlobalName = 0xffff0000
   }
 
   /**
