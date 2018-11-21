@@ -346,6 +346,25 @@ class Client extends DisplayRequests {
     }
     delete this._resources[resource.id]
     this.displayResource.deleteId(resource.id)
+
+    this._resourceDestroyListeners.forEach(listener => listener(resource))
+  }
+
+  /**
+   * @param {function(Resource):void}listener
+   */
+  addResourceDestroyListener (listener) {
+    this._resourceDestroyListeners.push(listener)
+  }
+
+  /**
+   * @param {function(Resource):void}listener
+   */
+  removeResourceDestroyListener (listener) {
+    const idx = this._resourceDestroyListeners.indexOf(listener)
+    if (idx !== -1) {
+      this._resourceDestroyListeners.splice(idx, 1)
+    }
   }
 
   /**
@@ -529,6 +548,11 @@ class Client extends DisplayRequests {
      * @private
      */
     this._outOfBandListeners = {}
+    /**
+     * @type {Array<function(Resource):void>}
+     * @private
+     */
+    this._resourceDestroyListeners = []
   }
 }
 
