@@ -171,10 +171,11 @@ class Endpoint {
   }
 
   /**
-   * @param {Object}wlResource
+   * @param {Object}wlClient
+   * @param {number}wlResourceId
    */
-  static destroyWlResourceSilently (wlResource) {
-    westfieldNative.destroyWlResourceSilently(wlResource)
+  static destroyWlResourceSilently (wlClient, wlResourceId) {
+    westfieldNative.destroyWlResourceSilently(wlClient, wlResourceId)
   }
 
   /**

@@ -921,16 +921,24 @@ createWlResource(napi_env env, napi_callback_info info) {
 napi_value
 destroyWlResourceSilently(napi_env env, napi_callback_info info) {
     napi_status status;
-    size_t argc = 1;
-    napi_value argv[argc], resource_value;
-    struct wl_resource *resource;
+    size_t argc = 2;
+    napi_value argv[argc], client_value, id_value;
+    uint32_t id;
+    struct wl_client *client;
 
     status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
     check_status(env, status);
 
-    resource_value = argv[0];
-    napi_get_value_external(env, resource_value, (void **) &resource);
-    wl_resource_destroy_silently(resource);
+    client_value = argv[0];
+    id_value = argv[1];
+
+
+    napi_get_value_external(env, client_value, (void **) &client);
+    check_status(env, status);
+    napi_get_value_uint32(env, id_value, &id);
+    check_status(env, status);
+
+    wl_resource_destroy_silently(wl_client_get_object(client, id));
 }
 
 // temp method - to be replaced by general encoding function
