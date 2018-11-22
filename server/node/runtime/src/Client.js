@@ -237,10 +237,10 @@ class Client extends DisplayRequests {
       if (handler) {
         handler(incomingMessage)
       } else {
-        throw new Error(`Out of band object id: ${objectId} does not have listener for opcode: ${opcode}.`)
+        console.log(`Out of band object id: ${objectId} does not have listener for opcode: ${opcode}.`)
       }
     } else {
-      throw new Error(`Out of band object id: ${objectId} using opcode: ${opcode} not found.`)
+      console.log(`Out of band object id: ${objectId} using opcode: ${opcode} not found.`)
     }
   }
 
