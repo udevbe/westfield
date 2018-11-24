@@ -303,9 +303,8 @@ class Client extends DisplayRequests {
       return
     }
 
-    Object.values(this._resources).forEach((resource) => {
-      resource.destroy()
-    })
+    // destroy resources in descending order
+    Object.values(this._resources).sort((a, b) => a.id - b.id).forEach((resource) => resource.destroy())
 
     this._outMessages = null
     this._inMessages = null
