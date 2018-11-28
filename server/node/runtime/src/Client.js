@@ -494,11 +494,32 @@ class Client extends DisplayRequests {
   }
 
   /**
-   *
-   * @param {Display} display
+   * @param {number}objectId
+   * @param {number}opcode
+   * @param {ArrayBuffer}payload
    */
-  constructor (display) {
+  sendOutOfBand (objectId, opcode, payload) {
+    // FIXME there's the danger of sending > 16kb, which might fail in chrome. => Chunk the message
+    const sendBuffer = new ArrayBuffer(8 + payload.byteLength)
+    const dataView = new DataView(sendBuffer)
+    dataView.setUint32(0, objectId, true)
+    dataView.setUint32(4, opcode, true)
+    new Uint8Array(sendBuffer, 8).set(new Uint8Array(payload))
+
+    this._onOutOfBandSend(sendBuffer)
+  }
+
+  /**
+   * @param {Display} display
+   * @param {function(ArrayBuffer):void}onOutOfBandSend
+   */
+  constructor (display, onOutOfBandSend) {
     super()
+    /**
+     * @type {function(ArrayBuffer): void}
+     * @private
+     */
+    this._onOutOfBandSend = onOutOfBandSend
     /**
      * @type {Object.<number, Resource>}
      * @private
