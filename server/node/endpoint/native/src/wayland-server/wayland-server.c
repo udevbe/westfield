@@ -454,7 +454,6 @@ wl_client_connection_data(int fd, uint32_t mask, void *data) {
             wl_connection_copy_fds_in(connection, fds_in);
         }
 
-        // TODO when to close fds?
         client->wire_message_end_cb(client, fds_in, fds_in_size);
     }
 

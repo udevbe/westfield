@@ -2,13 +2,16 @@
 #include <node_api.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/mman.h>
 
 #include "wayland-server-core-extensions.h"
 #include "connection.h"
 
 #include "westfield-fdutils.h"
+#include "wayland-server/wayland-os.h"
 
 #define DECLARE_NAPI_METHOD(name, func)                          \
   { name, 0, func, 0, 0, 0, napi_default, 0 }
@@ -546,8 +549,8 @@ sendEvents(napi_env env, napi_callback_info info) {
     struct wl_connection *connection;
     void *messages;
     int *fds;
-    size_t messages_length, fds_byte_length, fds_length;
-
+    int dup_fd;
+    size_t messages_length, fds_length;
 
     status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
     check_status(env, status);
@@ -556,17 +559,17 @@ sendEvents(napi_env env, napi_callback_info info) {
     napi_get_value_external(env, client_value, (void **) &client);
 
     messages_value = argv[1];
-    napi_get_arraybuffer_info(env, messages_value, &messages, &messages_length);
+    napi_get_typedarray_info(env, messages_value, NULL, &messages_length, &messages, NULL, NULL);
 
     fds_value = argv[2];
-    napi_get_arraybuffer_info(env, fds_value, (void **) &fds, &fds_byte_length);
-    fds_length = fds_byte_length / sizeof(int);
+    napi_get_typedarray_info(env, fds_value, NULL, &fds_length, (void **) &fds, NULL, NULL);
 
     connection = wl_client_get_connection(client);
-    wl_connection_write(connection, messages, messages_length);
     for (int i = 0; i < fds_length; ++i) {
-        wl_connection_put_fd(connection, fds[i]);
+        dup_fd = wl_os_dupfd_cloexec(fds[i])
+        wl_connection_put_fd(connection, dup_fd, 0));
     }
+    wl_connection_write(connection, messages, messages_length * 4);
 }
 
 // expected arguments in order:
@@ -616,6 +619,7 @@ flush(napi_env env, napi_callback_info info) {
             display, on_display_destroyed);
     display_destruction_listener->env = env;
     wl_connection_flush(wl_client_get_connection(client));
+
     display_destruction_listener->env = NULL;
 }
 
@@ -652,17 +656,31 @@ getFd(napi_env env, napi_callback_info info) {
 napi_value
 createMemoryMappedFile(napi_env env, napi_callback_info info) {
     napi_status status;
+    void *contents;
     size_t argc = 1, size;
-    napi_value argv[argc], size_value, fd_value;
+    napi_value argv[argc], buffer_value, fd_value;
     int fd;
+    ssize_t written;
 
     status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
     check_status(env, status);
 
-    size_value = argv[0];
-    napi_get_value_uint32(env, size_value, (uint32_t *) &size);
+    buffer_value = argv[0];
+    napi_get_buffer_info(env, buffer_value, &contents, &size);
 
     fd = os_create_anonymous_file(size);
+    mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+    while (size > 0) {
+        // FIXME error handling
+        written = write(fd, contents, size);
+        if (written <= 0)
+            break;
+
+        contents += written;
+        size -= written;
+    }
+
     status = napi_create_int32(env, fd, &fd_value);
     check_status(env, status);
 

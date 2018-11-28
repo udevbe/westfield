@@ -87,8 +87,8 @@ class Endpoint {
 
   /**
    * @param {Object}wlClient
-   * @param {ArrayBuffer}wireMessages
-   * @param {ArrayBuffer}fdsOut
+   * @param {Uint32Array}wireMessages
+   * @param {Uint32Array}fdsOut
    */
   static sendEvents (wlClient, wireMessages, fdsOut) {
     westfieldNative.sendEvents(wlClient, wireMessages, fdsOut)
@@ -198,6 +198,13 @@ class Endpoint {
    */
   static setBufferCreatedCallback (wlClient, onBufferCreated) {
     westfieldNative.setBufferCreatedCallback(wlClient, onBufferCreated)
+  }
+
+  /**
+   * @param {Buffer}contents
+   */
+  static createMemoryMappedFile (contents) {
+    return westfieldNative.createMemoryMappedFile(contents)
   }
 }
 
