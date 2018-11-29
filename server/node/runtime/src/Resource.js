@@ -24,7 +24,7 @@ SOFTWARE.
 
 'use strict'
 
-const {string} = require('./WireFormat')
+const { string } = require('./WireFormat')
 
 class Resource {
   /**
@@ -76,6 +76,8 @@ class Resource {
    */
   postError (code, msg) {
     this.client.displayResource.error(this, code, msg)
+    this.client.flush()
+    this.client.close()
   }
 
   destroy () {
