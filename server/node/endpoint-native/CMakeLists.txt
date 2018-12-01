@@ -38,7 +38,7 @@ function(PARSE_CMAKEJS_PROPERTIES)
 endfunction(PARSE_CMAKEJS_PROPERTIES)
 
 project(westfield-native C)
-set(CMAKE_BUILD_TYPE "debug")
+#set(CMAKE_BUILD_TYPE "debug")
 
 PARSE_CMAKEJS_PROPERTIES()
 

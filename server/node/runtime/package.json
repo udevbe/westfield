@@ -1,6 +1,6 @@
 {
   "name": "westfield-runtime-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "index.js",
   "description": "Wayland HTML5 runtime for Node.js",
   "repository": {
@@ -27,10 +27,6 @@
     "test": "mocha ./test/*.js --timeout 10000"
   },
   "devDependencies": {
-    "westfield-endpoint": "file:./../endpoint",
-    "epoll": "^2.0.1",
-    "mocha": "^5.2.0",
-    "sinon": "^6.3.4",
     "standard": "^12.0.1"
   }
 }
