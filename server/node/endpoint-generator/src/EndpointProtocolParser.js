@@ -32,7 +32,7 @@ const camelCase = require('camelcase')
 const ProtocolArguments = require('./EndpointProtocolArguments')
 
 class EndpointProtocolParser {
-  static _parseMessageInterfaces (itfMessage) {
+  static _parseMessageInterfaces (itfMessage, itfName) {
     let argInterfaces = '['
     if (itfMessage.hasOwnProperty('arg')) {
       const evArgs = itfMessage.arg
@@ -43,7 +43,11 @@ class EndpointProtocolParser {
         if (argType === 'object' || argType === 'new_id') {
           const argInterface = arg.$.interface
           if (argInterface != null) {
-            interface_ = `require('./${argInterface}_interface')`
+            if (argInterface === itfName) {
+              interface_ = 'wlInterface'
+            } else {
+              interface_ = `require('./${argInterface}_interface')`
+            }
           }
         }
 
@@ -109,6 +113,8 @@ class EndpointProtocolParser {
     const interfaceOut = fs.createWriteStream(path.join(outDir, `${resourceName}.js`))
 
     interfaceOut.write(`const { Endpoint } = require('westfield-endpoint')\n\n`)
+    interfaceOut.write(`const wlInterface = Endpoint.createWlInterface()\n`)
+    interfaceOut.write(`module.exports = wlInterface\n`)
     interfaceOut.write(`const requests = [\n`)
     if (protocolItf.hasOwnProperty('request')) {
       const itfRequests = protocolItf.request
@@ -119,7 +125,7 @@ class EndpointProtocolParser {
         if (i !== 0) {
           interfaceOut.write(', \n')
         }
-        interfaceOut.write(`\tEndpoint.createWlMessage('${messageName}', '${signature}', ${EndpointProtocolParser._parseMessageInterfaces(itfRequest)})`)
+        interfaceOut.write(`\tEndpoint.createWlMessage('${messageName}', '${signature}', ${EndpointProtocolParser._parseMessageInterfaces(itfRequest, itfName)})`)
       }
     }
     interfaceOut.write(`\n]\n\n`)
@@ -134,12 +140,12 @@ class EndpointProtocolParser {
         if (i !== 0) {
           interfaceOut.write(', \n')
         }
-        interfaceOut.write(`\tEndpoint.createWlMessage('${messageName}', '${signature}', ${EndpointProtocolParser._parseMessageInterfaces(itfEvent)})`)
+        interfaceOut.write(`\tEndpoint.createWlMessage('${messageName}', '${signature}', ${EndpointProtocolParser._parseMessageInterfaces(itfEvent, itfName)})`)
       }
     }
     interfaceOut.write(`\n]\n\n`)
 
-    interfaceOut.write(`module.exports = Endpoint.createWlInterface('${itfName}', ${itfVersion}, requests, events)\n`)
+    interfaceOut.write(`Endpoint.initWlInterface(wlInterface, '${itfName}', ${itfVersion}, requests, events)\n`)
   }
 
   /**

@@ -149,14 +149,22 @@ class Endpoint {
   }
 
   /**
+   * @param {Object}wlInterface
    * @param {string}name
    * @param {number}version
    * @param {Array<Object>}wlMessageRequests
    * @param {Array<Object>}wlMessageEvents
    * @return {Object}
    */
-  static createWlInterface (name, version, wlMessageRequests, wlMessageEvents) {
-    return westfieldNative.createWlInterface(name, version, wlMessageRequests, wlMessageEvents)
+  static initWlInterface (wlInterface, name, version, wlMessageRequests, wlMessageEvents) {
+    westfieldNative.initWlInterface(wlInterface, name, version, wlMessageRequests, wlMessageEvents)
+  }
+
+  /**
+   * @return {Object}
+   */
+  static createWlInterface () {
+    return westfieldNative.createWlInterface()
   }
 
   /**

@@ -16,6 +16,25 @@
 #define DECLARE_NAPI_METHOD(name, func)                          \
   { name, 0, func, 0, 0, 0, napi_default, 0 }
 
+#define GET_AND_THROW_LAST_ERROR(env)                                    \
+    const napi_extended_error_info *error_info;                          \
+    napi_get_last_error_info((env), &error_info);                        \
+    bool is_pending;                                                     \
+    napi_is_exception_pending((env), &is_pending);                       \
+    /* If an exception is already pending, don't rethrow it */           \
+    if (!is_pending) {                                                   \
+      const char* error_message = error_info->error_message != NULL ?    \
+        error_info->error_message :                                      \
+        "empty error message";                                           \
+      napi_throw_error((env), NULL, error_message);                      \
+    }
+
+#define NAPI_CALL(env, the_call) {                                       \
+    if ((the_call) != napi_ok) {                                         \
+        GET_AND_THROW_LAST_ERROR((env));                                 \
+    }                                                                    \
+}
+
 struct display_destruction_listener {
     struct wl_listener listener;
     napi_env env;
@@ -34,16 +53,6 @@ struct client_destruction_listener {
     napi_ref buffer_created_cb_ref;
 };
 
-static void
-check_status(napi_env env, napi_status status) {
-    if (status != napi_ok) {
-        const napi_extended_error_info *result;
-        assert(napi_get_last_error_info(env, &result) == napi_ok);
-        printf("%s\n", result->error_message);
-        assert(0);
-    }
-}
-
 
 void
 finalize_cb(napi_env env, void *finalize_data, void *finalize_hint) {
@@ -55,9 +64,9 @@ on_display_destroyed(struct wl_listener *listener, void *data) {
     struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) listener;
     napi_env env = display_destruction_listener->env;
 
-    napi_delete_reference(env, display_destruction_listener->client_creation_cb_ref);
-    napi_delete_reference(env, display_destruction_listener->global_created_cb_ref);
-    napi_delete_reference(env, display_destruction_listener->global_destroyed_cb_ref);
+    NAPI_CALL(env, napi_delete_reference(env, display_destruction_listener->client_creation_cb_ref));
+    NAPI_CALL(env, napi_delete_reference(env, display_destruction_listener->global_created_cb_ref));
+    NAPI_CALL(env, napi_delete_reference(env, display_destruction_listener->global_destroyed_cb_ref));
 }
 
 void
@@ -67,38 +76,35 @@ on_client_destroyed(struct wl_listener *listener, void *data) {
         struct wl_client *client = data;
         struct display_destruction_listener *display_destruction_listener;
         napi_value global, client_value, cb_result, cb;
-        napi_status status;
+        napi_env env;
+
 
         display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
                 wl_client_get_display(client), on_display_destroyed);
+        env = display_destruction_listener->env;
 
-        status = napi_get_reference_value(display_destruction_listener->env, destruction_listener->js_object,
-                                          &client_value);
-        check_status(display_destruction_listener->env, status);
+        NAPI_CALL(env, napi_get_reference_value(env, destruction_listener->js_object, &client_value));
         napi_value argv[1] = {client_value};
 
-        status = napi_get_reference_value(display_destruction_listener->env, destruction_listener->destroy_cb_ref, &cb);
-        check_status(display_destruction_listener->env, status);
-        status = napi_get_global(display_destruction_listener->env, &global);
-        check_status(display_destruction_listener->env, status);
-        status = napi_call_function(display_destruction_listener->env, global, cb, 1, argv, &cb_result);
-        check_status(display_destruction_listener->env, status);
+        NAPI_CALL(env, napi_get_reference_value(env, destruction_listener->destroy_cb_ref, &cb));
+        NAPI_CALL(env, napi_get_global(env, &global));
+        NAPI_CALL(env, napi_call_function(env, global, cb, 1, argv, &cb_result));
 
-        napi_delete_reference(display_destruction_listener->env, destruction_listener->js_object);
+        napi_delete_reference(env, destruction_listener->js_object);
         if (destruction_listener->destroy_cb_ref) {
-            napi_delete_reference(display_destruction_listener->env, destruction_listener->destroy_cb_ref);
+            NAPI_CALL(env, napi_delete_reference(env, destruction_listener->destroy_cb_ref));
         }
         if (destruction_listener->wire_message_cb_ref) {
-            napi_delete_reference(display_destruction_listener->env, destruction_listener->wire_message_cb_ref);
+            NAPI_CALL(env, napi_delete_reference(env, destruction_listener->wire_message_cb_ref));
         }
         if (destruction_listener->wire_message_end_cb_ref) {
-            napi_delete_reference(display_destruction_listener->env, destruction_listener->wire_message_end_cb_ref);
+            NAPI_CALL(env, napi_delete_reference(env, destruction_listener->wire_message_end_cb_ref));
         }
         if (destruction_listener->registry_created_cb_ref) {
-            napi_delete_reference(display_destruction_listener->env, destruction_listener->registry_created_cb_ref);
+            NAPI_CALL(env, napi_delete_reference(env, destruction_listener->registry_created_cb_ref));
         }
         if (destruction_listener->buffer_created_cb_ref) {
-            napi_delete_reference(display_destruction_listener->env, destruction_listener->buffer_created_cb_ref);
+            NAPI_CALL(env, napi_delete_reference(env, destruction_listener->buffer_created_cb_ref));
         }
     }
 }
@@ -112,36 +118,23 @@ on_wire_message(struct wl_client *client, int32_t *wire_message,
         struct display_destruction_listener *display_destruction_listener;
         uint32_t cb_result_consumed;
         napi_value wire_message_value, client_value, object_id_value, opcode_value, global, cb_result, cb;
-        napi_status status;
+        napi_env env;
 
         display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
                 wl_client_get_display(client), on_display_destroyed);
+        env = display_destruction_listener->env;
 
-        status = napi_create_external_arraybuffer(display_destruction_listener->env, wire_message, wire_message_size,
-                                                  finalize_cb, NULL,
-                                                  &wire_message_value);
-        check_status(display_destruction_listener->env, status);
-
-        napi_create_uint32(display_destruction_listener->env, (uint32_t) object_id, &object_id_value);
-        check_status(display_destruction_listener->env, status);
-
-        napi_create_uint32(display_destruction_listener->env, (uint32_t) opcode, &opcode_value);
-        check_status(display_destruction_listener->env, status);
-
-        status = napi_get_global(display_destruction_listener->env, &global);
-        check_status(display_destruction_listener->env, status);
-        status = napi_get_reference_value(display_destruction_listener->env, destruction_listener->js_object,
-                                          &client_value);
-        check_status(display_destruction_listener->env, status);
+        NAPI_CALL(env, napi_create_external_arraybuffer(env, wire_message, wire_message_size, finalize_cb, NULL,
+                                                        &wire_message_value));
+        NAPI_CALL(env, napi_create_uint32(env, (uint32_t) object_id, &object_id_value));
+        NAPI_CALL(env, napi_create_uint32(env, (uint32_t) opcode, &opcode_value));
+        NAPI_CALL(env, napi_get_global(env, &global));
+        NAPI_CALL(env, napi_get_reference_value(env, destruction_listener->js_object, &client_value));
         napi_value argv[4] = {client_value, wire_message_value, object_id_value, opcode_value};
 
-        status = napi_get_reference_value(display_destruction_listener->env, destruction_listener->wire_message_cb_ref,
-                                          &cb);
-        check_status(display_destruction_listener->env, status);
-        status = napi_call_function(display_destruction_listener->env, global, cb, 4, argv, &cb_result);
-        check_status(display_destruction_listener->env, status);
-
-        napi_get_value_uint32(display_destruction_listener->env, cb_result, &cb_result_consumed);
+        NAPI_CALL(env, napi_get_reference_value(env, destruction_listener->wire_message_cb_ref, &cb));
+        NAPI_CALL(env, napi_call_function(env, global, cb, 4, argv, &cb_result));
+        NAPI_CALL(env, napi_get_value_uint32(env, cb_result, &cb_result_consumed));
         return cb_result_consumed;
     } else {
         return 0;
@@ -155,33 +148,24 @@ on_wire_message_end(struct wl_client *client, int *fds_in, size_t fds_in_size) {
     if (destruction_listener->wire_message_end_cb_ref) {
         struct display_destruction_listener *display_destruction_listener;
         napi_value client_value, fds_value = NULL, global, cb_result, cb;
-        napi_status status;
+        napi_env env;
 
         display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
                 wl_client_get_display(client), on_display_destroyed);
+        env = display_destruction_listener->env;
 
         if (fds_in_size) {
-            status = napi_create_external_arraybuffer(display_destruction_listener->env, fds_in, fds_in_size,
-                                                      finalize_cb, NULL, &fds_value);
-            check_status(display_destruction_listener->env, status);
+            NAPI_CALL(env, napi_create_external_arraybuffer(env, fds_in, fds_in_size, finalize_cb, NULL, &fds_value));
         } else {
-            napi_get_null(display_destruction_listener->env, &fds_value);
+            NAPI_CALL(env, napi_get_null(env, &fds_value));
         }
 
-        status = napi_get_global(display_destruction_listener->env, &global);
-        check_status(display_destruction_listener->env, status);
-        status = napi_get_reference_value(display_destruction_listener->env, destruction_listener->js_object,
-                                          &client_value);
-        check_status(display_destruction_listener->env, status);
-
+        NAPI_CALL(env, napi_get_global(env, &global));
+        NAPI_CALL(env, napi_get_reference_value(env, destruction_listener->js_object, &client_value));
         napi_value argv[2] = {client_value, fds_value};
 
-        status = napi_get_reference_value(display_destruction_listener->env,
-                                          destruction_listener->wire_message_end_cb_ref,
-                                          &cb);
-        check_status(display_destruction_listener->env, status);
-        status = napi_call_function(display_destruction_listener->env, global, cb, 2, argv, &cb_result);
-        check_status(display_destruction_listener->env, status);
+        NAPI_CALL(env, napi_get_reference_value(env, destruction_listener->wire_message_end_cb_ref, &cb));
+        NAPI_CALL(env, napi_call_function(env, global, cb, 2, argv, &cb_result));
     }
 }
 
@@ -194,24 +178,16 @@ on_registry_created(struct wl_client *client, struct wl_resource *registry, uint
     if (destruction_listener->registry_created_cb_ref) {
         struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
                 wl_client_get_display(client), on_display_destroyed);
-        napi_status status;
+        napi_env env = display_destruction_listener->env;
         napi_value cb, registry_value, registry_id_value, global, cb_result;
 
-        status = napi_create_external(display_destruction_listener->env, registry, NULL, NULL, &registry_value);
-        check_status(display_destruction_listener->env, status);
-        napi_create_uint32(display_destruction_listener->env, registry_id, &registry_id_value);
+        NAPI_CALL(env, napi_create_external(env, registry, NULL, NULL, &registry_value));
+        NAPI_CALL(env, napi_create_uint32(env, registry_id, &registry_id_value));
         napi_value argv[2] = {registry_value, registry_id_value};
 
-        status = napi_get_reference_value(display_destruction_listener->env,
-                                          destruction_listener->registry_created_cb_ref,
-                                          &cb);
-        check_status(display_destruction_listener->env, status);
-
-        status = napi_get_global(display_destruction_listener->env, &global);
-        check_status(display_destruction_listener->env, status);
-
-        status = napi_call_function(display_destruction_listener->env, global, cb, 2, argv, &cb_result);
-        check_status(display_destruction_listener->env, status);
+        NAPI_CALL(env, napi_get_reference_value(env, destruction_listener->registry_created_cb_ref, &cb));
+        NAPI_CALL(env, napi_get_global(env, &global));
+        NAPI_CALL(env, napi_call_function(env, global, cb, 2, argv, &cb_result));
     }
 }
 
@@ -227,23 +203,15 @@ on_resource_created(struct wl_listener *listener, void *data) {
 
     const char *itf_name = wl_resource_get_class(resource);
     if (strcmp(itf_name, "wl_buffer") == 0 && client_destruction_listener->buffer_created_cb_ref) {
-        napi_status status;
+        napi_env env = display_destruction_listener->env;
         napi_value cb, global, cb_result, resource_id_value;
 
-        status = napi_get_reference_value(display_destruction_listener->env,
-                                          client_destruction_listener->buffer_created_cb_ref,
-                                          &cb);
-        check_status(display_destruction_listener->env, status);
-
-        status = napi_get_global(display_destruction_listener->env, &global);
-        check_status(display_destruction_listener->env, status);
-
-        napi_create_uint32(display_destruction_listener->env, wl_resource_get_id(resource), &resource_id_value);
-        check_status(display_destruction_listener->env, status);
+        NAPI_CALL(env, napi_get_reference_value(env, client_destruction_listener->buffer_created_cb_ref, &cb));
+        NAPI_CALL(env, napi_get_global(env, &global));
+        NAPI_CALL(env, napi_create_uint32(env, wl_resource_get_id(resource), &resource_id_value));
 
         napi_value argv[] = {resource_id_value};
-        status = napi_call_function(display_destruction_listener->env, global, cb, 1, argv, &cb_result);
-        check_status(display_destruction_listener->env, status);
+        NAPI_CALL(env, napi_call_function(env, global, cb, 1, argv, &cb_result));
     }
 }
 
@@ -253,10 +221,11 @@ on_client_created(struct wl_listener *listener, void *data) {
     struct display_destruction_listener *display_destruction_listener;
     napi_value client_value, global, cb_result, cb;
     napi_ref client_ref;
-    napi_status status;
+    napi_env env;
 
     display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
             wl_client_get_display(client), on_display_destroyed);
+    env = display_destruction_listener->env;
 
     struct client_destruction_listener *destruction_listener = malloc(sizeof(struct client_destruction_listener));
     destruction_listener->listener.notify = on_client_destroyed;
@@ -275,47 +244,43 @@ on_client_created(struct wl_listener *listener, void *data) {
     resource_listener->notify = on_resource_created;
     wl_client_add_resource_created_listener(client, resource_listener);
 
-    status = napi_create_external(display_destruction_listener->env, client, NULL, NULL, &client_value);
-    check_status(display_destruction_listener->env, status);
-    status = napi_create_reference(display_destruction_listener->env, client_value, 1, &client_ref);
-    check_status(display_destruction_listener->env, status);
+    NAPI_CALL(env, napi_create_external(env, client, NULL, NULL, &client_value));
+    NAPI_CALL(env, napi_create_reference(env, client_value, 1, &client_ref));
     destruction_listener->js_object = client_ref;
 
-    status = napi_get_global(display_destruction_listener->env, &global);
-    check_status(display_destruction_listener->env, status);
+    NAPI_CALL(env, napi_get_global(env, &global));
     napi_value argv[1] = {client_value};
-    status = napi_get_reference_value(display_destruction_listener->env,
-                                      display_destruction_listener->client_creation_cb_ref, &cb);
-    check_status(display_destruction_listener->env, status);
-    status = napi_call_function(display_destruction_listener->env, global, cb, 1, argv, &cb_result);
-    check_status(display_destruction_listener->env, status);
+    NAPI_CALL(env, napi_get_reference_value(env, display_destruction_listener->client_creation_cb_ref, &cb));
+    NAPI_CALL(env, napi_call_function(env, global, cb, 1, argv, &cb_result));
 }
 
 // expected arguments in order:
 // - Object client
 // - onWireMessage(Object client, ArrayBuffer wireMessage, ArrayBuffer fdsIn):void
 // return:
+// - void
 napi_value
 setClientDestroyedCallback(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 2;
-    napi_value argv[argc], client_value, js_cb;
+    napi_value argv[argc], client_value, js_cb, return_value;
     napi_ref js_cb_ref;
     struct wl_client *client;
     struct client_destruction_listener *destruction_listener;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
 
     client_value = argv[0];
-    napi_get_value_external(env, client_value, (void **) &client);
+    NAPI_CALL(env, napi_get_value_external(env, client_value, (void **) &client));
 
     js_cb = argv[1];
-    napi_create_reference(env, js_cb, 1, &js_cb_ref);
+    NAPI_CALL(env, napi_create_reference(env, js_cb, 1, &js_cb_ref));
 
     destruction_listener = (struct client_destruction_listener *) wl_client_get_destroy_listener(client,
                                                                                                  on_client_destroyed);
     destruction_listener->destroy_cb_ref = js_cb_ref;
+
+    NAPI_CALL(env, napi_get_undefined(env, &return_value));
+    return return_value;
 }
 
 
@@ -323,54 +288,58 @@ setClientDestroyedCallback(napi_env env, napi_callback_info info) {
 // - Object client
 // - onWireMessage(Object client, ArrayBuffer wireMessage, number objectId, number opcode):void
 // return:
+// - void
 napi_value
 setWireMessageCallback(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 2;
-    napi_value argv[argc], client_value, js_cb;
+    napi_value argv[argc], client_value, js_cb, return_value;
     napi_ref js_cb_ref;
     struct wl_client *client;
     struct client_destruction_listener *destruction_listener;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
 
     client_value = argv[0];
-    napi_get_value_external(env, client_value, (void **) &client);
+    NAPI_CALL(env, napi_get_value_external(env, client_value, (void **) &client));
 
     js_cb = argv[1];
-    napi_create_reference(env, js_cb, 1, &js_cb_ref);
+    NAPI_CALL(env, napi_create_reference(env, js_cb, 1, &js_cb_ref));
 
     destruction_listener = (struct client_destruction_listener *) wl_client_get_destroy_listener(client,
                                                                                                  on_client_destroyed);
     destruction_listener->wire_message_cb_ref = js_cb_ref;
+
+    NAPI_CALL(env, napi_get_undefined(env, &return_value));
+    return return_value;
 }
 
 // expected arguments in order:
 // - Object client
 // - onWireMessage(Object client, ArrayBuffer fdsIn):void
 // return:
+// - void
 napi_value
 setWireMessageEndCallback(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 2;
-    napi_value argv[argc], client_value, js_cb;
+    napi_value argv[argc], client_value, js_cb, return_value;
     napi_ref js_cb_ref;
     struct wl_client *client;
     struct client_destruction_listener *destruction_listener;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
 
     client_value = argv[0];
-    napi_get_value_external(env, client_value, (void **) &client);
+    NAPI_CALL(env, napi_get_value_external(env, client_value, (void **) &client));
 
     js_cb = argv[1];
-    napi_create_reference(env, js_cb, 1, &js_cb_ref);
+    NAPI_CALL(env, napi_create_reference(env, js_cb, 1, &js_cb_ref));
 
     destruction_listener = (struct client_destruction_listener *) wl_client_get_destroy_listener(client,
                                                                                                  on_client_destroyed);
     destruction_listener->wire_message_end_cb_ref = js_cb_ref;
+
+    NAPI_CALL(env, napi_get_undefined(env, &return_value));
+    return return_value;
 }
 
 
@@ -379,19 +348,13 @@ on_global_created(struct wl_display *display, uint32_t global_name) {
     struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
             display, on_display_destroyed);
     napi_value cb, global, global_name_value, cb_result;
-    napi_status status;
+    napi_env env = display_destruction_listener->env;
 
-    status = napi_get_reference_value(display_destruction_listener->env,
-                                      display_destruction_listener->global_created_cb_ref,
-                                      &cb);
-    check_status(display_destruction_listener->env, status);
-
-    status = napi_get_global(display_destruction_listener->env, &global);
-    check_status(display_destruction_listener->env, status);
-    napi_create_uint32(display_destruction_listener->env, global_name, &global_name_value);
+    NAPI_CALL(env, napi_get_reference_value(env, display_destruction_listener->global_created_cb_ref, &cb));
+    NAPI_CALL(env, napi_get_global(env, &global));
+    NAPI_CALL(env, napi_create_uint32(env, global_name, &global_name_value));
     napi_value argv[1] = {global_name_value};
-    status = napi_call_function(display_destruction_listener->env, global, cb, 1, argv, &cb_result);
-    check_status(display_destruction_listener->env, status);
+    NAPI_CALL(env, napi_call_function(env, global, cb, 1, argv, &cb_result));
 }
 
 void
@@ -399,19 +362,13 @@ on_global_destroyed(struct wl_display *display, uint32_t global_name) {
     struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
             display, on_display_destroyed);
     napi_value cb, global, global_name_value, cb_result;
-    napi_status status;
+    napi_env env = display_destruction_listener->env;
 
-    status = napi_get_reference_value(display_destruction_listener->env,
-                                      display_destruction_listener->global_destroyed_cb_ref,
-                                      &cb);
-    check_status(display_destruction_listener->env, status);
-
-    status = napi_get_global(display_destruction_listener->env, &global);
-    check_status(display_destruction_listener->env, status);
-    napi_create_uint32(display_destruction_listener->env, global_name, &global_name_value);
+    NAPI_CALL(env, napi_get_reference_value(env, display_destruction_listener->global_destroyed_cb_ref, &cb));
+    NAPI_CALL(env, napi_get_global(env, &global));
+    NAPI_CALL(env, napi_create_uint32(env, global_name, &global_name_value));
     napi_value argv[1] = {global_name_value};
-    status = napi_call_function(display_destruction_listener->env, global, cb, 1, argv, &cb_result);
-    check_status(display_destruction_listener->env, status);
+    NAPI_CALL(env, napi_call_function(env, global, cb, 1, argv, &cb_result));
 }
 
 // expected arguments in order:
@@ -422,14 +379,12 @@ on_global_destroyed(struct wl_display *display, uint32_t global_name) {
 // - Object display
 napi_value
 createDisplay(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 3;
     napi_value argv[argc], display_value;
     struct wl_listener *client_creation_listener;
     struct display_destruction_listener *display_destruction_listener;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
 
     client_creation_listener = malloc(sizeof(struct wl_listener));
     client_creation_listener->notify = on_client_created;
@@ -438,12 +393,9 @@ createDisplay(napi_env env, napi_callback_info info) {
     display_destruction_listener->listener.notify = on_display_destroyed;
     display_destruction_listener->env = env;
 
-    status = napi_create_reference(env, argv[0], 1, &display_destruction_listener->client_creation_cb_ref);
-    check_status(env, status);
-    status = napi_create_reference(env, argv[1], 1, &display_destruction_listener->global_created_cb_ref);
-    check_status(env, status);
-    status = napi_create_reference(env, argv[2], 1, &display_destruction_listener->global_destroyed_cb_ref);
-    check_status(env, status);
+    NAPI_CALL(env, napi_create_reference(env, argv[0], 1, &display_destruction_listener->client_creation_cb_ref));
+    NAPI_CALL(env, napi_create_reference(env, argv[1], 1, &display_destruction_listener->global_created_cb_ref));
+    NAPI_CALL(env, napi_create_reference(env, argv[2], 1, &display_destruction_listener->global_destroyed_cb_ref));
 
     struct wl_display *display = wl_display_create();
     wl_display_add_destroy_listener(display, &display_destruction_listener->listener);
@@ -451,8 +403,7 @@ createDisplay(napi_env env, napi_callback_info info) {
     wl_display_set_global_created_cb(display, on_global_created);
     wl_display_set_global_destroyed_cb(display, on_global_destroyed);
 
-    napi_create_external(env, display, NULL, NULL, &display_value);
-    display_destruction_listener->env = NULL;
+    NAPI_CALL(env, napi_create_external(env, display, NULL, NULL, &display_value));
     return display_value;
 }
 
@@ -462,13 +413,11 @@ createDisplay(napi_env env, napi_callback_info info) {
 // - string
 napi_value
 addSocketAuto(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 1;
     napi_value argv[argc], display_value, display_name_value;
     struct wl_display *display;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
 
     display_value = argv[0];
     napi_get_value_external(env, display_value, (void **) &display);
@@ -477,8 +426,8 @@ addSocketAuto(napi_env env, napi_callback_info info) {
     display_destruction_listener->env = env;
 
     const char *display_name = wl_display_add_socket_auto(display);
-    napi_create_string_latin1(env, display_name, NAPI_AUTO_LENGTH, &display_name_value);
-    display_destruction_listener->env = NULL;
+    NAPI_CALL(env, napi_create_string_latin1(env, display_name, NAPI_AUTO_LENGTH, &display_name_value));
+
     return display_name_value;
 }
 
@@ -488,16 +437,14 @@ addSocketAuto(napi_env env, napi_callback_info info) {
 // - void
 napi_value
 destroyDisplay(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 1;
-    napi_value argv[argc], display_value;
+    napi_value argv[argc], display_value, return_value;
     struct wl_display *display;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
 
     display_value = argv[0];
-    napi_get_value_external(env, display_value, (void **) &display);
+    NAPI_CALL(env, napi_get_value_external(env, display_value, (void **) &display));
 
     struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
             display, on_display_destroyed);
@@ -505,7 +452,9 @@ destroyDisplay(napi_env env, napi_callback_info info) {
     wl_display_terminate(display);
     wl_display_destroy_clients(display);
     wl_display_destroy(display);
-    display_destruction_listener->env = NULL;
+
+    NAPI_CALL(env, napi_get_undefined(env, &return_value));
+    return return_value;
 }
 
 // expected arguments in order:
@@ -514,14 +463,12 @@ destroyDisplay(napi_env env, napi_callback_info info) {
 // - void
 napi_value
 destroyClient(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 1;
-    napi_value argv[argc], client_value;
+    napi_value argv[argc], client_value, return_value;
     struct wl_client *client;
     struct wl_display *display;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
 
     client_value = argv[0];
     napi_get_value_external(env, client_value, (void **) &client);
@@ -531,7 +478,9 @@ destroyClient(napi_env env, napi_callback_info info) {
             display, on_display_destroyed);
     display_destruction_listener->env = env;
     wl_client_destroy(client);
-    display_destruction_listener->env = NULL;
+
+    NAPI_CALL(env, napi_get_undefined(env, &return_value));
+    return return_value;
 }
 
 // expected arguments in order:
@@ -542,9 +491,8 @@ destroyClient(napi_env env, napi_callback_info info) {
 // - void
 napi_value
 sendEvents(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 3;
-    napi_value argv[argc], client_value, messages_value, fds_value;
+    napi_value argv[argc], client_value, messages_value, fds_value, return_value;
     struct wl_client *client;
     struct wl_connection *connection;
     void *messages;
@@ -552,17 +500,14 @@ sendEvents(napi_env env, napi_callback_info info) {
     int dup_fd;
     size_t messages_length, fds_length;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
-
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
     client_value = argv[0];
-    napi_get_value_external(env, client_value, (void **) &client);
-
     messages_value = argv[1];
-    napi_get_typedarray_info(env, messages_value, NULL, &messages_length, &messages, NULL, NULL);
-
     fds_value = argv[2];
-    napi_get_typedarray_info(env, fds_value, NULL, &fds_length, (void **) &fds, NULL, NULL);
+
+    NAPI_CALL(env, napi_get_value_external(env, client_value, (void **) &client));
+    NAPI_CALL(env, napi_get_typedarray_info(env, messages_value, NULL, &messages_length, &messages, NULL, NULL));
+    NAPI_CALL(env, napi_get_typedarray_info(env, fds_value, NULL, &fds_length, (void **) &fds, NULL, NULL));
 
     connection = wl_client_get_connection(client);
     for (int i = 0; i < fds_length; ++i) {
@@ -570,6 +515,9 @@ sendEvents(napi_env env, napi_callback_info info) {
         wl_connection_put_fd(connection, dup_fd);
     }
     wl_connection_write(connection, messages, messages_length * 4);
+
+    NAPI_CALL(env, napi_get_undefined(env, &return_value));
+    return return_value;
 }
 
 // expected arguments in order:
@@ -578,13 +526,11 @@ sendEvents(napi_env env, napi_callback_info info) {
 // - void
 napi_value
 dispatchRequests(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 1;
-    napi_value argv[argc], display_value;
+    napi_value argv[argc], display_value, return_value;
     struct wl_display *display;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
 
     display_value = argv[0];
     napi_get_value_external(env, display_value, (void **) &display);
@@ -593,7 +539,9 @@ dispatchRequests(napi_env env, napi_callback_info info) {
             display, on_display_destroyed);
     display_destruction_listener->env = env;
     wl_event_loop_dispatch(wl_display_get_event_loop(display), 0);
-    display_destruction_listener->env = NULL;
+
+    NAPI_CALL(env, napi_get_undefined(env, &return_value));
+    return return_value;
 }
 
 // expected arguments in order:
@@ -602,25 +550,25 @@ dispatchRequests(napi_env env, napi_callback_info info) {
 // - void
 napi_value
 flush(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 1;
-    napi_value argv[argc], client_value;
+    napi_value argv[argc], client_value, return_value;
     struct wl_client *client;
     struct wl_display *display;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
 
     client_value = argv[0];
-    napi_get_value_external(env, client_value, (void **) &client);
+    NAPI_CALL(env, napi_get_value_external(env, client_value, (void **) &client));
 
     display = wl_client_get_display(client);
     struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
             display, on_display_destroyed);
     display_destruction_listener->env = env;
     wl_connection_flush(wl_client_get_connection(client));
-
     display_destruction_listener->env = NULL;
+
+    NAPI_CALL(env, napi_get_undefined(env, &return_value));
+    return return_value;
 }
 
 // expected arguments in order:
@@ -629,23 +577,17 @@ flush(napi_env env, napi_callback_info info) {
 // - number
 napi_value
 getFd(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 1;
     napi_value argv[argc], display_value, fd_value;
     struct wl_display *display;
     int fd;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
-
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
     display_value = argv[0];
-    napi_get_value_external(env, display_value, (void **) &display);
+    NAPI_CALL(env, napi_get_value_external(env, display_value, (void **) &display));
 
     fd = wl_event_loop_get_fd(wl_display_get_event_loop(display));
-
-    status = napi_create_int32(env, fd, &fd_value);
-    check_status(env, status);
-
+    NAPI_CALL(env, napi_create_int32(env, fd, &fd_value));
     return fd_value;
 }
 
@@ -655,18 +597,15 @@ getFd(napi_env env, napi_callback_info info) {
 // - number
 napi_value
 createMemoryMappedFile(napi_env env, napi_callback_info info) {
-    napi_status status;
     void *contents;
     size_t argc = 1, size;
     napi_value argv[argc], buffer_value, fd_value;
     int fd;
     ssize_t written;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
-
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
     buffer_value = argv[0];
-    napi_get_buffer_info(env, buffer_value, &contents, &size);
+    NAPI_CALL(env, napi_get_buffer_info(env, buffer_value, &contents, &size));
 
     fd = os_create_anonymous_file(size);
     mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
@@ -681,9 +620,7 @@ createMemoryMappedFile(napi_env env, napi_callback_info info) {
         size -= written;
     }
 
-    status = napi_create_int32(env, fd, &fd_value);
-    check_status(env, status);
-
+    NAPI_CALL(env, napi_create_int32(env, fd, &fd_value));
     return fd_value;
 }
 
@@ -693,104 +630,99 @@ createMemoryMappedFile(napi_env env, napi_callback_info info) {
 // - void
 napi_value
 initShm(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 1;
-    napi_value argv[argc], display_value;
+    napi_value argv[argc], display_value, return_value;
     struct wl_display *display;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
-
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
     display_value = argv[0];
-    napi_get_value_external(env, display_value, (void **) &display);
+    NAPI_CALL(env, napi_get_value_external(env, display_value, (void **) &display));
 
     struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
             display, on_display_destroyed);
     display_destruction_listener->env = env;
     wl_display_init_shm(display);
-    display_destruction_listener->env = NULL;
+
+    NAPI_CALL(env, napi_get_undefined(env, &return_value));
+    return return_value;
 }
 
 // expected arguments in order:
 // - Object client
 // - onRegistryCreated(Object client, Object registry, number registryId):void
 // return:
+// - void
 napi_value
 setRegistryCreatedCallback(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 2;
-    napi_value argv[argc], client_value, js_cb;
+    napi_value argv[argc], client_value, js_cb, return_value;
     napi_ref js_cb_ref;
 
     struct wl_client *client;
-    struct wl_display *display;
     struct client_destruction_listener *destruction_listener;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
-
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
     client_value = argv[0];
-    status = napi_get_value_external(env, client_value, (void **) &client);
-    check_status(env, status);
-
     js_cb = argv[1];
-    status = napi_create_reference(env, js_cb, 1, &js_cb_ref);
-    check_status(env, status);
+
+    NAPI_CALL(env, napi_get_value_external(env, client_value, (void **) &client));
+    NAPI_CALL(env, napi_create_reference(env, js_cb, 1, &js_cb_ref));
 
     destruction_listener = (struct client_destruction_listener *) wl_client_get_destroy_listener(client,
                                                                                                  on_client_destroyed);
     destruction_listener->registry_created_cb_ref = js_cb_ref;
+
+    NAPI_CALL(env, napi_get_undefined(env, &return_value));
+    return return_value;
 }
 
 // expected arguments in order:
 // - Object client
 // - onBufferCreated(Object client, number bufferId):void
 // return:
+// - void
 napi_value
 setBufferCreatedCallback(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 2;
-    napi_value argv[argc], client_value, js_cb;
+    napi_value argv[argc], client_value, js_cb, return_value;
     napi_ref js_cb_ref;
 
     struct wl_client *client;
-    struct wl_display *display;
     struct client_destruction_listener *destruction_listener;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
-
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
     client_value = argv[0];
-    status = napi_get_value_external(env, client_value, (void **) &client);
-    check_status(env, status);
-
     js_cb = argv[1];
-    status = napi_create_reference(env, js_cb, 1, &js_cb_ref);
-    check_status(env, status);
+
+    NAPI_CALL(env, napi_get_value_external(env, client_value, (void **) &client));
+    NAPI_CALL(env, napi_create_reference(env, js_cb, 1, &js_cb_ref));
 
     destruction_listener = (struct client_destruction_listener *) wl_client_get_destroy_listener(client,
                                                                                                  on_client_destroyed);
     destruction_listener->buffer_created_cb_ref = js_cb_ref;
+
+    NAPI_CALL(env, napi_get_undefined(env, &return_value));
+    return return_value;
 }
 
 napi_value
 emitGlobals(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 1;
-    napi_value argv[argc], registry_value;
+    napi_value argv[argc], registry_value, return_value;
     struct wl_resource *registry_resource;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
-
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
     registry_value = argv[0];
-    napi_get_value_external(env, registry_value, (void **) &registry_resource);
+    NAPI_CALL(env, napi_get_value_external(env, registry_value, (void **) &registry_resource));
+
     wl_registry_emit_globals(registry_resource);
+
+    NAPI_CALL(env, napi_get_undefined(env, &return_value));
+    return return_value;
 }
 
 napi_value
 createWlMessage(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 3, name_size = 64, signature_size = 16;
     napi_value argv[argc], name_value, signature_value, types_value, type_value, message_value, null_value;
     char *name, *signature;
@@ -799,11 +731,8 @@ createWlMessage(napi_env env, napi_callback_info info) {
     struct wl_message *message;
     bool is_null;
 
-    status = napi_get_null(env, &null_value);
-    check_status(env, status);
-
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
+    NAPI_CALL(env, napi_get_null(env, &null_value));
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
 
     name_value = argv[0];
     signature_value = argv[1];
@@ -812,21 +741,19 @@ createWlMessage(napi_env env, napi_callback_info info) {
     // TODO do we care about copied length for strings?
     name = calloc(1, name_size);
     signature = calloc(1, signature_size);
-    status = napi_get_value_string_latin1(env, name_value, name, name_size, &length);
-    check_status(env, status);
-    status = napi_get_value_string_latin1(env, signature_value, signature, signature_size, &length);
-    check_status(env, status);
+    NAPI_CALL(env, napi_get_value_string_latin1(env, name_value, name, name_size, &length));
+    NAPI_CALL(env, napi_get_value_string_latin1(env, signature_value, signature, signature_size, &length));
     napi_get_array_length(env, types_value, (uint32_t *) &length);
     types = malloc(length * sizeof(struct wl_interface *));
 
 
     for (int i = 0; i < length; ++i) {
-        napi_get_element(env, types_value, i, &type_value);
-        status = napi_strict_equals(env, type_value, null_value, &is_null);
+        NAPI_CALL(env, napi_get_element(env, types_value, i, &type_value));
+        NAPI_CALL(env, napi_strict_equals(env, type_value, null_value, &is_null));
         if (is_null) {
             types[i] = NULL;
         } else {
-            napi_get_value_external(env, type_value, (void **) (types + i));
+            NAPI_CALL(env, napi_get_value_external(env, type_value, (void **) (types + i)));
         }
     }
 
@@ -835,60 +762,62 @@ createWlMessage(napi_env env, napi_callback_info info) {
     message->signature = signature;
     message->types = types;
 
-    napi_create_external(env, message, NULL, NULL, &message_value);
-    check_status(env, status);
-
+    NAPI_CALL(env, napi_create_external(env, message, NULL, NULL, &message_value));
     return message_value;
 }
 
 napi_value
 createWlInterface(napi_env env, napi_callback_info info) {
-    napi_status status;
-    size_t argc = 4, name_size = 64, length;
-    napi_value argv[argc], name_value, version_value, requests_value, events_value, request_value, event_value, interface_value;
+    napi_value interface_value;
+
     struct wl_interface *interface = malloc(sizeof(struct wl_interface));
+    NAPI_CALL(env, napi_create_external(env, interface, NULL, NULL, &interface_value));
+    return interface_value;
+}
+
+napi_value
+initWlInterface(napi_env env, napi_callback_info info) {
+    size_t argc = 5, name_size = 64, length;
+    napi_value argv[argc], name_value, version_value, requests_value, events_value, request_value, event_value, interface_value, return_value;
+    struct wl_interface *interface;
     int version;
     char *name;
     uint32_t method_count, event_count;
     struct wl_message *methods = NULL, *events = NULL, *message;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
-
-    name_value = argv[0];
-    version_value = argv[1];
-    requests_value = argv[2];
-    events_value = argv[3];
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
+    interface_value = argv[0];
+    name_value = argv[1];
+    version_value = argv[2];
+    requests_value = argv[3];
+    events_value = argv[4];
 
     // TODO do we care about copied length for strings?
     name = calloc(1, name_size);
-    status = napi_get_value_string_latin1(env, name_value, name, name_size, &length);
-    check_status(env, status);
-    status = napi_get_value_int32(env, version_value, &version);
-    check_status(env, status);
+    NAPI_CALL(env, napi_get_value_string_latin1(env, name_value, name, name_size, &length));
+    NAPI_CALL(env, napi_get_value_int32(env, version_value, &version));
 
-    napi_get_array_length(env, requests_value, &method_count);
-    check_status(env, status);
+    NAPI_CALL(env, napi_get_array_length(env, requests_value, &method_count));
     if (method_count) {
         methods = malloc(method_count * sizeof(struct wl_message));
         for (int i = 0; i < method_count; ++i) {
-            napi_get_element(env, requests_value, i, &request_value);
-            napi_get_value_external(env, request_value, (void **) &message);
+            NAPI_CALL(env, napi_get_element(env, requests_value, i, &request_value));
+            NAPI_CALL(env, napi_get_value_external(env, request_value, (void **) &message));
             methods[i] = *message;
         }
     }
 
-    napi_get_array_length(env, requests_value, &event_count);
-    check_status(env, status);
+    NAPI_CALL(env, napi_get_array_length(env, events_value, &event_count));
     if (event_count) {
         events = malloc(event_count * sizeof(struct wl_message));
         for (int i = 0; i < event_count; ++i) {
-            napi_get_element(env, events_value, i, &event_value);
-            napi_get_value_external(env, event_value, (void **) &message);
+            NAPI_CALL(env, napi_get_element(env, events_value, i, &event_value));
+            NAPI_CALL(env, napi_get_value_external(env, event_value, (void **) &message));
             events[i] = *message;
         }
     }
 
+    NAPI_CALL(env, napi_get_value_external(env, interface_value, (void **) &interface));
     interface->name = name;
     interface->version = version;
     interface->method_count = method_count;
@@ -896,15 +825,12 @@ createWlInterface(napi_env env, napi_callback_info info) {
     interface->event_count = event_count;
     interface->events = events;
 
-    napi_create_external(env, interface, NULL, NULL, &interface_value);
-    check_status(env, status);
-
-    return interface_value;
+    NAPI_CALL(env, napi_get_undefined(env, &return_value));
+    return return_value;
 }
 
 napi_value
 createWlResource(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 4;
     napi_value argv[argc], interface_value, client_value, version_value, id_value, resource_value;
     struct wl_client *client;
@@ -912,57 +838,45 @@ createWlResource(napi_env env, napi_callback_info info) {
     struct wl_interface *interface;
     struct wl_resource *resource;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
-
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
     client_value = argv[0];
     id_value = argv[1];
     version_value = argv[2];
     interface_value = argv[3];
 
-    napi_get_value_external(env, client_value, (void **) &client);
-    check_status(env, status);
-    napi_get_value_int32(env, id_value, &id);
-    check_status(env, status);
-    napi_get_value_int32(env, version_value, &version);
-    check_status(env, status);
-    napi_get_value_external(env, interface_value, (void **) &interface);
-    check_status(env, status);
+    NAPI_CALL(env, napi_get_value_external(env, client_value, (void **) &client));
+    NAPI_CALL(env, napi_get_value_int32(env, id_value, &id));
+    NAPI_CALL(env, napi_get_value_int32(env, version_value, &version));
+    NAPI_CALL(env, napi_get_value_external(env, interface_value, (void **) &interface));
 
-    resource = wl_resource_create(client, interface, version, id);
-    napi_create_external(env, resource, NULL, NULL, &resource_value);
-    check_status(env, status);
-
+    resource = wl_resource_create(client, interface, version, (uint32_t) id);
+    NAPI_CALL(env, napi_create_external(env, resource, NULL, NULL, &resource_value));
     return resource_value;
 }
 
 napi_value
 destroyWlResourceSilently(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 2;
-    napi_value argv[argc], client_value, id_value;
+    napi_value argv[argc], client_value, id_value, return_value;
     uint32_t id;
     struct wl_client *client;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
-
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
     client_value = argv[0];
     id_value = argv[1];
 
-
-    napi_get_value_external(env, client_value, (void **) &client);
-    check_status(env, status);
-    napi_get_value_uint32(env, id_value, &id);
-    check_status(env, status);
+    NAPI_CALL(env, napi_get_value_external(env, client_value, (void **) &client));
+    NAPI_CALL(env, napi_get_value_uint32(env, id_value, &id));
 
     wl_resource_destroy_silently(wl_client_get_object(client, id));
+
+    NAPI_CALL(env, napi_get_undefined(env, &return_value));
+    return return_value;
 }
 
 // temp method - to be replaced by general encoding function
 napi_value
 getShmBuffer(napi_env env, napi_callback_info info) {
-    napi_status status;
     size_t argc = 2;
     napi_value argv[argc], client_value, id_value, result;
     uint32_t id;
@@ -970,16 +884,12 @@ getShmBuffer(napi_env env, napi_callback_info info) {
     struct wl_resource *resource;
     struct wl_shm_buffer *shm_buffer;
 
-    status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    check_status(env, status);
-
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL));
     client_value = argv[0];
     id_value = argv[1];
 
-    napi_get_value_external(env, client_value, (void **) &client);
-    check_status(env, status);
-    napi_get_value_uint32(env, id_value, &id);
-    check_status(env, status);
+    NAPI_CALL(env, napi_get_value_external(env, client_value, (void **) &client));
+    NAPI_CALL(env, napi_get_value_uint32(env, id_value, &id));
 
     resource = wl_client_get_object(client, id);
 
@@ -993,16 +903,12 @@ getShmBuffer(napi_env env, napi_callback_info info) {
         const int32_t stride = wl_shm_buffer_get_stride(shm_buffer);
         const int32_t format = wl_shm_buffer_get_format(shm_buffer);
 
-        napi_create_external_arraybuffer(env, data, (size_t) (stride * height), NULL, NULL, &data_value);
-        check_status(env, status);
-        napi_create_int32(env, width, &width_value);
-        check_status(env, status);
-        napi_create_int32(env, height, &height_value);
-        check_status(env, status);
-        napi_create_int32(env, stride, &stride_value);
-        check_status(env, status);
-        napi_create_int32(env, format, &format_value);
-        check_status(env, status);
+        NAPI_CALL(env,
+                  napi_create_external_arraybuffer(env, data, (size_t) (stride * height), NULL, NULL, &data_value));
+        NAPI_CALL(env, napi_create_int32(env, width, &width_value));
+        NAPI_CALL(env, napi_create_int32(env, height, &height_value));
+        NAPI_CALL(env, napi_create_int32(env, stride, &stride_value));
+        NAPI_CALL(env, napi_create_int32(env, format, &format_value));
 
         const napi_property_descriptor properties[] = {
                 {"buffer", NULL, NULL, NULL, NULL, data_value,   napi_default, NULL},
@@ -1012,20 +918,18 @@ getShmBuffer(napi_env env, napi_callback_info info) {
                 {"stride", NULL, NULL, NULL, NULL, stride_value, napi_default, NULL},
         };
 
-        napi_create_object(env, &result);
-        check_status(env, status);
-        napi_define_properties(env, result, sizeof(properties) / sizeof(napi_property_descriptor), properties);
-        check_status(env, status);
+        NAPI_CALL(env, napi_create_object(env, &result));
+        NAPI_CALL(env, napi_define_properties(env, result, sizeof(properties) / sizeof(napi_property_descriptor),
+                                              properties));
         return result;
     } else {
-        napi_get_null(env, &result);
+        NAPI_CALL(env, napi_get_null(env, &result));
         return result;
     }
 }
 
 napi_value
 init(napi_env env, napi_value exports) {
-    napi_status status;
     napi_property_descriptor desc[] = {
             DECLARE_NAPI_METHOD("createDisplay", createDisplay),
             DECLARE_NAPI_METHOD("destroyDisplay", destroyDisplay),
@@ -1043,6 +947,7 @@ init(napi_env env, napi_value exports) {
             DECLARE_NAPI_METHOD("setRegistryCreatedCallback", setRegistryCreatedCallback),
             DECLARE_NAPI_METHOD("emitGlobals", emitGlobals),
             DECLARE_NAPI_METHOD("createWlMessage", createWlMessage),
+            DECLARE_NAPI_METHOD("initWlInterface", initWlInterface),
             DECLARE_NAPI_METHOD("createWlInterface", createWlInterface),
             DECLARE_NAPI_METHOD("createWlResource", createWlResource),
             DECLARE_NAPI_METHOD("destroyWlResourceSilently", destroyWlResourceSilently),
@@ -1050,9 +955,7 @@ init(napi_env env, napi_value exports) {
             DECLARE_NAPI_METHOD("setBufferCreatedCallback", setBufferCreatedCallback),
     };
 
-    status = napi_define_properties(env, exports, sizeof(desc) / sizeof(napi_property_descriptor), desc);
-    check_status(env, status);
-
+    NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(napi_property_descriptor), desc));
     return exports;
 }
 
