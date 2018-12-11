@@ -17,6 +17,8 @@ Inside the `server/node` directory the following modules are present:
 
 - **endpoint**: A shim Wayland compositor. Forwards raw wire protocol messages.
 
-- **endpoint-native**: A fork of libwayland-server used by the endpoint module. *Requires native libffi headers to build*
+- **endpoint-native**: A fork of libwayland-server used by the endpoint module. 
+  - *Requires native libffi headers to build. `sudo apt-get install -y libffi-dev`*
+  - *Requires cmake-js on your path. `npm install -g cmake-js`*
 
 - **endpoint-generator**: Generates shim Wayland server protocol stubs to properly interoperate with natively implemented Wayland server libraries.
