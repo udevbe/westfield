@@ -216,6 +216,5 @@ typings/
 # Serverless directories
 .serverless
 /build/
-/package-lock.json
 
 .idea/
