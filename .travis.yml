@@ -4,7 +4,7 @@ node_js:
   - lts/*
 branches:
   only:
-    - travis_build
+    - master
 before_install:
   - sudo apt-get install -y libffi-dev
   - npm install -g cmake-js
