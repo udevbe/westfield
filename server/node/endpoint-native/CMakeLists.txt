@@ -45,7 +45,6 @@ PARSE_CMAKEJS_PROPERTIES()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
 
 find_package(LibFFI REQUIRED)
-find_package(Wayland REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
         src/wayland-server/protocol/wayland-server-protocol.h
