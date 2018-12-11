@@ -1,5 +1,8 @@
 # Westfield
 
+[![Build Status](https://travis-ci.org/udevbe/westfield.svg)](https://travis-ci.org/udevbe/westfield)
+
+
 A JavaScript Wayland protocol generator. Generates JavaScript RPC stubs based on a wayland xml to let native Wayland
 applications talk the browser. The primary use case being [Greenfield](https://github.com/udevbe/greenfield).
 
