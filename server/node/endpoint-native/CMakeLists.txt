@@ -69,6 +69,7 @@ add_library(${PROJECT_NAME} SHARED
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE ${CMAKE_JS_INC}
+    PRIVATE "${CMAKE_SOURCE_DIR}/src/wayland-server"
     PRIVATE "${CMAKE_SOURCE_DIR}/src/wayland-server/protocol"
     )
 
