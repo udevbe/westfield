@@ -24,20 +24,34 @@ SOFTWARE.
 
 'use strict'
 
-/**
- * @interface
- */
-class DisplayRequests {
+import Resource from './Resource'
+import { Connection } from 'westfield-runtime-common'
+
+const { uint } = Connection
+
+class SyncCallbackResource extends Resource {
   /**
-   * @param {DisplayResource}resource
+   * @param {Client}client
    * @param {number}id
+   * @param {number}version
    */
-  sync (resource, id) {}
+  constructor (client, id, version) {
+    super(client, id, version)
+  }
+
   /**
-   * @param {DisplayResource}resource
-   * @param {number}id
+   *
+   * Notify the client when the related request is done.
+   *
+   *
+   * @param {number} callbackData request-specific data for the callback
+   *
+   * @since 1
+   *
    */
-  getRegistry (resource, id) {}
+  done (callbackData) {
+    this.client.marshall(this.id, 0, [uint(callbackData)])
+  }
 }
 
-module.exports = DisplayRequests
+export default SyncCallbackResource

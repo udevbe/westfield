@@ -24,61 +24,63 @@ SOFTWARE.
 
 'use strict'
 
-const Client = require('./Client')
-const Registry = require('./Registry')
-
-class Display {
-  constructor () {
+class Global {
+  /**
+   * Use Registry.createGlobal(..) instead.
+   * @param {Registry}registry
+   * @param {Object}implementation
+   * @param {string} interface_
+   * @param {number} version
+   * @param {number}name
+   * @param {function(Client,number,number):void}bindCallback
+   */
+  constructor (registry, implementation, interface_, version, name, bindCallback) {
     /**
      * @type {Registry}
      */
-    this.registry = new Registry()
+    this.registry = registry
     /**
-     * @type {Array<Client>}
+     * @type {Object}
      */
-    this.clients = []
-    /*
-     * IDs allocated by the client are in the range [1, 0xfeffffff] while IDs allocated by the server are
-     * in the range [0xff000000, 0xffffffff]. The 0 ID is reserved to represent a null or non-existent object
+    this.implementation = implementation
+    /**
+     * @type {function(Client, number, number): void}
+     * @private
      */
+    this._bindCallback = bindCallback
+    /**
+     * @type {string}
+     */
+    this.interface_ = interface_
     /**
      * @type {number}
      */
-    this.nextId = 0xff000000
-  }
-
-  /**
-   * Next server side object id.
-   * @return {number}
-   */
-  getNextObjectId () {
-    return ++this.nextId
+    this.version = version
+    /**
+     * @type {number}
+     */
+    this.name = name
   }
 
   /**
    *
    * Invoked when a client binds to this global. Subclasses implement this method so they can instantiate a
    * corresponding Resource subtype.
-   * @param {function(ArrayBuffer):void}onOutOfBandSend
-   * @return {Client}
+   *
+   * @param {Client} client
+   * @param {number} id
+   * @param {number} version
    */
-  createClient (onOutOfBandSend) {
-    const client = new Client(this, onOutOfBandSend)
-    client.onClose().then(() => {
-      const idx = this.clients.indexOf(client)
-      if (idx > -1) {
-        this.clients.splice(idx, 1)
-      }
-    })
-    this.clients.push(client)
-    return client
+  bindClient (client, id, version) {
+    this._bindCallback(client, id, version)
   }
 
-  flushClients () {
-    this.clients.forEach(client => {
-      client.flush()
-    })
+  destroy () {
+    if (this.registry) {
+      this.registry.destroyGlobal(this)
+      this.registry = null
+    }
   }
 }
 
-module.exports = Display
+export default Global

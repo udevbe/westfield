@@ -26,6 +26,9 @@
   "scripts": {
     "test": "mocha ./test/*.js --timeout 10000"
   },
+  "dependencies": {
+    "westfield-runtime-common": "../../../common"
+  },
   "devDependencies": {
     "standard": "^12.0.1"
   }

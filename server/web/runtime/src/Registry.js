@@ -24,9 +24,9 @@ SOFTWARE.
 
 'use strict'
 
-const RegistryResource = require('./RegistryResource')
-const RegistryRequests = require('./RegistryRequests')
-const Global = require('./Global')
+import RegistryResource from './RegistryResource'
+import RegistryRequests from './RegistryRequests'
+import Global from './Global'
 
 /**
  * @implements {RegistryRequests}
@@ -115,4 +115,4 @@ class Registry extends RegistryRequests {
   }
 }
 
-module.exports = Registry
+export default Registry

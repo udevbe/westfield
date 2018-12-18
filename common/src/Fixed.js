@@ -24,32 +24,40 @@ SOFTWARE.
 
 'use strict'
 
-const Resource = require('./Resource')
-const {uint} = require('./WireFormat')
-
-class SyncCallbackResource extends Resource {
+class Fixed {
   /**
-   * @param {Client}client
-   * @param {number}id
-   * @param {number}version
+   * @param {number}number
+   * @return {Fixed}
    */
-  constructor (client, id, version) {
-    super(client, id, version)
+  static parse (number) {
+    return new Fixed((number * 256.0) >> 0)
   }
 
   /**
+   * Represent fixed as a signed 24-bit integer.
    *
-   * Notify the client when the related request is done.
-   *
-   *
-   * @param {number} callbackData request-specific data for the callback
-   *
-   * @since 1
-   *
+   * @returns {number}
    */
-  done (callbackData) {
-    this.client.marshall(this.id, 0, [uint(callbackData)])
+  asInt () {
+    return ((this._raw / 256.0) >> 0)
+  }
+
+  /**
+   * Represent fixed as a signed 24-bit number with an 8-bit fractional part.
+   *
+   * @returns {number}
+   */
+  asDouble () {
+    return this._raw / 256.0
+  }
+
+  /**
+   * use parseFixed instead
+   * @param {number}raw
+   */
+  constructor (raw) {
+    this._raw = raw
   }
 }
 
-module.exports = SyncCallbackResource
+export default Fixed

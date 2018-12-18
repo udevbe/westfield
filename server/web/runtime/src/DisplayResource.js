@@ -24,8 +24,10 @@ SOFTWARE.
 
 'use strict'
 
-const Resource = require('./Resource')
-const {uint, object, string} = require('./WireFormat')
+import Resource from './Resource'
+import { Connection } from 'westfield-runtime-common'
+
+const { object, uint, string, n } = Connection
 
 class DisplayResource extends Resource {
   /**
@@ -44,21 +46,19 @@ class DisplayResource extends Resource {
   /**
    * opcode 0 -> sync
    *
-   * @param {{buffer: Uint32Array, fds: Uint32Array, bufferOffset: number, fdsOffset:number, consumed: number, size: number}} message
+   * @param {{buffer: Uint32Array, fds: Array<WebFD>, bufferOffset: number, consumed: number, size: number}} message
    */
   async [0] (message) {
-    const args = this.client.unmarshallArgs(message, 'n')
-    await this.implementation.sync(this, ...args)
+    await this.implementation.sync(this, n(message))
   }
 
   /**
    * opcode 1 -> getRegistry
    *
-   * @param {{buffer: Uint32Array, fds: Uint32Array, bufferOffset: number, fdsOffset:number, consumed: number, size: number}} message
+   * @param {{buffer: Uint32Array, fds: Array<WebFD>, bufferOffset: number, consumed: number, size: number}} message
    */
   async [1] (message) {
-    const args = this.client.unmarshallArgs(message, 'n')
-    await this.implementation.getRegistry(this, ...args)
+    await this.implementation.getRegistry(this, n(message))
   }
 
   /**
@@ -94,4 +94,4 @@ class DisplayResource extends Resource {
   }
 }
 
-module.exports = DisplayResource
+export default DisplayResource

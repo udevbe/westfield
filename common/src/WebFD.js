@@ -21,19 +21,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+
 'use strict'
 
-import Proxy from './Proxy'
-
-class SyncCallbackProxy extends Proxy {
+class WebFD {
   /**
-   * @param {Display}display
-   * @param {number}id
+   * @param {number}fd
+   * @param {string}fdDomain
+   * @param {function(WebFD): Transferable}onGetTransferable
    */
-  constructor (display, id) {
-    super(display, id)
-    this.listener = null
+  constructor (fd, fdDomain, onGetTransferable) {
+    /**
+     * @type {number}
+     */
+    this.fd = fd
+    /**
+     * @type {string}
+     */
+    this.fdDomain = fdDomain
+    /**
+     * @type {function(WebFD): Transferable}
+     * @private
+     */
+    this._onGetTransferable = onGetTransferable
+  }
+
+  get transferable () {
+    return this._onGetTransferable(this)
   }
 }
 
-export default SyncCallbackProxy
+export default WebFD

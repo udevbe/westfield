@@ -24,16 +24,51 @@ SOFTWARE.
 
 'use strict'
 
-/**
- * @type {{namespace: Object, Client: Client, Display: Display, Fixed: Fixed, Global: Global, CompositorEndpoint: CompositorEndpoint}}
- */
-module.exports = {
-  private: {
-    WireFormat: require('./src/WireFormat'),
-    Resource: require('./src/Resource')
-  },
-  Client: require('./src/Client'),
-  Display: require('./src/Display'),
-  Fixed: require('./src/Fixed'),
-  Global: require('./src/Global')
+import { WlObject } from 'westfield-runtime-common'
+
+class Resource extends WlObject {
+  /**
+   * @param {Client}client
+   * @param {number}id
+   * @param {number}version
+   */
+  constructor (client, id, version) {
+    super(id)
+    /**
+     * @type {Client}
+     */
+    this.client = client
+    /**
+     * @type {number}
+     */
+    this.version = version
+    /**
+     * Arbitrary data that can be attached to the resource.
+     * @type {*}
+     */
+    this.userData = {}
+
+    this.client.registerResource(this)
+  }
+
+  /**
+   *
+   * @param {number} code
+   * @param {string} msg
+   */
+  postError (code, msg) {
+    this.client.displayResource.error(this, code, msg)
+    this.client.flush()
+    this.client.close()
+  }
+
+  /**
+   * @override
+   */
+  destroy () {
+    super.destroy()
+    this.client.unregisterResource(this)
+  }
 }
+
+export default Resource

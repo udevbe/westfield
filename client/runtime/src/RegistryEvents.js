@@ -59,4 +59,4 @@ class RegistryEvents {
   globalRemove (name) {}
 }
 
-module.exports = RegistryEvents
+export default RegistryEvents

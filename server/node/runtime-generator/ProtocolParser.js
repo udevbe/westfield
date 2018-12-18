@@ -77,6 +77,9 @@ class ProtocolParser {
         const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
         const argType = arg.$.type
 
+        if (i !== 0) {
+          evSig += ', '
+        }
         evSig += ProtocolArguments[argType](argName, optional).signature
       }
     }
@@ -90,8 +93,7 @@ class ProtocolParser {
     out.write(`\tasync [${opcode}] (message) {\n`)
     const evSig = ProtocolParser._parseRequestSignature(ev)
     if (evSig.length) {
-      out.write(`\t\tconst args = this.client.unmarshallArgs(message,'${evSig}')\n`)
-      out.write(`\t\tawait this.implementation.${evName}(this, ...args)\n`)
+      out.write(`\t\tawait this.implementation.${evName}(this, ${evSig})\n`)
     } else {
       out.write(`\t\tawait this.implementation.${evName}(this)\n`)
     }
@@ -255,7 +257,8 @@ class ProtocolParser {
     resourceOut.write('const { uint, uintOptional, int, intOptional, fixed, \n' +
       '\tfixedOptional, object, objectOptional, newObject, string, \n' +
       '\tstringOptional, array, arrayOptional, \n' +
-      '\tfileDescriptorOptional, fileDescriptor } = WireFormat\n')
+      '\tfileDescriptorOptional, fileDescriptor, \n' +
+      'h, u, i, f, o, n, s, a } = WireFormat\n')
 
     // class docs
     const description = protocolItf.description

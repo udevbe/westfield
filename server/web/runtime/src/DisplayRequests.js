@@ -21,47 +21,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+
 'use strict'
 
-import { Connection } from 'westfield-runtime-common'
-
-const { uint, newObject, string, i, s, u } = Connection
-
-class RegistryProxy extends Proxy {
+/**
+ * @interface
+ */
+class DisplayRequests {
   /**
-   * @param {Display}display
+   * @param {DisplayResource}resource
    * @param {number}id
    */
-  constructor (display, id) {
-    super(display, id)
-    /**
-     * @type {RegistryEvents}
-     */
-    this.listener = null
-  }
-
+  sync (resource, id) {}
   /**
-   * Bind a new object to the global.
-   *
-   * Binds a new, client-created object to the server using the specified name as the identifier.
-   *
-   * @param {number} name unique numeric name of the global
-   * @param {string} interface_ interface implemented by the new object
-   * @param {function} proxyConstructor
-   * @param {number} version The version used and supported by the client
-   * @return {Object} a new bounded object
+   * @param {DisplayResource}resource
+   * @param {number}id
    */
-  bind (name, interface_, proxyConstructor, version) {
-    return this.display.marshallConstructor(this.id, 0, proxyConstructor, [uint(name), string(interface_), uint(version), newObject()])
-  }
-
-  [0] (message) {
-    this.listener.global(i(message), s(message, false), u(message))
-  }
-
-  [1] (message) {
-    this.listener.globalRemove(i(message))
-  }
+  getRegistry (resource, id) {}
 }
 
-export default RegistryProxy
+export default DisplayRequests

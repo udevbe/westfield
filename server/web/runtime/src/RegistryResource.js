@@ -24,8 +24,10 @@ SOFTWARE.
 
 'use strict'
 
-const Resource = require('./Resource')
-const { uint, string } = require('./WireFormat')
+import Resource from './Resource'
+import { Connection } from 'westfield-runtime-common'
+
+const { string, uint, u, s, n } = Connection
 
 class RegistryResource extends Resource {
   /**
@@ -61,12 +63,11 @@ class RegistryResource extends Resource {
   /**
    * opcode 1 -> bind
    *
-   * @param {{buffer: Uint32Array, fds: Uint32Array, bufferOffset: number, fdsOffset:number, consumed: number, size: number}} message
+   * @param {{buffer: Uint32Array, fds: Array<WebFD>, bufferOffset: number, consumed: number, size: number}} message
    */
   async [0] (message) {
-    const args = this.client.unmarshallArgs(message, 'usun')
-    await this.implementation.bind(this.client, this, ...args)
+    await this.implementation.bind(this.client, this, u(message), s(message, false), u(message), n(message))
   }
 }
 
-module.exports = RegistryResource
+export default RegistryResource

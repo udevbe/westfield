@@ -24,40 +24,20 @@ SOFTWARE.
 
 'use strict'
 
-class Fixed {
-  /**
-   * @param {number}number
-   * @return {Fixed}
-   */
-  static parse (number) {
-    return new Fixed((number * 256.0) >> 0)
-  }
+import Resource from './src/Resource'
+import Client from './src/Client'
+import Display from './src/Display'
+import Fixed from './src/Fixed'
+import Global from './src/Global'
+import WebFD from './src/WebFD'
 
-  /**
-   * Represent fixed as a signed 24-bit integer.
-   *
-   * @returns {number}
-   */
-  asInt () {
-    return ((this._raw / 256.0) >> 0)
-  }
-
-  /**
-   * Represent fixed as a signed 24-bit number with an 8-bit fractional part.
-   *
-   * @returns {number}
-   */
-  asDouble () {
-    return this._raw / 256.0
-  }
-
-  /**
-   * use parse(..) instead
-   * @param {number}raw
-   */
-  constructor (raw) {
-    this._raw = raw
-  }
+/**
+ * @type {{Resource: Resource, Client: Client, Display: Display, Fixed: Fixed, Global: Global, WebFD: WebFD}}
+ */
+export {
+  Resource,
+  Client,
+  Display,
+  Fixed,
+  Global
 }
-
-module.exports = Fixed

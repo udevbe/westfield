@@ -1,11 +1,8 @@
 {
-  "name": "westfield-runtime-client",
+  "name": "westfield-runtime-common",
   "version": "0.1.0",
-  "description": "Wayland HTML5 core client protocol",
-  "main": "westfield-client-core.js",
-  "scripts": {
-    "test": "standard --verbose && node ./node_modules/jasmine/bin/jasmine.js"
-  },
+  "description": "Wayland HTML5 common client-server runtime",
+  "main": "index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/udevbe/westfield.git"
@@ -25,12 +22,7 @@
     "url": "https://github.com/udevbe/westfield/issues"
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
-  "dependencies": {
-    "westfield-runtime-common": "../../common"
-  },
   "devDependencies": {
-    "jasmine": "2.5.2",
-    "jasmine-core": "2.5.2",
     "standard": "^10.0.2"
   }
 }

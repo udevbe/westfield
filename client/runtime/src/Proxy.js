@@ -23,20 +23,21 @@ SOFTWARE.
 */
 'use strict'
 
-class Proxy {
+import { WlObject, Connection } from 'westfield-runtime-common'
+
+class Proxy extends WlObject {
   /**
    *
    * @param {Display} display
+   * @param {number}id
    */
-  constructor (display) {
+  constructor (display, id) {
+    super(id)
     /**
      * @type {Display}
      */
     this.display = display
-    /**
-     * @type {number}
-     */
-    this.id = 0
+    this.display.registerProxy(this)
   }
 }
 

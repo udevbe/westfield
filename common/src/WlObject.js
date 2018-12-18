@@ -24,21 +24,48 @@ SOFTWARE.
 
 'use strict'
 
-/**
- * @interface
- */
-class RegistryRequests {
+class WlObject {
+  constructor (id) {
+    this.id = id
+    /**
+     * @type {Promise<void>}
+     * @private
+     */
+    this._destroyPromise = new Promise((resolve) => {
+      this._destroyResolver = resolve
+    })
+    /**
+     * @type {Array<function(Resource):void>}
+     * @private
+     */
+    this._destroyListeners = []
+    this._destroyPromise.then(() => this._destroyListeners.forEach((destroyListener) => destroyListener(this)))
+  }
+
+  destroy () {
+    this._destroyResolver()
+  }
+
   /**
-   *  Binds a new, client-created object to the server using the
-   * specified name as the identifier.
-   * @param {Client}client
-   * @param {RegistryResource}resource
-   * @param {number}name unique numeric name of the object
-   * @param {string}interface_
-   * @param {number}version
-   * @param {number}id bounded object
+   * @param {function(Resource):void}destroyListener
    */
-  bind (client, resource, name, interface_, version, id) {}
+  addDestroyListener (destroyListener) {
+    this._destroyListeners.push(destroyListener)
+  }
+
+  /**
+   * @param {function(Resource):void}destroyListener
+   */
+  removeDestroyListener (destroyListener) {
+    this._destroyListeners = this._destroyListeners.filter((item) => { return item !== destroyListener })
+  }
+
+  /**
+   * @return {Promise<void>}
+   */
+  onDestroy () {
+    return this._destroyPromise
+  }
 }
 
-module.exports = RegistryRequests
+export default WlObject
