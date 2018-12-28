@@ -253,12 +253,13 @@ class ProtocolParser {
     })
     resourceOut.write(' */\n\n')
 
-    resourceOut.write('const { Resource, WireFormat } = require(\'westfield-runtime-server\').private\n')
+    resourceOut.write('const { Resource } = require(\'westfield-runtime-server\')\n')
+    resourceOut.write('const { Connection } = require(\'westfield-runtime-common\')\n')
     resourceOut.write('const { uint, uintOptional, int, intOptional, fixed, \n' +
       '\tfixedOptional, object, objectOptional, newObject, string, \n' +
       '\tstringOptional, array, arrayOptional, \n' +
       '\tfileDescriptorOptional, fileDescriptor, \n' +
-      'h, u, i, f, o, n, s, a } = WireFormat\n')
+      'h, u, i, f, o, n, s, a } = Connection\n')
 
     // class docs
     const description = protocolItf.description

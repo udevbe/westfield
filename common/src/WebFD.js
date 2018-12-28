@@ -27,10 +27,12 @@ SOFTWARE.
 class WebFD {
   /**
    * @param {number}fd
-   * @param {string}fdDomain
-   * @param {function(WebFD): Transferable}onGetTransferable
+   * @param {'unsupported'|'shm'|'pipe'}fdType
+   * @param {string}fdDomainUUID
+   * @param {function(WebFD): Promise<Transferable>}onGetTransferable
+   * @param {function(WebFD): Promise<void>} onClose
    */
-  constructor (fd, fdDomain, onGetTransferable) {
+  constructor (fd, fdType, fdDomainUUID, onGetTransferable, onClose) {
     /**
      * @type {number}
      */
@@ -38,16 +40,35 @@ class WebFD {
     /**
      * @type {string}
      */
-    this.fdDomain = fdDomain
+    this.fdType = fdType
     /**
-     * @type {function(WebFD): Transferable}
+     * @type {string}
+     */
+    this.fdDomainUUID = fdDomainUUID
+    /**
+     * @type {function(WebFD): Promise<Transferable>}
      * @private
      */
     this._onGetTransferable = onGetTransferable
+    /**
+     * @type {function(WebFD): Promise<void>}
+     * @private
+     */
+    this._onClose = onClose
   }
 
-  get transferable () {
-    return this._onGetTransferable(this)
+  /**
+   * @return {Promise<Transferable>}
+   */
+  async getTransferable () {
+    return await this._onGetTransferable(this)
+  }
+
+  /**
+   * @return {Promise<void>}
+   */
+  async close () {
+    await this._onClose(this)
   }
 }
 

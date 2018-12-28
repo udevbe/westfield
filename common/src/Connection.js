@@ -636,10 +636,9 @@ class Connection {
   async message (incomingWireMessages) {
     if (this.closed) { return }
 
-    this._inMessages.push(incomingWireMessages)
     // more than one message in queue means the message loop is in await, don't concurrently process the new
     // message, instead return early and let the resume-from-await pick up the newly queued message.
-    if (this._inMessages.length > 1) { return }
+    if (this._inMessages.push(incomingWireMessages) > 1) { return }
 
     while (this._inMessages.length) {
       const wireMessages = /** @type {{buffer: Uint32Array, fds: Array<WebFD>, bufferOffset: number, consumed: number, size: number}} */this._inMessages[0]

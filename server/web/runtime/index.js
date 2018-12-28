@@ -27,9 +27,7 @@ SOFTWARE.
 import Resource from './src/Resource'
 import Client from './src/Client'
 import Display from './src/Display'
-import Fixed from './src/Fixed'
 import Global from './src/Global'
-import WebFD from './src/WebFD'
 
 /**
  * @type {{Resource: Resource, Client: Client, Display: Display, Fixed: Fixed, Global: Global, WebFD: WebFD}}
@@ -38,6 +36,5 @@ export {
   Resource,
   Client,
   Display,
-  Fixed,
   Global
 }
