@@ -14,7 +14,8 @@ build () {
 }
 
 printf "======[ STARTING BUILDS ]=====\n"
-build component=server/node/runtime
+build component=common
+build component=server/web/runtime
 build component=server/node/generator
 build component=server/node/endpoint-native
 build component=server/node/endpoint

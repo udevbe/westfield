@@ -655,7 +655,7 @@ class Connection {
           throw new Error('Request buffer too small')
         }
 
-        const resource = this._resources[id]
+        const resource = this.wlObjects[id]
         if (resource) {
           wireMessages.bufferOffset += 2
           wireMessages.consumed = 8
