@@ -27,7 +27,7 @@ SOFTWARE.
 class WebFD {
   /**
    * @param {number}fd
-   * @param {'unsupported'|'shm'|'pipe'}fdType
+   * @param {'ImageBitmap'|'ArrayBuffer'|'MessagePort'}fdType
    * @param {string}fdDomainUUID
    * @param {function(WebFD): Promise<Transferable>}onGetTransferable
    * @param {function(WebFD): Promise<void>} onClose

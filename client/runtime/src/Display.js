@@ -168,7 +168,7 @@ class Display extends Proxy {
    */
   [0] (message) {
     this.close()
-    this.implementation.error(o(message, false, this.connection.wlObjects), u(message), s(message, false))
+    this.implementation.error(o(message, false, this.connection), u(message), s(message, false))
   }
 
   /**

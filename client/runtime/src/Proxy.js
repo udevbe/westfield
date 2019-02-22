@@ -23,7 +23,7 @@ SOFTWARE.
 */
 'use strict'
 
-import { WlObject, Connection } from 'westfield-runtime-common'
+import { WlObject } from 'westfield-runtime-common'
 
 class Proxy extends WlObject {
   /**

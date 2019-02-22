@@ -34,27 +34,6 @@ import { Connection } from 'westfield-runtime-common'
  * @implements DisplayRequests
  */
 class Client extends DisplayRequests {
-  /**
-   * @param {ArrayBuffer}incomingMessage
-   */
-  outOfBandMessage (incomingMessage) {
-    const dataView = new DataView(incomingMessage)
-    const objectId = dataView.getUint32(0, true)
-    const opcode = dataView.getUint32(Uint32Array.BYTES_PER_ELEMENT, true)
-
-    const outOfBandHandlers = this._outOfBandListeners[objectId]
-    if (outOfBandHandlers) {
-      const handler = outOfBandHandlers[opcode]
-      if (handler) {
-        handler(incomingMessage)
-      } else {
-        console.log(`Out of band object id: ${objectId} does not have listener for opcode: ${opcode}.`)
-      }
-    } else {
-      console.log(`Out of band object id: ${objectId} using opcode: ${opcode} not found.`)
-    }
-  }
-
   close () {
     if (this.connection.closed) { return }
     this.connection.close()
@@ -167,63 +146,11 @@ class Client extends DisplayRequests {
   }
 
   /**
-   * @param {number}objectId
-   * @param {number}opcode
-   * @param {function(ArrayBuffer):void}listener
-   */
-  setOutOfBandListener (objectId, opcode, listener) {
-    let opcodeHandlers = this._outOfBandListeners[objectId]
-    if (!opcodeHandlers) {
-      opcodeHandlers = {}
-      this._outOfBandListeners[objectId] = opcodeHandlers
-    }
-    opcodeHandlers[opcode] = listener
-  }
-
-  /**
-   * @param {number}objectId
-   * @param {number}opcode
-   */
-  removeOutOfBandListener (objectId, opcode) {
-    const opcodeHandlers = this._outOfBandListeners[objectId]
-    if (opcodeHandlers) { delete opcodeHandlers[opcode] }
-  }
-
-  /**
-   * @param {number}objectId
-   */
-  removeAllOutOfBandListeners (objectId) {
-    delete this._outOfBandListeners[objectId]
-  }
-
-  /**
-   * @param {number}objectId
-   * @param {number}opcode
-   * @param {ArrayBuffer}payload
-   */
-  sendOutOfBand (objectId, opcode, payload) {
-    // FIXME there's the danger of sending > 16kb, which might fail in chrome. => Chunk the message
-    const sendBuffer = new ArrayBuffer(8 + payload.byteLength)
-    const dataView = new DataView(sendBuffer)
-    dataView.setUint32(0, objectId, true)
-    dataView.setUint32(4, opcode, true)
-    new Uint8Array(sendBuffer, 8).set(new Uint8Array(payload))
-
-    this._onOutOfBandSend(sendBuffer)
-  }
-
-  /**
    * @param {Display} display
-   * @param {function(ArrayBuffer):void}onOutOfBandSend
    */
-  constructor (display, onOutOfBandSend) {
+  constructor (display) {
     super()
     this.connection = new Connection()
-    /**
-     * @type {function(ArrayBuffer): void}
-     * @private
-     */
-    this._onOutOfBandSend = onOutOfBandSend
     /**
      * @type {Display}
      * @private
@@ -251,12 +178,6 @@ class Client extends DisplayRequests {
      */
     this.displayResource = new DisplayResource(this, 1, 0)
     this.displayResource.implementation = this
-    /**
-     * Out of band listeners. Allows for messages & listeners not part of the ordinary wayland protocol.
-     * @type {Object.<number, Object.<number, function(ArrayBuffer):void>>}
-     * @private
-     */
-    this._outOfBandListeners = {}
     /**
      * @type {Array<function(Resource):void>}
      * @private
