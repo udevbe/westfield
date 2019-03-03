@@ -172,7 +172,6 @@ class ProtocolParser {
 
           reqArgs.forEach((arg) => {
             const argDescription = arg.$.summary || ''
-            const argItf = arg.$['interface']
             const argType = arg.$.type
             if (argType === 'new_id') {
               out.write(`\t * @return {number} resource id. ${argDescription} \n`)

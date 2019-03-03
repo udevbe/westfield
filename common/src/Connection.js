@@ -576,29 +576,6 @@ class Connection {
 
   /**
    *
-   * @param {{buffer: Uint32Array, fds: Array<WebFD>, bufferOffset: number, consumed: number, size: number}} message
-   * @param {string} argsSignature
-   * @returns {Array<*>}
-   */
-  unmarshallArgs (message, argsSignature) {
-    const argsSigLength = argsSignature.length
-    const args = []
-    let optional = false
-    for (let i = 0; i < argsSigLength; i++) {
-      let signatureChar = argsSignature[i]
-      optional = signatureChar === '?'
-
-      if (optional) {
-        signatureChar = argsSignature[++i]
-      }
-
-      args.push(Connection[signatureChar](message, optional, this.wlObjects))
-    }
-    return args
-  }
-
-  /**
-   *
    * @param {number} id
    * @param {number} opcode
    * @param {number} size

@@ -27,40 +27,49 @@ SOFTWARE.
 class ProtocolArguments {
   /**
    * @param {string}argName
-   * @param {boolean}optional
    * @return {{signature: string, jsType: string, marshallGen: string}}
    */
-  static uint (argName, optional) {
+  static fd (argName) {
     return {
-      signature: optional ? '?u' : 'u',
-      jsType: optional ? '?number' : 'number',
-      marshallGen: optional ? `uintOptional(${argName})` : `uint(${argName})`
+      signature: 'h(message)',
+      jsType: 'WebFD',
+      marshallGen: `fileDescriptor(${argName})`
     }
   }
 
   /**
    * @param {string}argName
-   * @param {boolean}optional
    * @return {{signature: string, jsType: string, marshallGen: string}}
    */
-  static int (argName, optional) {
+  static uint (argName) {
     return {
-      signature: optional ? '?i' : 'i',
-      jsType: optional ? '?number' : 'number',
-      marshallGen: optional ? `intOptional(${argName})` : `int(${argName})`
+      signature: 'u(message)',
+      jsType: 'number',
+      marshallGen: `uint(${argName})`
     }
   }
 
   /**
    * @param {string}argName
-   * @param {boolean}optional
    * @return {{signature: string, jsType: string, marshallGen: string}}
    */
-  static fixed (argName, optional) {
+  static int (argName) {
     return {
-      signature: optional ? '?f' : 'f',
-      jsType: optional ? '?Fixed' : 'Fixed',
-      marshallGen: optional ? `fixedOptional(${argName})` : `fixed(${argName})`
+      signature: 'i(message)',
+      jsType: 'number',
+      marshallGen: `int(${argName})`
+    }
+  }
+
+  /**
+   * @param {string}argName
+   * @return {{signature: string, jsType: string, marshallGen: string}}
+   */
+  static fixed (argName) {
+    return {
+      signature: 'f(message)',
+      jsType: 'Fixed',
+      marshallGen: `fixed(${argName})`
     }
   }
 
@@ -71,7 +80,7 @@ class ProtocolArguments {
    */
   static object (argName, optional) {
     return {
-      signature: optional ? '?o' : 'o',
+      signature: `o(message, ${optional}, this.display.connection)`,
       jsType: optional ? '?*' : '*',
       marshallGen: optional ? `objectOptional(${argName})` : `object(${argName})`
     }
@@ -79,13 +88,12 @@ class ProtocolArguments {
 
   /**
    * @param {string}argName
-   * @param {boolean}optional
    * @return {{signature: string, jsType: string, marshallGen: string}}
    */
-  static new_id (argName, optional) {
+  static new_id (argName) {
     return {
-      signature: optional ? '?n' : 'n',
-      jsType: 'Proxy',
+      signature: 'n(message)',
+      jsType: 'number',
       marshallGen: 'newObject()'
     }
   }
@@ -97,7 +105,7 @@ class ProtocolArguments {
    */
   static string (argName, optional) {
     return {
-      signature: optional ? '?s' : 's',
+      signature: `s(message, ${optional})`,
       jsType: optional ? '?string' : 'string',
       marshallGen: optional ? `stringOptional(${argName})` : `string(${argName})`
     }
@@ -110,8 +118,8 @@ class ProtocolArguments {
    */
   static array (argName, optional) {
     return {
-      signature: optional ? '?a' : 'a',
-      jsType: optional ? '?TypedArray' : 'TypedArray',
+      signature: `a(message, ${optional})`,
+      jsType: optional ? '?ArrayBuffer' : 'ArrayBuffer',
       marshallGen: optional ? `arrayOptional(${argName})` : `array(${argName})`
     }
   }

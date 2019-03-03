@@ -24,10 +24,116 @@ SOFTWARE.
 
 'use strict'
 
+import Display from './src/Display'
+
+// core wayland protocol
+import WlDisplayProxy from './src/protocol/WlDisplayProxy'
+import WlRegistryProxy from './src/protocol/WlRegistryProxy'
+import WlCallbackProxy from './src/protocol/WlCallbackProxy'
+import WlCompositorProxy from './src/protocol/WlCompositorProxy'
+// import WlShmPoolProxy from './src/protocol/WlShmPoolProxy'
+// import WlShmProxy from './src/protocol/WlShmProxy'
+import WlBufferProxy from './src/protocol/WlBufferProxy'
+import WlDataOfferProxy from './src/protocol/WlDataOfferProxy'
+import WlDataSourceProxy from './src/protocol/WlDataSourceProxy'
+import WlDataDeviceProxy from './src/protocol/WlDataDeviceProxy'
+import WlDataDeviceManagerProxy from './src/protocol/WlDataDeviceManagerProxy'
+import WlShellProxy from './src/protocol/WlShellProxy'
+import WlShellSurfaceProxy from './src/protocol/WlShellSurfaceProxy'
+import WlSurfaceProxy from './src/protocol/WlSurfaceProxy'
+import WlSeatProxy from './src/protocol/WlSeatProxy'
+import WlPointerProxy from './src/protocol/WlPointerProxy'
+import WlKeyboardProxy from './src/protocol/WlKeyboardProxy'
+import WlTouchProxy from './src/protocol/WlTouchProxy'
+import WlOutputProxy from './src/protocol/WlOutputProxy'
+import WlRegionProxy from './src/protocol/WlRegionProxy'
+import WlSubcompositorProxy from './src/protocol/WlSubcompositorProxy'
+import WlSubsurfaceProxy from './src/protocol/WlSubsurfaceProxy'
+import WlDisplayEvents from './src/protocol/WlDisplayEvents'
+import WlRegistryEvents from './src/protocol/WlRegistryEvents'
+import WlCallbackEvents from './src/protocol/WlCallbackEvents'
+// import WlShmEvents from './src/protocol/WlShmEvents'
+import WlBufferEvents from './src/protocol/WlBufferEvents'
+import WlDataOfferEvents from './src/protocol/WlDataOfferEvents'
+import WlDataSourceEvents from './src/protocol/WlDataSourceEvents'
+import WlDataDeviceEvents from './src/protocol/WlDataDeviceEvents'
+import WlShellSurfaceEvents from './src/protocol/WlShellSurfaceEvents'
+import WlSurfaceEvents from './src/protocol/WlSurfaceEvents'
+import WlSeatEvents from './src/protocol/WlSeatEvents'
+import WlPointerEvents from './src/protocol/WlPointerEvents'
+import WlKeyboardEvents from './src/protocol/WlKeyboardEvents'
+import WlTouchEvents from './src/protocol/WlTouchEvents'
+import WlOutputEvents from './src/protocol/WlOutputEvents'
+
+// xdg_shell
+import XdgWmBaseProxy from './src/protocol/XdgWmBaseProxy'
+import XdgPositionerProxy from './src/protocol/XdgPositionerProxy'
+import XdgSurfaceProxy from './src/protocol/XdgSurfaceProxy'
+import XdgToplevelProxy from './src/protocol/XdgToplevelProxy'
+import XdgPopupProxy from './src/protocol/XdgPopupProxy'
+import XdgWmBaseEvents from './src/protocol/XdgWmBaseEvents'
+import XdgSurfaceEvents from './src/protocol/XdgSurfaceEvents'
+import XdgToplevelEvents from './src/protocol/XdgToplevelEvents'
+import XdgPopupEvents from './src/protocol/XdgPopupEvents'
+
+import WebArrayBufferProxy from './src/protocol/WebArrayBufferProxy'
+import WebShmProxy from './src/protocol/WebShmProxy'
+import WebArrayBufferEvents from './src/protocol/WebArrayBufferEvents'
+import WebShmEvents from './src/protocol/WebShmEvents'
+
 /**
- * @type {{Display: Display, Fixed: Fixed}}
+ * @type {{Display: Display}}
  */
-module.exports = {
-  Display: require('./src/Display'),
-  Fixed: require('./src/Fixed')
+export {
+  Display,
+
+  WlDisplayProxy,
+  WlRegistryProxy,
+  WlCallbackProxy,
+  WlCompositorProxy,
+  WlBufferProxy,
+  WlDataOfferProxy,
+  WlDataSourceProxy,
+  WlDataDeviceProxy,
+  WlDataDeviceManagerProxy,
+  WlShellProxy,
+  WlShellSurfaceProxy,
+  WlSurfaceProxy,
+  WlSeatProxy,
+  WlPointerProxy,
+  WlKeyboardProxy,
+  WlTouchProxy,
+  WlOutputProxy,
+  WlRegionProxy,
+  WlSubcompositorProxy,
+  WlSubsurfaceProxy,
+  WlDisplayEvents,
+  WlRegistryEvents,
+  WlCallbackEvents,
+  WlBufferEvents,
+  WlDataOfferEvents,
+  WlDataSourceEvents,
+  WlDataDeviceEvents,
+  WlShellSurfaceEvents,
+  WlSurfaceEvents,
+  WlSeatEvents,
+  WlPointerEvents,
+  WlKeyboardEvents,
+  WlTouchEvents,
+  WlOutputEvents,
+
+  XdgWmBaseProxy,
+  XdgPositionerProxy,
+  XdgSurfaceProxy,
+  XdgToplevelProxy,
+  XdgPopupProxy,
+  XdgWmBaseEvents,
+  XdgSurfaceEvents,
+  XdgToplevelEvents,
+  XdgPopupEvents,
+
+  WebArrayBufferProxy,
+  WebShmProxy,
+  WebArrayBufferEvents,
+  WebShmEvents
 }

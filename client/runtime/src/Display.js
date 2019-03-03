@@ -24,35 +24,35 @@ SOFTWARE.
 'use strict'
 
 import { Connection } from 'westfield-runtime-common'
-import SyncCallbackProxy from './SyncCallbackProxy'
-import RegistryProxy from './RegistryProxy'
-import Proxy from './Proxy'
+import WlDisplayProxy from './protocol/WlDisplayProxy'
+import WlDisplayEvents from './protocol/WlDisplayEvents'
 
-const { newObject, o, u, s } = Connection
-
-class Display extends Proxy {
+/**
+ * @implements WlDisplayEvents
+ */
+class Display extends WlDisplayEvents {
   constructor () {
-    // Proxy expects a display object as super arg. We can't do that here so we set it immediately afterwards.
-    // This is mostly to make our connection object be in line of a general WlObject layout as the connection object
-    // is a special case as it's the core root object.
-    super(null, 1)
-    /**
-     * @type {Display}
-     */
-    super.display = this
-    /**
-     * @type {Display}
-     */
-    this.implementation = this
-    this.connection = new Connection()
+    super()
     /**
      * @type {number}
      */
-    this.nextId = 2
+    this.nextId = 1
+    /**
+     * @type {WlDisplayProxy}
+     */
+    this.displayProxy = new WlDisplayProxy(this, this.nextId++)
+    /**
+     * @type {Display}
+     */
+    this.displayProxy.implementation = this
+    /**
+     * @type {Connection}
+     */
+    this.connection = new Connection()
   }
 
   /**
-   *
+   * For internal use only.
    * @param {number} id
    * @param {number} opcode
    * @param {function} proxyConstructor
@@ -78,7 +78,7 @@ class Display extends Proxy {
   }
 
   /**
-   *
+   * For internal use only.
    * @param {number} id
    * @param {number} opcode
    * @param {Array<{value: *, type: string, size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<WebFD>, bufferOffset: number}):void}>} argsArray
@@ -117,11 +117,11 @@ class Display extends Proxy {
   }
 
   /**
-   * @return {RegistryProxy}
+   * @return {WlRegistryProxy}
    */
   getRegistry () {
     // createRegistry -> opcode 1
-    return this.display.marshallConstructor(this.id, 1, RegistryProxy.constructor, [newObject()])
+    return this.displayProxy.getRegistry()
   }
 
   /**
@@ -129,10 +129,10 @@ class Display extends Proxy {
    * @return {Promise<number>}
    */
   async roundtrip () {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const syncCallback = this.sync()
       syncCallback.listener = resolve
-      this.flush()
+      this.connection.flush()
     })
   }
 
@@ -140,6 +140,8 @@ class Display extends Proxy {
    * @param {Proxy}proxy
    * @param {number}code
    * @param {string}message
+   * @override
+   * @private
    */
   error (proxy, code, message) {
     console.error(message)
@@ -147,37 +149,19 @@ class Display extends Proxy {
   }
 
   /**
-   * @param {number}id
-   * @private
-   */
-  _deleteId (id) {
-    // TODO object id recycling
-  }
-
-  /**
-   * @return {SyncCallbackProxy}
+   * @return {WlCallbackProxy}
    */
   sync () {
-    return this.display.marshallConstructor(this.id, 0, SyncCallbackProxy.constructor, [newObject()])
+    return this.displayProxy.sync()
   }
 
   /**
-   * opcode 0 -> error
-   *
-   * @param {{buffer: Uint32Array, fds: Array<WebFD>, bufferOffset: number, consumed: number, size: number}} message
+   * @param {number}id
+   * @override
+   * @private
    */
-  [0] (message) {
-    this.close()
-    this.implementation.error(o(message, false, this.connection), u(message), s(message, false))
-  }
-
-  /**
-   * opcode 1 -> deleteId
-   *
-   * @param {{buffer: Uint32Array, fds: Array<WebFD>, bufferOffset: number, consumed: number, size: number}} message
-   */
-  [0] (message) {
-    this.implementation._deleteId(u(message))
+  deleteId (id) {
+    // TODO object id recycling?
   }
 }
 

@@ -32,7 +32,7 @@ class ProtocolArguments {
   static fd (argName) {
     return {
       signature: 'h(message)',
-      jsType: 'number',
+      jsType: 'WebFD',
       marshallGen: `fileDescriptor(${argName})`
     }
   }
