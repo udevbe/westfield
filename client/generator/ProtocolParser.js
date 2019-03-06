@@ -97,7 +97,7 @@ class ProtocolParser {
         }
         if (argType === 'new_id') {
           const argItf = upperCamelCase(arg.$['interface']) + 'Proxy'
-          importLines.push(`const ${argItf} = require('./${argItf}')\n`)
+          importLines.push(`import ${argItf} from './${argItf}'\n`)
           evSig += `new ${argItf}(this.display, ${ProtocolArguments[argType](argName, optional).signature})`
         } else {
           evSig += ProtocolArguments[argType](argName, optional).signature
@@ -268,9 +268,9 @@ class ProtocolParser {
 
     if (itfName) {
       if (itfName !== 'any') {
-        importLines.push(`const ${itfName}Proxy = require('./${itfName}Proxy')\n`)
+        importLines.push(`import ${itfName}Proxy from './${itfName}Proxy'\n`)
       }
-      codeLines.push(`\t\treturn this.display.marshallConstructor(this.id, ${opcode}, ${itfName}Proxy.constructor, ${argArray})\n`)
+      codeLines.push(`\t\treturn this.display.marshallConstructor(this.id, ${opcode}, ${itfName}Proxy, ${argArray})\n`)
     } else {
       codeLines.push(`\t\tthis.display.marshall(this.id, ${opcode}, ${argArray})\n`)
     }
@@ -309,8 +309,8 @@ class ProtocolParser {
     const importLines = []
     const codeLines = []
 
-    importLines.push('const Proxy = require(\'./Proxy\')\n')
-    proxyOut.write('const { Connection } = require(\'westfield-runtime-common\')\n')
+    importLines.push('import Proxy from \'./Proxy\'\n')
+    proxyOut.write('import { Connection } from \'westfield-runtime-common\'\n')
     proxyOut.write('const { uint, uintOptional, int, intOptional, fixed, \n' +
       '\tfixedOptional, object, objectOptional, newObject, string, \n' +
       '\tstringOptional, array, arrayOptional, \n' +
@@ -497,7 +497,7 @@ class ProtocolParser {
     eventsOut.write('/**\n')
     eventsOut.write(' * @interface\n')
     eventsOut.write(' */\n')
-    eventsOut.write(`class ${eventsName} {\n`)
+    eventsOut.write(`export default class ${eventsName} {\n`)
 
     for (let j = 0; j < itfEvents.length; j++) {
       const itfEvent = itfEvents[j]
@@ -505,7 +505,6 @@ class ProtocolParser {
     }
 
     eventsOut.write('}\n\n')
-    eventsOut.write(`module.exports = ${eventsName}\n`)
     eventsOut.end()
   }
 }

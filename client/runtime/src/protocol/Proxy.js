@@ -25,7 +25,7 @@ SOFTWARE.
 
 import { WlObject } from 'westfield-runtime-common'
 
-class Proxy extends WlObject {
+export default class Proxy extends WlObject {
   /**
    *
    * @param {Display} display
@@ -40,5 +40,3 @@ class Proxy extends WlObject {
     this.display.registerProxy(this)
   }
 }
-
-module.exports = Proxy

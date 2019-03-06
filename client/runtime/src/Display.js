@@ -30,7 +30,7 @@ import WlDisplayEvents from './protocol/WlDisplayEvents'
 /**
  * @implements WlDisplayEvents
  */
-class Display extends WlDisplayEvents {
+export default class Display extends WlDisplayEvents {
   constructor () {
     super()
     /**
@@ -38,29 +38,29 @@ class Display extends WlDisplayEvents {
      */
     this.nextId = 1
     /**
+     * @type {Connection}
+     */
+    this.connection = new Connection()
+    /**
      * @type {WlDisplayProxy}
      */
     this.displayProxy = new WlDisplayProxy(this, this.nextId++)
     /**
      * @type {Display}
      */
-    this.displayProxy.implementation = this
-    /**
-     * @type {Connection}
-     */
-    this.connection = new Connection()
+    this.displayProxy.listener = this
   }
 
   /**
    * For internal use only.
    * @param {number} id
    * @param {number} opcode
-   * @param {function} proxyConstructor
+   * @param {Proxy} proxyClass
    * @param {Array<{value: *, type: string, size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<WebFD>, bufferOffset: number}):void}>} argsArray
    */
-  marshallConstructor (id, opcode, proxyConstructor, argsArray) {
+  marshallConstructor (id, opcode, proxyClass, argsArray) {
     // construct new object
-    const proxy = new proxyConstructor(this, this.nextId++)
+    const proxy = new proxyClass(this, this.nextId++)
     this.registerProxy(proxy)
 
     // determine required wire message length
@@ -164,5 +164,3 @@ class Display extends WlDisplayEvents {
     // TODO object id recycling?
   }
 }
-
-export default Display

@@ -24,6 +24,7 @@ SOFTWARE.
 
 'use strict'
 
+import WebFS from './src/WebFS'
 import Display from './src/Display'
 
 // core wayland protocol
@@ -76,16 +77,109 @@ import XdgSurfaceEvents from './src/protocol/XdgSurfaceEvents'
 import XdgToplevelEvents from './src/protocol/XdgToplevelEvents'
 import XdgPopupEvents from './src/protocol/XdgPopupEvents'
 
+// web shm
 import WebArrayBufferProxy from './src/protocol/WebArrayBufferProxy'
 import WebShmProxy from './src/protocol/WebShmProxy'
 import WebArrayBufferEvents from './src/protocol/WebArrayBufferEvents'
 import WebShmEvents from './src/protocol/WebShmEvents'
 
 /**
- * @type {{Display: Display}}
+ * @type {WebFS}
+ */
+const webFS = WebFS.create(_uuidv4())
+/**
+ * @type {Display}
+ */
+const display = new Display()
+
+/**
+ * @returns {string}
+ * @private
+ */
+function _uuidv4 () {
+  return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+    (c ^ self.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+  )
+}
+
+/**
+ * @param {Connection}connection
+ * @param {WebFS}webFS
+ * @private
+ */
+function _setupMessageHandling (connection, webFS) {
+  /**
+   * @type {Array<Array<{buffer: ArrayBuffer, fds: Array<WebFD>}>>}
+   * @private
+   */
+  const _flushQueue = []
+  /**
+   * @param {MessageEvent}event
+   */
+  onmessage = (event) => {
+    const webWorkerMessage = /** @type {{protocolMessage:ArrayBuffer, meta:Array<Transferable>}} */event.data
+    if (webWorkerMessage.protocolMessage instanceof ArrayBuffer) {
+      const buffer = new Uint32Array(/** @type {ArrayBuffer} */webWorkerMessage.protocolMessage)
+      const fds = webWorkerMessage.meta.map(transferable => {
+        if (transferable instanceof ArrayBuffer) {
+          return webFS.fromArrayBuffer(transferable)
+        } else if (transferable instanceof ImageBitmap) {
+          return webFS.fromImageBitmap(transferable)
+        }// else if (transferable instanceof MessagePort) {
+        // }
+        throw new Error(`Unsupported transferable: ${transferable}`)
+      })
+      connection.message({ buffer, fds })
+    } else {
+      console.error(`[web-worker-client] server send an illegal message.`)
+      connection.close()
+    }
+  }
+
+  /**
+   * @param {Array<{buffer: ArrayBuffer, fds: Array<WebFD>}>}wireMessages
+   * @return {Promise<void>}
+   */
+  connection.onFlush = async (wireMessages) => {
+    _flushQueue.push(wireMessages)
+
+    if (_flushQueue.length > 1) {
+      return
+    }
+
+    while (_flushQueue.length) {
+      const sendWireMessages = _flushQueue[0]
+
+      // convert to single arrayBuffer so it can be send over a data channel using zero copy semantics.
+      const messagesSize = sendWireMessages.reduce((previousValue, currentValue) => previousValue + currentValue.buffer.byteLength, 0)
+
+      const sendBuffer = new Uint32Array(new ArrayBuffer(messagesSize))
+      let offset = 0
+      const meta = []
+      for (const wireMessage of sendWireMessages) {
+        for (const webFd of wireMessage.fds) {
+          const transferable = await webFd.getTransferable()
+          meta.push(transferable)
+        }
+        const message = new Uint32Array(wireMessage.buffer)
+        sendBuffer.set(message, offset)
+        offset += message.length
+      }
+
+      postMessage({ protocolMessage: sendBuffer.buffer, meta }, [sendBuffer.buffer].concat(meta))
+      _flushQueue.shift()
+    }
+  }
+}
+
+_setupMessageHandling(display.connection, webFS)
+
+/**
+ * @type {{display: Display, webFS: WebFS}}
  */
 export {
-  Display,
+  webFS,
+  display,
 
   WlDisplayProxy,
   WlRegistryProxy,
