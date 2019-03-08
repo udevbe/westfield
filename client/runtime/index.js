@@ -81,7 +81,6 @@ import XdgPopupEvents from './src/protocol/XdgPopupEvents'
 import WebArrayBufferProxy from './src/protocol/WebArrayBufferProxy'
 import WebShmProxy from './src/protocol/WebShmProxy'
 import WebArrayBufferEvents from './src/protocol/WebArrayBufferEvents'
-import WebShmEvents from './src/protocol/WebShmEvents'
 
 /**
  * @type {WebFS}
@@ -228,6 +227,5 @@ export {
 
   WebArrayBufferProxy,
   WebShmProxy,
-  WebArrayBufferEvents,
-  WebShmEvents
+  WebArrayBufferEvents
 }
