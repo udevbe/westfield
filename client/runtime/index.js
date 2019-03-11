@@ -78,9 +78,13 @@ import XdgToplevelEvents from './src/protocol/XdgToplevelEvents'
 import XdgPopupEvents from './src/protocol/XdgPopupEvents'
 
 // web shm
-import WebArrayBufferProxy from './src/protocol/WebArrayBufferProxy'
-import WebShmProxy from './src/protocol/WebShmProxy'
-import WebArrayBufferEvents from './src/protocol/WebArrayBufferEvents'
+import GrWebShmBufferProxy from './src/protocol/GrWebShmBufferProxy'
+import GrWebShmProxy from './src/protocol/GrWebShmProxy'
+import GrWebShmBufferEvents from './src/protocol/GrWebShmBufferEvents'
+
+// web gl
+import GrWebGLBufferProxy from './src/protocol/GrWebGlBufferProxy'
+import GrWebGLProxy from './src/protocol/GrWebGlProxy'
 
 /**
  * @type {WebFS}
@@ -225,7 +229,10 @@ export {
   XdgToplevelEvents,
   XdgPopupEvents,
 
-  WebArrayBufferProxy,
-  WebShmProxy,
-  WebArrayBufferEvents
+  GrWebShmBufferProxy,
+  GrWebShmProxy,
+  GrWebShmBufferEvents,
+
+  GrWebGLBufferProxy,
+  GrWebGLProxy
 }

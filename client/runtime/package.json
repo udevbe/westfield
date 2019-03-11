@@ -4,10 +4,11 @@
   "description": "Wayland HTML5 core client protocol",
   "main": "index.js",
   "scripts": {
-    "prepare:generate:webshm": "westfield-scanner-client ../../protocol/web-shm.xml -o src/protocol",
+    "prepare:generate:webgl": "westfield-scanner-client ../../protocol/gr-web-gl.xml -o src/protocol",
+    "prepare:generate:webshm": "westfield-scanner-client ../../protocol/gr-web-shm.xml -o src/protocol",
     "prepare:generate:xdgshell": "westfield-scanner-client ../../protocol/xdg-shell.xml -o src/protocol",
     "prepare:generate:wayland": "westfield-scanner-client ../../protocol/wayland.xml -o src/protocol",
-    "prepare:generate": "mkdir -p src/protocol/ && npm run prepare:generate:wayland && npm run prepare:generate:xdgshell && npm run prepare:generate:webshm",
+    "prepare:generate": "mkdir -p src/protocol/ && npm run prepare:generate:wayland && npm run prepare:generate:xdgshell && npm run prepare:generate:webshm && npm run prepare:generate:webgl",
     "prepare": "npm run prepare:generate && webpack --config build.config/webpack.config.prod.js",
     "prepare:dev": "npm run prepare:generate && webpack --config build.config/webpack.config.dev.js"
   },
