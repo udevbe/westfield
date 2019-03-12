@@ -26,6 +26,7 @@ SOFTWARE.
 
 import WebFS from './src/WebFS'
 import Display from './src/Display'
+import { Connection } from 'westfield-runtime-common'
 
 // core wayland protocol
 import WlDisplayProxy from './src/protocol/WlDisplayProxy'
@@ -91,9 +92,13 @@ import GrWebGLProxy from './src/protocol/GrWebGlProxy'
  */
 const webFS = WebFS.create(_uuidv4())
 /**
+ * @type {Connection}
+ */
+const connection = new Connection()
+/**
  * @type {Display}
  */
-const display = new Display()
+const display = new Display(connection)
 
 /**
  * @returns {string}
@@ -106,11 +111,12 @@ function _uuidv4 () {
 }
 
 /**
+ * @param {Display}display
  * @param {Connection}connection
  * @param {WebFS}webFS
  * @private
  */
-function _setupMessageHandling (connection, webFS) {
+function _setupMessageHandling (display, connection, webFS) {
   /**
    * @type {Array<Array<{buffer: ArrayBuffer, fds: Array<WebFD>}>>}
    * @private
@@ -120,6 +126,8 @@ function _setupMessageHandling (connection, webFS) {
    * @param {MessageEvent}event
    */
   onmessage = (event) => {
+    if (connection.closed) { return }
+
     const webWorkerMessage = /** @type {{protocolMessage:ArrayBuffer, meta:Array<Transferable>}} */event.data
     if (webWorkerMessage.protocolMessage instanceof ArrayBuffer) {
       const buffer = new Uint32Array(/** @type {ArrayBuffer} */webWorkerMessage.protocolMessage)
@@ -130,9 +138,20 @@ function _setupMessageHandling (connection, webFS) {
           return webFS.fromImageBitmap(transferable)
         }// else if (transferable instanceof MessagePort) {
         // }
-        throw new Error(`Unsupported transferable: ${transferable}`)
+        console.warn(`COMPOSITOR BUG? Unsupported transferable received from compositor: ${transferable}. WebFD will be null.`)
+        return null
       })
-      connection.message({ buffer, fds })
+      try {
+        connection.message({ buffer, fds })
+      } catch (e) {
+        if (display.errorHandler && typeof display.errorHandler === 'function') {
+          display.errorHandler(e)
+        } else {
+          console.error('\tname: ' + e.name + ' message: ' + e.message + ' text: ' + e.text)
+          console.error('error object stack: ')
+          console.error(e.stack)
+        }
+      }
     } else {
       console.error(`[web-worker-client] server send an illegal message.`)
       connection.close()
@@ -175,14 +194,30 @@ function _setupMessageHandling (connection, webFS) {
   }
 }
 
-_setupMessageHandling(display.connection, webFS)
+_setupMessageHandling(display, connection, webFS)
 
 /**
- * @type {{display: Display, webFS: WebFS}}
+ * @param {WlSurfaceProxy}wlSurfaceProxy
+ * @return {function(): Promise<number>}
  */
+function frame (wlSurfaceProxy) {
+  return () => {
+    return new Promise(resolve => {
+      const wlCallbackProxy = wlSurfaceProxy.frame()
+      wlCallbackProxy.listener = {
+        done: (data) => {
+          resolve(data)
+          wlCallbackProxy.destroy()
+        }
+      }
+    })
+  }
+}
+
 export {
   webFS,
   display,
+  frame,
 
   WlDisplayProxy,
   WlRegistryProxy,

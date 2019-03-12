@@ -25,142 +25,144 @@ SOFTWARE.
 
 import { Connection } from 'westfield-runtime-common'
 import WlDisplayProxy from './protocol/WlDisplayProxy'
-import WlDisplayEvents from './protocol/WlDisplayEvents'
 
-/**
- * @implements WlDisplayEvents
- */
-export default class Display extends WlDisplayEvents {
-  constructor () {
-    super()
+export default class Display {
+  /**
+   * @param {Connection}connection
+   */
+  constructor (connection) {
     /**
-     * @type {number}
+     * @type {Array<number>}
+     * @private
      */
-    this.nextId = 1
+    this._recycledIds = []
     /**
      * @type {Connection}
+     * @private
      */
-    this.connection = new Connection()
+    this._connection = connection
     /**
      * @type {WlDisplayProxy}
+     * @private
      */
-    this.displayProxy = new WlDisplayProxy(this, this.nextId++)
+    this._displayProxy = new WlDisplayProxy(this, this._connection, 1)
     /**
-     * @type {Display}
+     * @type {number}
+     * @private
      */
-    this.displayProxy.listener = this
-  }
+    this._lastId = 1
+    /**
+     * @type {function():void}
+     * @private
+     */
+    this._destroyResolve = null
+    /**
+     * @type {function(error:Error):void}
+     * @private
+     */
+    this._destroyReject = null
+    /**
+     * @type {Promise<void>}
+     * @private
+     */
+    this._destroyPromise = new Promise(((resolve, reject) => {
+      this._destroyResolve = resolve
+      this._destroyReject = reject
+    }))
 
-  /**
-   * For internal use only.
-   * @param {number} id
-   * @param {number} opcode
-   * @param {Proxy} proxyClass
-   * @param {Array<{value: *, type: string, size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<WebFD>, bufferOffset: number}):void}>} argsArray
-   */
-  marshallConstructor (id, opcode, proxyClass, argsArray) {
-    // construct new object
-    const proxy = new proxyClass(this, this.nextId++)
-    this.registerProxy(proxy)
-
-    // determine required wire message length
-    let size = 4 + 2 + 2 // id+size+opcode
-    argsArray.forEach(arg => {
-      if (arg.type === 'n') {
-        arg.value = proxy.id
-      }
-      size += arg.size
-    })
-
-    this.connection.marshallMsg(id, opcode, size, argsArray)
-
-    return proxy
-  }
-
-  /**
-   * For internal use only.
-   * @param {number} id
-   * @param {number} opcode
-   * @param {Array<{value: *, type: string, size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<WebFD>, bufferOffset: number}):void}>} argsArray
-   */
-  marshall (id, opcode, argsArray) {
-    // determine required wire message length
-    let size = 4 + 2 + 2  // id+size+opcode
-    argsArray.forEach(arg => size += arg.size)
-    this.connection.marshallMsg(id, opcode, size, argsArray)
+    this._displayProxy.listener = {
+      /**
+       * @param id
+       */
+      deleteId: (id) => { this._recycledIds.push(id) },
+      /**
+       * @param proxy
+       * @param code
+       * @param message
+       */
+      error: (proxy, code, message) => { this._protocolError(proxy, code, message) }
+    }
+    /**
+     * Set this to have a default 'catch-all' application error handler. Can be null for default behavior.
+     * @param {function(error):void|null}
+     */
+    this.errorHandler = null
   }
 
   close () {
-    if (this.connection.closed) { return }
-    this.connection.close()
-    this.display = null
-    this.implementation = null
-    this._destroyedResolver()
-  }
-
-  /**
-   *
-   * @param {Proxy} proxy
-   */
-  registerProxy (proxy) {
-    this.connection.registerWlObject(proxy)
-    // TODO proxy created listener?
-  }
-
-  /**
-   * @param {Proxy}proxy
-   * @private
-   */
-  unregisterProxy (proxy) {
-    this.connection.unregisterWlObject(proxy)
-    // TODO proxy destroyed listener?
-  }
-
-  /**
-   * @return {WlRegistryProxy}
-   */
-  getRegistry () {
-    // createRegistry -> opcode 1
-    return this.displayProxy.getRegistry()
-  }
-
-  /**
-   * Flush and resolve once all requests have been processed by the server.
-   * @return {Promise<number>}
-   */
-  async roundtrip () {
-    return new Promise(resolve => {
-      const syncCallback = this.sync()
-      syncCallback.listener = resolve
-      this.connection.flush()
-    })
+    if (this._connection.closed) { return }
+    this._connection.close()
+    this._destroyResolve()
   }
 
   /**
    * @param {Proxy}proxy
    * @param {number}code
    * @param {string}message
-   * @override
    * @private
    */
-  error (proxy, code, message) {
-    console.error(message)
-    this.close()
+  _protocolError (proxy, code, message) {
+    if (this._connection.closed) { return }
+    this._connection.close()
+    this._destroyReject(new Error(`Protocol error. type: ${proxy.constructor.name}, id: ${proxy.id}, code: ${code}, message: ${message}`))
   }
 
   /**
-   * @return {WlCallbackProxy}
+   * Resolves once the connection is closed normally ie. with a call to close(). The promise will be rejected with an
+   * error if the connection is closed abnormally ie when a protocol error is received.
+   *
+   * @return {Promise<void>}
+   */
+  onClose () {
+    return this._destroyPromise
+  }
+
+  /**
+   * @return {WlRegistryProxy}
+   */
+  getRegistry () {
+    return this._displayProxy.getRegistry()
+  }
+
+  /**
+   * For internal use. Generates the id of the next proxy object.
+   *
+   * @return {number}
+   */
+  generateNextId () {
+    if (this._recycledIds.length) {
+      return this._recycledIds.shift()
+    } else {
+      return ++this._lastId
+    }
+  }
+
+  /**
+   * Wait for the compositor to have send us all remaining events.
+   *
+   * The data in the resolved promise is the event serial.
+   *
+   * Don't 'await' this sync call as it will result in a deadlock where the worker will block all incoming events,
+   * including the event the resolves the await state. Instead use the classic 'then(..)' construct.
+   *
+   * @return {Promise<number>}
    */
   sync () {
-    return this.displayProxy.sync()
+    return new Promise(resolve => {
+      const wlCallbackProxy = this._displayProxy.sync()
+      wlCallbackProxy.listener = {
+        done: (data) => {
+          resolve(data)
+          wlCallbackProxy.destroy()
+        }
+      }
+    })
   }
 
   /**
-   * @param {number}id
-   * @override
-   * @private
+   * Send queued messages to the compositor.
    */
-  deleteId (id) {
-    // TODO object id recycling?
+  flush () {
+    this._connection.flush()
   }
 }

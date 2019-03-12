@@ -31,15 +31,13 @@ class WlObject {
      * @type {Promise<void>}
      * @private
      */
-    this._destroyPromise = new Promise((resolve) => {
-      this._destroyResolver = resolve
-    })
+    this._destroyPromise = new Promise(resolve => this._destroyResolver = resolve)
     /**
      * @type {Array<function(Resource):void>}
      * @private
      */
     this._destroyListeners = []
-    this._destroyPromise.then(() => this._destroyListeners.forEach((destroyListener) => destroyListener(this)))
+    this._destroyPromise.then(() => this._destroyListeners.forEach(destroyListener => destroyListener(this)))
   }
 
   destroy () {

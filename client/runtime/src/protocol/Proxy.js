@@ -27,16 +27,65 @@ import { WlObject } from 'westfield-runtime-common'
 
 export default class Proxy extends WlObject {
   /**
-   *
    * @param {Display} display
+   * @param {Connection}connection
    * @param {number}id
    */
-  constructor (display, id) {
+  constructor (display, connection, id) {
     super(id)
     /**
      * @type {Display}
+     * @private
      */
     this.display = display
-    this.display.registerProxy(this)
+    this._connection = connection
+    connection.registerWlObject(this)
+  }
+
+  destroy () {
+    super.destroy()
+    this._connection.unregisterWlObject(this)
+  }
+
+  /**
+   * For internal use only.
+   * @param {number} id
+   * @param {number} opcode
+   * @param {Function} proxyClass
+   * @param {Array<{value: *, type: string, size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<WebFD>, bufferOffset: number}):void}>} argsArray
+   * @protected
+   */
+  _marshallConstructor (id, opcode, proxyClass, argsArray) {
+    // construct new object
+    const proxy = new proxyClass(this.display, this._connection, this.display.generateNextId())
+
+    // determine required wire message length
+    let size = 4 + 2 + 2 // id+size+opcode
+    argsArray.forEach(arg => {
+      if (arg.type === 'n') {
+        arg.value = proxy.id
+      }
+      size += arg.size
+    })
+
+    this._connection.marshallMsg(id, opcode, size, argsArray)
+
+    return proxy
+  }
+
+  /**
+   * For internal use only.
+   * @param {number} id
+   * @param {number} opcode
+   * @param {Array<{value: *, type: string, size: number, optional: boolean, _marshallArg: function({buffer: ArrayBuffer, fds: Array<WebFD>, bufferOffset: number}):void}>} argsArray
+   * @protected
+   */
+  _marshall (id, opcode, argsArray) {
+    // determine required wire message length
+    let size = 4 + 2 + 2  // id+size+opcode
+    argsArray.forEach(arg => size += arg.size)
+    this._connection.marshallMsg(id, opcode, size, argsArray)
   }
 }
+
+

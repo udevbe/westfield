@@ -693,6 +693,7 @@ class Connection {
    */
   registerWlObject (wlObject) {
     if (this.closed) { return }
+    if (wlObject.id in this.wlObjects) { throw new Error(`Illegal object id: ${wlObject.id}. Already registered.`) }
     this.wlObjects[wlObject.id] = wlObject
   }
 

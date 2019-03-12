@@ -98,7 +98,7 @@ class ProtocolParser {
         if (argType === 'new_id') {
           const argItf = upperCamelCase(arg.$['interface']) + 'Proxy'
           importLines.push(`import ${argItf} from './${argItf}'\n`)
-          evSig += `new ${argItf}(this.display, ${ProtocolArguments[argType](argName, optional).signature})`
+          evSig += `new ${argItf}(this._connection, ${ProtocolArguments[argType](argName, optional).signature})`
         } else {
           evSig += ProtocolArguments[argType](argName, optional).signature
         }
@@ -171,12 +171,12 @@ class ProtocolParser {
 \t*
 \t* @param {number} name unique numeric name of the global
 \t* @param {string} interface_ interface implemented by the new object
-\t* @param {Object} proxyClass
+\t* @param {Function} proxyClass
 \t* @param {number} version The version used and supported by the client
 \t* @return {Object} a new bounded object
 \t*/
 \tbind (name, interface_, proxyClass, version) {
-\t\treturn this.display.marshallConstructor(this.id, 0, proxyClass, [uint(name), string(interface_), uint(version), newObject()])
+\t\treturn this._marshallConstructor(this.id, 0, proxyClass, [uint(name), string(interface_), uint(version), newObject()])
 \t}\n`
     )
   }
@@ -266,13 +266,17 @@ class ProtocolParser {
     ProtocolParser._generateRequestArgs(codeLines, itfRequest)
     codeLines.push(') {\n')
 
+    if (itfRequest.$.type === 'destructor') {
+      codeLines.push(`\t\tsuper.destroy()\n`)
+    }
+
     if (itfName) {
       if (itfName !== 'any') {
         importLines.push(`import ${itfName}Proxy from './${itfName}Proxy'\n`)
       }
-      codeLines.push(`\t\treturn this.display.marshallConstructor(this.id, ${opcode}, ${itfName}Proxy, ${argArray})\n`)
+      codeLines.push(`\t\treturn this._marshallConstructor(this.id, ${opcode}, ${itfName}Proxy, ${argArray})\n`)
     } else {
-      codeLines.push(`\t\tthis.display.marshall(this.id, ${opcode}, ${argArray})\n`)
+      codeLines.push(`\t\tthis._marshall(this.id, ${opcode}, ${argArray})\n`)
     }
 
     codeLines.push('\t}\n')
@@ -356,12 +360,14 @@ class ProtocolParser {
     }
 
     // constructor
-    codeLines.push('\n/**\n')
+    codeLines.push('\n\t/**\n')
+    codeLines.push('\t * Do not construct proxies directly. Instead use one of the factory methods from other proxies.\n')
     codeLines.push('\t *@param {Display}display\n')
+    codeLines.push('\t *@param {Connection}connection\n')
     codeLines.push('\t *@param {number}id\n')
     codeLines.push('\t */\n')
-    codeLines.push('\tconstructor (display, id) {\n')
-    codeLines.push('\t\tsuper(display, id)\n')
+    codeLines.push('\tconstructor (display, connection, id) {\n')
+    codeLines.push('\t\tsuper(display, connection, id)\n')
     codeLines.push('\t\t/**\n')
     codeLines.push(`\t\t * @type {${eventsName}|null}\n`)
     codeLines.push('\t\t */\n')
