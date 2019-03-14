@@ -632,11 +632,22 @@ class Connection {
           throw new Error('Request buffer too small')
         }
 
-        const resource = this.wlObjects[id]
-        if (resource) {
+        const wlObject = this.wlObjects[id]
+        if (wlObject) {
           wireMessages.bufferOffset += 2
           wireMessages.consumed = 8
-          await resource[opcode](wireMessages)
+          try {
+            await wlObject[opcode](wireMessages)
+          } catch (e) {
+            console.error(`
+wlObject: ${wlObject.constructor.name}[${opcode}](..)
+name: ${e.name} message: ${e.message} text: ${e.text}
+error object stack: 
+${e.stack}
+`)
+            this.close()
+            throw e
+          }
           if (this.closed) { return }
         } else {
           throw new Error(`invalid object ${id}`)
