@@ -38,6 +38,10 @@ export default class Proxy extends WlObject {
      * @private
      */
     this.display = display
+    /**
+     * @type {Connection}
+     * @protected
+     */
     this._connection = connection
     connection.registerWlObject(this)
   }
