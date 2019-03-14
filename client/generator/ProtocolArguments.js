@@ -80,7 +80,7 @@ class ProtocolArguments {
    */
   static object (argName, optional) {
     return {
-      signature: `o(message, ${optional}, this.display.connection)`,
+      signature: `o(message, ${optional}, this._connection)`,
       jsType: optional ? '?*' : '*',
       marshallGen: optional ? `objectOptional(${argName})` : `object(${argName})`
     }
