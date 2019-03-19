@@ -1,12 +1,12 @@
 {
   "name": "westfield-native",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "main": "./build/build/Release/westfield-native.node",
   "scripts": {
     "prepare": "cmake-js",
     "postinstall": "cmake-js"
   },
   "devDependencies": {
-    "cmake-js": "3.7.3"
+    "cmake-js": "5.1.0"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "westfield-scanner-server",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "description": "Wayland HTML5 protocol generator for Node.js",
   "scripts": {
     "test": "standard --verbose"
@@ -32,6 +32,6 @@
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
   "devDependencies": {
-    "standard": "^10.0.2"
+    "standard": "^12.0.1"
   }
 }
