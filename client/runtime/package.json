@@ -1,10 +1,15 @@
 {
   "name": "westfield-runtime-client",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Wayland HTML5 core client protocol",
-  "main": "westfield-client-core.js",
+  "main": "index.js",
   "scripts": {
-    "test": "standard --verbose && node ./node_modules/jasmine/bin/jasmine.js"
+    "prepare:generate:webgl": "westfield-scanner-client ../../protocol/gr-web-gl.xml -o src/protocol",
+    "prepare:generate:webshm": "westfield-scanner-client ../../protocol/gr-web-shm.xml -o src/protocol",
+    "prepare:generate:xdgshell": "westfield-scanner-client ../../protocol/xdg-shell.xml -o src/protocol",
+    "prepare:generate:wayland": "westfield-scanner-client ../../protocol/wayland.xml -o src/protocol",
+    "prepare:generate": "mkdir -p src/protocol/ && npm run prepare:generate:wayland && npm run prepare:generate:xdgshell && npm run prepare:generate:webshm && npm run prepare:generate:webgl",
+    "prepare": "npm run prepare:generate"
   },
   "repository": {
     "type": "git",
@@ -12,12 +17,11 @@
   },
   "keywords": [
     "wayland",
+    "client",
     "html5",
-    "weboscket",
     "compositor",
     "browser",
-    "javascript",
-    "ipc"
+    "javascript"
   ],
   "author": "Erik De Rijcke",
   "license": "MIT",
@@ -25,9 +29,11 @@
     "url": "https://github.com/udevbe/westfield/issues"
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
+  "dependencies": {
+    "westfield-runtime-common": "0.2.0"
+  },
   "devDependencies": {
-    "jasmine": "2.5.2",
-    "jasmine-core": "2.5.2",
-    "standard": "^10.0.2"
+    "westfield-scanner-client": "0.2.0",
+    "standard": "^12.0.1"
   }
 }

@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "wayland-server-core-extensions.h"
 #include "connection.h"
@@ -155,7 +158,28 @@ on_wire_message_end(struct wl_client *client, int *fds_in, size_t fds_in_size) {
         env = display_destruction_listener->env;
 
         if (fds_in_size) {
-            NAPI_CALL(env, napi_create_external_arraybuffer(env, fds_in, fds_in_size, finalize_cb, NULL, &fds_value));
+            struct stat buf;
+            int r;
+            int fd_type = 0;
+            // double the size, because we need an additional uint per fd to indicate it's type
+            int *fds_with_type = malloc(fds_in_size * 2);
+            for (int i = 0; i < fds_in_size; ++i) {
+                fds_with_type[i * 2] = fds_in[i];
+
+                r = fstat(fds_in[i], &buf);
+                if (!r) {
+                    if (S_TYPEISSHM(&buf)) {
+                        fd_type = 1;
+                    } else if (S_ISFIFO(buf.st_mode)) {
+                        fd_type = 2;
+                    }
+                }
+
+                fds_with_type[(i * 2) + 1] = fd_type;
+            }
+            free(fds_in);
+            NAPI_CALL(env, napi_create_external_arraybuffer(env, fds_with_type, fds_in_size * 2, finalize_cb, NULL,
+                                                            &fds_value));
         } else {
             NAPI_CALL(env, napi_get_null(env, &fds_value));
         }

@@ -40,13 +40,22 @@ class ProtocolParser {
       let processedFirstArg = false
       for (let i = 0; i < evArgs.length; i++) {
         const arg = evArgs[i]
+        let argName
         if (arg.$.type === 'new_id') {
-          continue
+          if (arg.$.hasOwnProperty('interface')) {
+            continue
+          } else {
+            argName = 'anyProxy'
+          }
+        } else {
+          argName = camelCase(arg.$.name)
         }
 
-        const argName = camelCase(arg.$.name)
         if (processedFirstArg) {
           codeLines.push(', ')
+        }
+        if (argName === 'interface') {
+          argName = 'interface_'
         }
         codeLines.push(argName)
         processedFirstArg = true
@@ -64,13 +73,16 @@ class ProtocolParser {
 
       for (let i = 1; i < evArgs.length; i++) {
         const arg = evArgs[i]
-        const argName = camelCase(arg.$.name)
+        let argName = camelCase(arg.$.name)
+        if (argName === 'interface') {
+          argName = 'interface_'
+        }
         out.write(', ' + argName)
       }
     }
   }
 
-  static _parseEventSignature (ev) {
+  static _parseEventSignature (ev, importLines) {
     let evSig = ''
     if (ev.hasOwnProperty('arg')) {
       const evArgs = ev.arg
@@ -80,8 +92,16 @@ class ProtocolParser {
         const argName = camelCase(arg.$.name)
         const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
         const argType = arg.$.type
-
-        evSig += ProtocolArguments[argType](argName, optional).signature
+        if (i !== 0) {
+          evSig += ', '
+        }
+        if (argType === 'new_id') {
+          const argItf = upperCamelCase(arg.$['interface']) + 'Proxy'
+          importLines.push(`import ${argItf} from './${argItf}'\n`)
+          evSig += `new ${argItf}(this._connection, ${ProtocolArguments[argType](argName, optional).signature})`
+        } else {
+          evSig += ProtocolArguments[argType](argName, optional).signature
+        }
       }
     }
 
@@ -91,38 +111,14 @@ class ProtocolParser {
   static _generateIfEventGlue (importLines, codeLines, ev, opcode) {
     const evName = camelCase(ev.$.name)
 
-    codeLines.push(`\t[${opcode}] (message) {\n`)
-    if (ev.hasOwnProperty('arg')) {
-      const evSig = this._parseEventSignature(ev)
-      codeLines.push(`\t\tconst args = this.display.unmarshallArgs(message, '${evSig}')\n`)
+    codeLines.push(`\tasync [${opcode}] (message) {\n`)
+    const evSig = this._parseEventSignature(ev, importLines)
+    if (evSig.length) {
+      codeLines.push(`\t\tawait this.listener.${evName}(${evSig})\n`)
+    } else {
+      codeLines.push(`\t\tawait this.listener.${evName}()\n`)
     }
 
-    codeLines.push(`\t\tthis.listener.${evName}(`)
-
-    if (ev.hasOwnProperty('arg')) {
-      const evArgs = ev.arg
-      const arg0 = evArgs[0]
-      const arg0Type = arg0.$.type
-      codeLines.push(`args[0]`)
-      if (arg0Type === 'new_id') {
-        const argItf = upperCamelCase(arg0.$['interface']) + 'Proxy'
-        importLines.push(`const ${argItf} = require('./${argItf}')\n`)
-        codeLines.push(`(${argItf}.constructor)`)
-      }
-      for (let i = 1; i < evArgs.length; i++) {
-        codeLines.push(', ')
-        const arg = evArgs[i]
-        const argType = arg.$.type
-        codeLines.push(`args[${i}]`)
-        if (argType === 'new_id') {
-          const argItf = upperCamelCase(arg.$['interface']) + 'Proxy'
-          importLines.push(`const ${argItf} = require('./${argItf}')\n`)
-          codeLines.push(`(${argItf}.constructor)`)
-        }
-      }
-    }
-
-    codeLines.push(')\n')
     codeLines.push('\t}\n\n')
   }
 
@@ -166,6 +162,25 @@ class ProtocolParser {
     eventsOut.write(') {}\n')
   }
 
+  _parseRegistryBindRequest (codeLines) {
+    codeLines.push(
+      `\t/**
+\t* Bind a new object to the global.
+\t*
+\t* Binds a new, client-created object to the server using the specified name as the identifier.
+\t*
+\t* @param {number} name unique numeric name of the global
+\t* @param {string} interface_ interface implemented by the new object
+\t* @param {Function} proxyClass
+\t* @param {number} version The version used and supported by the client
+\t* @return {Object} a new bounded object
+\t*/
+\tbind (name, interface_, proxyClass, version) {
+\t\treturn this._marshallConstructor(this.id, 0, proxyClass, [uint(name), string(interface_), uint(version), newObject()])
+\t}\n`
+    )
+  }
+
   _parseItfRequest (codeLines, importLines, itfRequest, opcode) {
     const sinceVersion = itfRequest.$.hasOwnProperty('since') ? parseInt(itfRequest.$.since) : 1
 
@@ -192,6 +207,8 @@ class ProtocolParser {
             const argType = arg.$.type
             if (argType !== 'new_id') {
               codeLines.push(`\t * @param {${ProtocolArguments[argType](argName, optional).jsType}} ${argName} ${argDescription} \n`)
+            } else if (argType === 'new_id' && !arg.$.hasOwnProperty('interface')) {
+              codeLines.push(`\t * @param {Object} anyProxy class object of a proxy. \n`)
             }
           })
 
@@ -200,7 +217,11 @@ class ProtocolParser {
             const argItf = arg.$['interface']
             const argType = arg.$.type
             if (argType === 'new_id') {
-              codeLines.push(`\t * @return {${argItf}} ${argDescription} \n`)
+              if (arg.$.hasOwnProperty('interface')) {
+                codeLines.push(`\t * @return {${upperCamelCase(argItf)}Proxy} ${argDescription} \n`)
+              } else {
+                codeLines.push(`\t * @return {Proxy} a new instance of the give class object of a proxy \n`)
+              }
             }
           })
           codeLines.push('\t *\n')
@@ -210,11 +231,6 @@ class ProtocolParser {
         codeLines.push('\t */\n')
       })
     }
-
-    // function
-    codeLines.push(`\t${reqName} (`)
-    ProtocolParser._generateRequestArgs(codeLines, itfRequest)
-    codeLines.push(') {\n')
 
     let itfName
     // function args
@@ -229,7 +245,11 @@ class ProtocolParser {
         const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
 
         if (argType === 'new_id') {
-          itfName = upperCamelCase(arg.$['interface'])
+          if (arg.$.hasOwnProperty('interface')) {
+            itfName = upperCamelCase(arg.$['interface'])
+          } else {
+            itfName = 'any'
+          }
         }
 
         if (i !== 0) {
@@ -241,11 +261,22 @@ class ProtocolParser {
     }
     argArray += ']'
 
+    // function
+    codeLines.push(`\t${reqName} (`)
+    ProtocolParser._generateRequestArgs(codeLines, itfRequest)
+    codeLines.push(') {\n')
+
+    if (itfRequest.$.type === 'destructor') {
+      codeLines.push(`\t\tsuper.destroy()\n`)
+    }
+
     if (itfName) {
-      importLines.push(`const ${itfName}Proxy = require('./${itfName}Proxy')\n`)
-      codeLines.push(`\t\treturn this.display.marshallConstructor(this.id, ${opcode}, ${itfName}Proxy.constructor, ${argArray})\n`)
+      if (itfName !== 'any') {
+        importLines.push(`import ${itfName}Proxy from './${itfName}Proxy'\n`)
+      }
+      codeLines.push(`\t\treturn this._marshallConstructor(this.id, ${opcode}, ${itfName}Proxy, ${argArray})\n`)
     } else {
-      codeLines.push(`\t\tthis.display.marshall(this.id, ${opcode}, ${argArray})\n`)
+      codeLines.push(`\t\tthis._marshall(this.id, ${opcode}, ${argArray})\n`)
     }
 
     codeLines.push('\t}\n')
@@ -282,10 +313,13 @@ class ProtocolParser {
     const importLines = []
     const codeLines = []
 
-    importLines.push('const { Proxy, WireFormat } = require(\'westfield-runtime-client\')\n')
-    importLines.push('const { uint, uintOptional, int, intOptional, fixed, \n' +
+    importLines.push('import Proxy from \'./Proxy\'\n')
+    proxyOut.write('import { Connection } from \'westfield-runtime-common\'\n')
+    proxyOut.write('const { uint, uintOptional, int, intOptional, fixed, \n' +
       '\tfixedOptional, object, objectOptional, newObject, string, \n' +
-      '\tstringOptional, array, arrayOptional } = WireFormat\n')
+      '\tstringOptional, array, arrayOptional, \n' +
+      '\tfileDescriptorOptional, fileDescriptor, \n' +
+      'h, u, i, f, o, n, s, a } = Connection\n')
 
     // class docs
     const description = protocolItf.description
@@ -308,7 +342,12 @@ class ProtocolParser {
     if (protocolItf.hasOwnProperty('request')) {
       const itfRequests = protocolItf.request
       for (let j = 0; j < itfRequests.length; j++) {
-        this._parseItfRequest(codeLines, importLines, itfRequests[j], j)
+        // we need to special case for registry bind request.
+        if (itfRequests[j].$.name === 'bind' && itfNameOrig === 'wl_registry') {
+          this._parseRegistryBindRequest(codeLines, importLines, itfRequests[j], j)
+        } else {
+          this._parseItfRequest(codeLines, importLines, itfRequests[j], j)
+        }
       }
     }
 
@@ -321,11 +360,14 @@ class ProtocolParser {
     }
 
     // constructor
-    codeLines.push('\n/**\n')
+    codeLines.push('\n\t/**\n')
+    codeLines.push('\t * Do not construct proxies directly. Instead use one of the factory methods from other proxies.\n')
     codeLines.push('\t *@param {Display}display\n')
+    codeLines.push('\t *@param {Connection}connection\n')
+    codeLines.push('\t *@param {number}id\n')
     codeLines.push('\t */\n')
-    codeLines.push('\tconstructor (display) {\n')
-    codeLines.push('\t\tsuper(display)\n')
+    codeLines.push('\tconstructor (display, connection, id) {\n')
+    codeLines.push('\t\tsuper(display, connection, id)\n')
     codeLines.push('\t\t/**\n')
     codeLines.push(`\t\t * @type {${eventsName}|null}\n`)
     codeLines.push('\t\t */\n')
@@ -379,7 +421,7 @@ class ProtocolParser {
       }
     }
 
-    codeLines.push(`module.exports = ${proxyName}\n`)
+    codeLines.push(`export default ${proxyName}\n`)
 
     importLines.forEach(line => {
       proxyOut.write(line)
@@ -414,7 +456,6 @@ class ProtocolParser {
     console.log('Done')
   }
 
-  // TODO make outFile -> outDir
   /**
    * @param {string}outDir
    */
@@ -462,7 +503,7 @@ class ProtocolParser {
     eventsOut.write('/**\n')
     eventsOut.write(' * @interface\n')
     eventsOut.write(' */\n')
-    eventsOut.write(`class ${eventsName} {\n`)
+    eventsOut.write(`export default class ${eventsName} {\n`)
 
     for (let j = 0; j < itfEvents.length; j++) {
       const itfEvent = itfEvents[j]
@@ -470,7 +511,6 @@ class ProtocolParser {
     }
 
     eventsOut.write('}\n\n')
-    eventsOut.write(`module.exports = ${eventsName}\n`)
     eventsOut.end()
   }
 }

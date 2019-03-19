@@ -84,9 +84,7 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
-/server/node/example.browserclient/public.src/westfield-client-example.js
-/server/node/example.browserclient/public/browser.bundle.js
-/server/node/example.browserserver/public/browser.bundle.js
-/server/node/example.browserserver/public.src/westfield-server-example.js
-/server/node/example.browserserver/westfield-client-example.js
-/server/node/example.browserclient/westfield-server-example.js
+
+/client/runtime/src/protocol/
+!/client/runtime/src/protocol/Proxy
+/client/runtime/dist/

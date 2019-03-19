@@ -1,11 +1,8 @@
 {
-  "name": "westfield-scanner-client",
+  "name": "westfield-runtime-server",
   "version": "0.2.0",
-  "description": "Wayland HTML5 protocol generator for the browser",
-  "scripts": {
-    "test": "standard --verbose"
-  },
-  "bin": "westfield-scanner-client.js",
+  "main": "index.js",
+  "description": "Wayland HTML5 runtime for Node.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/udevbe/westfield.git"
@@ -25,11 +22,12 @@
     "url": "https://github.com/udevbe/westfield/issues"
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
+  "contributors": [],
+  "scripts": {
+    "test": "mocha ./test/*.js --timeout 10000"
+  },
   "dependencies": {
-    "camelcase": "^4.1.0",
-    "uppercamelcase": "^3.0.0",
-    "meow": "^3.7.0",
-    "xml2js": "^0.4.17"
+    "westfield-runtime-common": "0.2.0"
   },
   "devDependencies": {
     "standard": "^12.0.1"
