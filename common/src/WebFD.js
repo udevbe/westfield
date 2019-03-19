@@ -30,7 +30,7 @@ class WebFD {
    * @param {'ImageBitmap'|'ArrayBuffer'|'MessagePort'}fdType
    * @param {string}fdDomainUUID
    * @param {function(WebFD): Promise<Transferable>}onGetTransferable
-   * @param {function(WebFD): Promise<void>} onClose
+   * @param {function(WebFD): void} onClose
    */
   constructor (fd, fdType, fdDomainUUID, onGetTransferable, onClose) {
     /**
@@ -51,7 +51,7 @@ class WebFD {
      */
     this._onGetTransferable = onGetTransferable
     /**
-     * @type {function(WebFD): Promise<void>}
+     * @type {function(WebFD): void}
      * @private
      */
     this._onClose = onClose
@@ -67,8 +67,8 @@ class WebFD {
   /**
    * @return {Promise<void>}
    */
-  async close () {
-    await this._onClose(this)
+  close () {
+    this._onClose(this)
   }
 }
 
