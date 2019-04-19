@@ -42,11 +42,6 @@ class Resource extends WlObject {
      * @type {number}
      */
     this.version = version
-    /**
-     * Arbitrary data that can be attached to the resource.
-     * @type {*}
-     */
-    this.userData = {}
 
     this.client.registerResource(this)
   }
@@ -58,7 +53,7 @@ class Resource extends WlObject {
    */
   postError (code, msg) {
     this.client.displayResource.error(this, code, msg)
-    this.client.flush()
+    this.client.connection.flush()
     this.client.close()
   }
 
