@@ -559,7 +559,6 @@ class Connection {
     this.wlObjects = {}
     /**
      * @type {boolean}
-     * @private
      */
     this.closed = false
     /**

@@ -45,6 +45,7 @@ class Display {
      * @type {number}
      */
     this.nextId = 0xff000000
+    this._nextClientId = 0
   }
 
   /**
@@ -59,11 +60,10 @@ class Display {
    *
    * Invoked when a client binds to this global. Subclasses implement this method so they can instantiate a
    * corresponding Resource subtype.
-   * @param {function(ArrayBuffer):void}onOutOfBandSend
    * @return {Client}
    */
-  createClient (onOutOfBandSend) {
-    const client = new Client(this, onOutOfBandSend)
+  createClient () {
+    const client = new Client(this, `${this._nextClientId++}`)
     client.onClose().then(() => {
       const idx = this.clients.indexOf(client)
       if (idx > -1) {

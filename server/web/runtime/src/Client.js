@@ -147,9 +147,17 @@ class Client extends DisplayRequests {
 
   /**
    * @param {Display} display
+   * @param {string}id
    */
-  constructor (display) {
+  constructor (display, id) {
     super()
+    /**
+     * @type {string}
+     */
+    this.id = id
+    /**
+     * @type {Connection}
+     */
     this.connection = new Connection()
     /**
      * @type {Display}
@@ -170,9 +178,7 @@ class Client extends DisplayRequests {
      * @type {Promise<void>}
      * @private
      */
-    this._destroyPromise = new Promise((resolve) => {
-      this._destroyedResolver = resolve
-    })
+    this._destroyPromise = new Promise((resolve) => this._destroyedResolver = resolve)
     /**
      * @type {DisplayResource}
      */
