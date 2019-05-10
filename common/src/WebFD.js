@@ -28,11 +28,11 @@ class WebFD {
   /**
    * @param {number}fd
    * @param {'ImageBitmap'|'ArrayBuffer'|'MessagePort'}fdType
-   * @param {string}fdDomainUUID
+   * @param {URL}fdURL
    * @param {function(WebFD): Promise<Transferable>}onGetTransferable
    * @param {function(WebFD): void} onClose
    */
-  constructor (fd, fdType, fdDomainUUID, onGetTransferable, onClose) {
+  constructor (fd, fdType, fdURL, onGetTransferable, onClose) {
     /**
      * @type {number}
      */
@@ -40,11 +40,12 @@ class WebFD {
     /**
      * @type {string}
      */
-    this.fdType = fdType
+    this.type = fdType
     /**
-     * @type {string}
+     * URL representation of this WebFD
+     * @type {URL}
      */
-    this.fdDomainUUID = fdDomainUUID
+    this.url = fdURL
     /**
      * @type {function(WebFD): Promise<Transferable>}
      * @private
