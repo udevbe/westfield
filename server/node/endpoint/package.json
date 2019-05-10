@@ -27,7 +27,7 @@
     "test": "mocha ./test/*.js --timeout 10000"
   },
   "dependencies": {
-    "westfield-native": "0.2.0"
+    "westfield-native": "0.2.1"
   },
   "devDependencies": {
     "epoll": "^2.0.1",

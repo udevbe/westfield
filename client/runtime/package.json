@@ -30,10 +30,10 @@
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
   "dependencies": {
-    "westfield-runtime-common": "0.2.0"
+    "westfield-runtime-common": "0.2.1"
   },
   "devDependencies": {
-    "westfield-scanner-client": "0.2.0",
+    "westfield-scanner-client": "0.2.1",
     "standard": "^12.0.1"
   }
 }
