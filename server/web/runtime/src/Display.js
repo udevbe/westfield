@@ -45,6 +45,10 @@ class Display {
      * @type {number}
      */
     this.nextId = 0xff000000
+    /**
+     * @type {number}
+     * @private
+     */
     this._nextClientId = 0
   }
 
