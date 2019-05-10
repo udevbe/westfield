@@ -76,8 +76,8 @@ class DisplayResource extends Resource {
    */
   error (errorObject, code, message) {
     this.client.marshall(this.id, 0, [object(errorObject), uint(code), string(message)])
-    this.client.flush()
-    this.client.close()
+    this.client.connection.flush()
+    this.client.connection.close()
   }
 
   /**

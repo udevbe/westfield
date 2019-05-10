@@ -53,8 +53,6 @@ class Resource extends WlObject {
    */
   postError (code, msg) {
     this.client.displayResource.error(this, code, msg)
-    this.client.connection.flush()
-    this.client.close()
   }
 
   /**
