@@ -97,19 +97,16 @@ class Client extends DisplayRequests {
    * @return {number}
    */
   marshallConstructor (id, opcode, argsArray) {
-    // get next server id
-    const objectId = this._display.nextId
-    this._display.nextId++
-
     // determine required wire message length
     let size = 4 + 2 + 2 // id+size+opcode
+    const serverSideId = this._nextId++
     argsArray.forEach(arg => {
-      if (arg.type === 'n') { arg.value = objectId }
+      if (arg.type === 'n') { arg.value = serverSideId }
       size += arg.size // add size of the actual argument values
     })
 
     this.connection.marshallMsg(id, opcode, size, argsArray)
-    return objectId
+    return serverSideId
   }
 
   /**
@@ -189,6 +186,15 @@ class Client extends DisplayRequests {
      * @private
      */
     this._resourceDestroyListeners = []
+    /*
+     * IDs allocated by the client are in the range [1, 0xfeffffff] while IDs allocated by the server are
+     * in the range [0xff000000, 0xffffffff]. The 0 ID is reserved to represent a null or non-existent object
+     */
+    /**
+     * @type {number}
+     * @private
+     */
+    this._nextId = 0xff000000
   }
 }
 

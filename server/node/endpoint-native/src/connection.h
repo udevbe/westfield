@@ -31,7 +31,7 @@ size_t
 wl_connection_fds_in_size(struct wl_connection *connection);
 
 void
-wl_connection_copy_fds_in(struct wl_connection *connection, int *fds_in);
+wl_connection_copy_fds_in(struct wl_connection *connection, int *fds_in, size_t fds_in_size);
 
 int
 wl_connection_put_fd(struct wl_connection *connection, int32_t fd);

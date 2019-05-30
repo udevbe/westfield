@@ -29,7 +29,7 @@ class MessageInterceptor {
   /**
    * @param {number}objectId
    * @param {number}opcode
-   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}}message
+   * @param {{buffer: ArrayBuffer, fds: Array, bufferOffset: number, consumed: number, size: number}}message
    * @return {number} where the message should be send to. 0 = browser only, 1 native only, 2 both.
    */
   interceptRequest (objectId, opcode, message) {
@@ -37,12 +37,27 @@ class MessageInterceptor {
     let destination = 1
     if (interceptor) {
       destination = 0
-      const interception = interceptor[opcode]
+      const interception = interceptor[`R${opcode}`]
       if (interception) {
         destination = interception.call(interceptor, message)
       }
     }
     return destination
+  }
+
+  /**
+   * @param {number}objectId
+   * @param {number}opcode
+   * @param {{buffer: ArrayBuffer, fds: Array, bufferOffset: number, consumed: number, size: number}}message
+   */
+  interceptEvent (objectId, opcode, message) {
+    const interceptor = this.interceptors[objectId]
+    if (interceptor) {
+      const interception = interceptor[`E${opcode}`]
+      if (interception) {
+        interception.call(interceptor, message)
+      }
+    }
   }
 }
 

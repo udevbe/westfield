@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.7)
 
 function(PARSE_CMAKEJS_PROPERTIES)
     function(GET_VARIABLE INPUT_STRING VARIABLE_TO_SELECT OUTPUT_VARIABLE)
@@ -18,13 +18,13 @@ function(PARSE_CMAKEJS_PROPERTIES)
 
     string(TOLOWER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_LOWER)
     if (CMAKE_BUILD_TYPE_LOWER STREQUAL "debug")
-        execute_process(COMMAND "cmake-js" "print-configure" "--debug"
-                ${CMAKE_CURRENT_SOURCE_DIR}
+        exec_program(./node_modules/.bin/cmake-js ${CMAKE_CURRENT_SOURCE_DIR}
+                ARGS print-configure --debug
                 OUTPUT_VARIABLE CMAKE_JS_OUTPUT
                 )
-    else ()
-        execute_process(COMMAND "cmake-js" "print-configure"
-                ${CMAKE_CURRENT_SOURCE_DIR}
+    else()
+        exec_program(./node_modules/.bin/cmake-js ${CMAKE_CURRENT_SOURCE_DIR}
+                ARGS print-configure
                 OUTPUT_VARIABLE CMAKE_JS_OUTPUT
                 )
     endif ()
@@ -38,7 +38,7 @@ function(PARSE_CMAKEJS_PROPERTIES)
 endfunction(PARSE_CMAKEJS_PROPERTIES)
 
 project(westfield-native C)
-#set(CMAKE_BUILD_TYPE "debug")
+#set(CMAKE_BUILD_TYPE "Debug")
 
 PARSE_CMAKEJS_PROPERTIES()
 

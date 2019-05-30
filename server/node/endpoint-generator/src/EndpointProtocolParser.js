@@ -89,9 +89,25 @@ class EndpointProtocolParser {
     }
     const evName = camelCase(itfRequest.$.name)
     if (evSig.includes('n')) {
-      out.write(`\t[${opcode}] (message) {\n`)
+      out.write(`\tR${opcode} (message) {\n`)
       out.write(`\t\tconst args = WireMessageUtil.unmarshallArgs(message,'${evSig}')\n`)
-      out.write(`\t\treturn this.handlers.${evName}(...args)\n`)
+      out.write(`\t\treturn this.requestHandlers.${evName}(...args)\n`)
+      out.write('\t}\n')
+    }
+  }
+
+  static _generateIfEventGlue (out, itfEvent, opcode, protocolItf) {
+    let evSig
+    if (protocolItf.$.name === 'wl_registry' && itfEvent.$.name === 'bind') {
+      evSig = 'usun'
+    } else {
+      evSig = EndpointProtocolParser._parseMessageSignature(itfEvent)
+    }
+    const evName = camelCase(itfEvent.$.name)
+    if (evSig.includes('n')) {
+      out.write(`\tE${opcode} (message) {\n`)
+      out.write(`\t\tconst args = WireMessageUtil.unmarshallArgs(message,'${evSig}')\n`)
+      out.write(`\t\treturn this.eventHandlers.${evName}(...args)\n`)
       out.write('\t}\n')
     }
   }
@@ -170,23 +186,37 @@ class EndpointProtocolParser {
     interceptorOut.write('\t\tthis.wlClient = wlClient\n')
     interceptorOut.write('\t\tthis.wlResource = wlResource\n')
     interceptorOut.write('\t\tthis.userData = userData\n')
-    interceptorOut.write('\t\tthis.handlers = {\n')
+
+    // constructor request handlers
+    interceptorOut.write('\t\tthis.requestHandlers = {\n')
     const constructorRequests = this._getConstructorRequest(protocolItf)
     if (constructorRequests.length) {
-      this._generateFactoryInterceptionHandlers(interceptorOut, constructorRequests, protocolItf)
+      this._generateRequestFactoryInterceptionHandlers(interceptorOut, constructorRequests, protocolItf)
     }
+    interceptorOut.write('\t\t}\n')
 
-    // TODO native endpoint lib must expose function to destroy resource without emitting id destroyed event
-
+    // constructor event handlers
+    interceptorOut.write('\t\tthis.eventHandlers = {\n')
+    const constructorEvents = this._getConstructorEvent(protocolItf)
+    if (constructorEvents.length) {
+      this._generateEventFactoryInterceptionHandlers(interceptorOut, constructorEvents, protocolItf)
+    }
     interceptorOut.write('\t\t}\n')
     interceptorOut.write('\t}\n\n')
 
-    // glue request functions
+    // glue functions
     if (protocolItf.hasOwnProperty('request')) {
       const itfRequests = protocolItf.request
       for (let j = 0; j < itfRequests.length; j++) {
         const itfRequest = itfRequests[j]
         EndpointProtocolParser._generateIfRequestGlue(interceptorOut, itfRequest, j, protocolItf)
+      }
+    }
+    if (protocolItf.hasOwnProperty('event')) {
+      const itfEvents = protocolItf.event
+      for (let j = 0; j < itfEvents.length; j++) {
+        const itfRequest = itfEvents[j]
+        EndpointProtocolParser._generateIfEventGlue(interceptorOut, itfRequest, j, protocolItf)
       }
     }
 
@@ -225,7 +255,6 @@ class EndpointProtocolParser {
     console.log('Done')
   }
 
-  // TODO make outFile -> outDir
   /**
    * @param {string}outDir
    */
@@ -279,7 +308,28 @@ class EndpointProtocolParser {
     return constructorRequests
   }
 
-  _generateFactoryInterceptionHandlers (resourceOut, constructorRequests, protocolItf) {
+  _getConstructorEvent (protocolItf) {
+    const constructorEvents = []
+    if (protocolItf.hasOwnProperty('event')) {
+      const itfEvents = protocolItf.event
+      for (let j = 0; j < itfEvents.length; j++) {
+        const itfEvent = itfEvents[j]
+        if (itfEvent.hasOwnProperty('arg')) {
+          const evArg = itfEvent.arg
+          for (let i = 0; i < evArg.length; i++) {
+            const arg = evArg[i]
+            if (arg.$.type === 'new_id') {
+              constructorEvents.push(itfEvent)
+            }
+          }
+        }
+      }
+    }
+
+    return constructorEvents
+  }
+
+  _generateRequestFactoryInterceptionHandlers (resourceOut, constructorRequests, protocolItf) {
     constructorRequests.forEach(itfRequest => {
       let resourceName = null
       let resourceIdArgName = null
@@ -325,6 +375,40 @@ class EndpointProtocolParser {
           resourceOut.write(`\t\t\t\t\treturn 0\n`)
         }
       }
+      resourceOut.write(`\t\t\t},\n`)
+    })
+  }
+
+  _generateEventFactoryInterceptionHandlers (resourceOut, constructorRequests, protocolItf) {
+    constructorRequests.forEach(itfRequest => {
+      let resourceName = null
+      let resourceIdArgName = null
+
+      const reqName = itfRequest.$.name
+      resourceOut.write(`\t\t\t${camelCase(reqName)}: (`)
+
+      const evArgs = itfRequest.arg
+      for (let i = 0; i < evArgs.length; i++) {
+        const reqArg = evArgs[i]
+        if (i !== 0) {
+          resourceOut.write(', ')
+        }
+        resourceOut.write(`${reqArg.$.name}`)
+        if (reqArg.$.type === 'new_id') {
+          resourceName = reqArg.$.interface
+          resourceIdArgName = reqArg.$.name
+        }
+      }
+
+      resourceOut.write(`) => {\n`)
+
+      resourceOut.write(`\t\t\t\t\tconst remoteResource = Endpoint.createWlResource(wlClient, ${resourceIdArgName}, version, require(\`./${resourceName}_interface\`))\n`)
+      // FIXME this requires the server side ids to be exactly in sync with the server side ids in the browser, instead we should create a separate native method that can create a server side resource with a known id (instead of 0).
+      //resourceOut.write(`\t\t\t\t\tconst remoteResource = Endpoint.createWlResource(wlClient, 0, version, require(\`./${resourceName}_interface\`))\n`)
+
+      resourceOut.write(`\t\t\t\t\tinterceptors[${resourceIdArgName}] =  new (require(\`./${resourceName}_interceptor\`))(wlClient, interceptors, version, remoteResource, userData)\n`)
+      resourceOut.write(`\t\t\t\t\treturn 0\n`)
+
       resourceOut.write(`\t\t\t},\n`)
     })
   }

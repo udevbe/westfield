@@ -4,13 +4,13 @@ const Fixed = require('./Fixed')
 
 class WireMessageUtil {
   /**
-   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
+   * @param {{buffer: ArrayBuffer, fds: Array, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @param {number}consumption
    * @private
    */
   static _checkMessageSize (wireMsg, consumption) {
     if (wireMsg.consumed + consumption > wireMsg.size) {
-      throw new Error(`Request too short. Message max. size: ${size}, have: ${wireMsg.consumed + consumption}`)
+      throw new Error(`Request too short. Message max. size: ${wireMsg.size}, have: ${wireMsg.consumed + consumption}`)
     } else {
       wireMsg.consumed += consumption
     }
@@ -18,7 +18,7 @@ class WireMessageUtil {
 
   /**
    *
-   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
+   * @param {{buffer: ArrayBuffer, fds: Array, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @returns {number}
    */
   static u (wireMsg) { // unsigned integer {number}
@@ -33,7 +33,7 @@ class WireMessageUtil {
 
   /**
    *
-   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
+   * @param {{buffer: ArrayBuffer, fds: Array, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @returns {number}
    */
   static i (wireMsg) { // integer {number}
@@ -47,7 +47,7 @@ class WireMessageUtil {
 
   /**
    *
-   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
+   * @param {{buffer: ArrayBuffer, fds: Array, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @returns {number}
    */
   static f (wireMsg) { // float {number}
@@ -61,7 +61,7 @@ class WireMessageUtil {
 
   /**
    *
-   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
+   * @param {{buffer: ArrayBuffer, fds: Array, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @param {Boolean} optional
    * @returns {number}
    */
@@ -76,7 +76,7 @@ class WireMessageUtil {
 
   /**
    *
-   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
+   * @param {{buffer: ArrayBuffer, fds: Array, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @returns {number}
    */
   static n (wireMsg) {
@@ -90,7 +90,7 @@ class WireMessageUtil {
 
   /**
    *
-   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
+   * @param {{buffer: ArrayBuffer, fds: Array, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @param {Boolean} optional
    * @returns {String}
    */
@@ -113,7 +113,7 @@ class WireMessageUtil {
 
   /**
    *
-   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
+   * @param {{buffer: ArrayBuffer, fds: Array, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @param {Boolean} optional
    * @returns {ArrayBuffer}
    */
@@ -136,10 +136,10 @@ class WireMessageUtil {
 
   /**
    *
-   * @param {{buffer: ArrayBuffer, fds: Array<number>, bufferOffset: number, consumed: number, size: number}} wireMsg
+   * @param {{buffer: ArrayBuffer, fds: Array, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @returns {number}
    */
-  static h (wireMsg) { // file descriptor {number}
+  static h (wireMsg) {
     if (wireMsg.fds.length) {
       return wireMsg.fds.shift()
     } else {

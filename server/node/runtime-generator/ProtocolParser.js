@@ -216,7 +216,7 @@ class ProtocolParser {
     argArray += ']'
 
     if (itfName) {
-      out.write(`\t\treturn this.client.marshallConstructor(this.id, ${opcode}, '${itfName}', ${argArray})\n`)
+      out.write(`\t\treturn this.client.marshallConstructor(this.id, ${opcode}, ${argArray})\n`)
     } else {
       out.write(`\t\tthis.client.marshall(this.id, ${opcode}, ${argArray})\n`)
     }

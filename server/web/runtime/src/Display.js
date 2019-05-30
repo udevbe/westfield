@@ -37,27 +37,11 @@ class Display {
      * @type {Array<Client>}
      */
     this.clients = []
-    /*
-     * IDs allocated by the client are in the range [1, 0xfeffffff] while IDs allocated by the server are
-     * in the range [0xff000000, 0xffffffff]. The 0 ID is reserved to represent a null or non-existent object
-     */
-    /**
-     * @type {number}
-     */
-    this.nextId = 0xff000000
     /**
      * @type {number}
      * @private
      */
     this._nextClientId = 0
-  }
-
-  /**
-   * Next server side object id.
-   * @return {number}
-   */
-  getNextObjectId () {
-    return ++this.nextId
   }
 
   /**

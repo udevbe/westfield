@@ -448,13 +448,12 @@ wl_client_connection_data(int fd, uint32_t mask, void *data) {
 
     if (client->wire_message_end_cb) {
         fds_in_size = wl_connection_fds_in_size(connection);
-        int *fds_in = NULL;
+        int fds_in[fds_in_size / sizeof(int)];
         if (fds_in_size) {
-            fds_in = malloc(fds_in_size);
-            wl_connection_copy_fds_in(connection, fds_in);
+            wl_connection_copy_fds_in(connection, fds_in, fds_in_size);
         }
 
-        client->wire_message_end_cb(client, fds_in, fds_in_size);
+        client->wire_message_end_cb(client, fds_in, sizeof(fds_in) / sizeof(int));
     }
 
     return 1;
@@ -1649,8 +1648,8 @@ wl_resource_create(struct wl_client *client,
     if (resource == NULL)
         return NULL;
 
-    if (id == 0)
-        id = wl_map_insert_new(&client->objects, 0, NULL);
+    if (id >= WL_SERVER_ID_START)
+        assert(wl_map_insert_new(&client->objects, 0, NULL) == id);
 
     resource->object.id = id;
     resource->object.interface = interface;
