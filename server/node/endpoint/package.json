@@ -1,6 +1,6 @@
 {
   "name": "westfield-endpoint",
-  "version": "0.2.2",
+  "version": "0.2.4",
   "main": "src/index.js",
   "description": "Wayland HTML5 runtime for Node.js",
   "repository": {
@@ -27,7 +27,7 @@
     "test": "mocha ./test/*.js --timeout 10000"
   },
   "dependencies": {
-    "westfield-native": "file:../endpoint-native"
+    "westfield-native": "0.2.4"
   },
   "devDependencies": {
     "epoll": "^2.0.1",
