@@ -1303,4 +1303,5 @@ wl_connection_copy_fds_in(struct wl_connection *connection, int *fds_in, size_t 
     if (size == 0)
         return;
     wl_buffer_copy(&connection->fds_in, fds_in, size);
+    connection->fds_in.tail += size;
 }

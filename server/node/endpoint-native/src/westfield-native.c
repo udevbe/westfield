@@ -897,7 +897,28 @@ destroyWlResourceSilently(napi_env env, napi_callback_info info) {
     return return_value;
 }
 
-// temp method - to be replaced by general encoding function
+napi_value
+getServerObjectIdsBatch(napi_env env, napi_callback_info info) {
+    size_t argc = 2;
+    napi_value argv[argc], client_value, ids_value, return_value;
+    size_t amount;
+    uint32_t *ids;
+    struct wl_client *client;
+
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL))
+    client_value = argv[0];
+    ids_value = argv[1];
+
+    NAPI_CALL(env, napi_get_value_external(env, client_value, (void **) &client))
+    NAPI_CALL(env, napi_get_typedarray_info(env, ids_value, NULL, &amount, (void **) &ids, NULL, NULL))
+
+    wl_get_server_object_ids_batch(client, ids, amount);
+
+    NAPI_CALL(env, napi_get_undefined(env, &return_value))
+    return return_value;
+}
+
+// TODO temp method - to be replaced by general encoding function
 napi_value
 getShmBuffer(napi_env env, napi_callback_info info) {
     size_t argc = 2;
@@ -974,8 +995,11 @@ init(napi_env env, napi_value exports) {
             DECLARE_NAPI_METHOD("createWlInterface", createWlInterface),
             DECLARE_NAPI_METHOD("createWlResource", createWlResource),
             DECLARE_NAPI_METHOD("destroyWlResourceSilently", destroyWlResourceSilently),
-            DECLARE_NAPI_METHOD("getShmBuffer", getShmBuffer),
             DECLARE_NAPI_METHOD("setBufferCreatedCallback", setBufferCreatedCallback),
+            DECLARE_NAPI_METHOD("getServerObjectIdsBatch", getServerObjectIdsBatch),
+
+            // TODO temp method - to be replaced by general encoding function
+            DECLARE_NAPI_METHOD("getShmBuffer", getShmBuffer),
     };
 
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(napi_property_descriptor), desc))

@@ -214,6 +214,14 @@ class Endpoint {
   static createMemoryMappedFile (contents) {
     return westfieldNative.createMemoryMappedFile(contents)
   }
+
+  /**
+   * @param {Object}wlClient
+   * @param {Uint32Array}ids array to be filled in
+   */
+  static getServerObjectIdsBatch (wlClient, ids) {
+    westfieldNative.getServerObjectIdsBatch(wlClient, ids)
+  }
 }
 
 module.exports = Endpoint

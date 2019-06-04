@@ -724,6 +724,13 @@ wl_resource_destroy(struct wl_resource *resource) {
 }
 
 WL_EXPORT void
+wl_get_server_object_ids_batch(struct wl_client *client, uint32_t *ids, uint32_t amount) {
+    for (int i = 0; i < amount; ++i) {
+        ids[i] = wl_map_insert_new(&client->objects, 0, NULL);
+    }
+}
+
+WL_EXPORT void
 wl_resource_destroy_silently(struct wl_resource *resource) {
     struct wl_client *client = resource->client;
     uint32_t id;
@@ -733,11 +740,8 @@ wl_resource_destroy_silently(struct wl_resource *resource) {
     flags = wl_map_lookup_flags(&client->objects, id);
     destroy_resource(resource, NULL, flags);
 
-    if (id < WL_SERVER_ID_START) {
-        wl_map_insert_at(&client->objects, 0, id, NULL);
-    } else {
-        wl_map_remove(&client->objects, id);
-    }
+    // browser compositor server side resources ids are recycled in the browser compositor, hence we don't make the ids available, and just NULL the resource
+    wl_map_insert_at(&client->objects, 0, id, NULL);
 }
 
 WL_EXPORT uint32_t
@@ -1647,9 +1651,6 @@ wl_resource_create(struct wl_client *client,
     resource = malloc(sizeof *resource);
     if (resource == NULL)
         return NULL;
-
-    if (id >= WL_SERVER_ID_START)
-        assert(wl_map_insert_new(&client->objects, 0, NULL) == id);
 
     resource->object.id = id;
     resource->object.interface = interface;

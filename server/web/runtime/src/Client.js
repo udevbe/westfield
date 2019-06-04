@@ -29,6 +29,8 @@ import DisplayRequests from './DisplayRequests'
 import SyncCallbackResource from './SyncCallbackResource'
 import { Connection } from 'westfield-runtime-common'
 
+const SERVER_OBJECT_ID_BASE = 0xff000000
+
 /**
  * Represents a client connection.
  * @implements DisplayRequests
@@ -69,8 +71,29 @@ class Client extends DisplayRequests {
     if (this.connection.closed) { return }
 
     this.connection.unregisterWlObject(resource)
-    this.displayResource.deleteId(resource.id)
+    if (resource.id < SERVER_OBJECT_ID_BASE) {
+      this.displayResource.deleteId(resource.id)
+    } else {
+      this.recycledIds.push(resource.id)
+    }
     this._resourceDestroyListeners.forEach(listener => listener(resource))
+  }
+
+  /**
+   * @param {function(Resource):void}listener
+   */
+  addResourceCreatedListener (listener) {
+    this._resourceCreatedListeners.push(listener)
+  }
+
+  /**
+   * @param {function(Resource):void}listener
+   */
+  removeResourceCreatedListener (listener) {
+    const idx = this._resourceCreatedListeners.indexOf(listener)
+    if (idx !== -1) {
+      this._resourceCreatedListeners.splice(idx, 1)
+    }
   }
 
   /**
@@ -99,7 +122,7 @@ class Client extends DisplayRequests {
   marshallConstructor (id, opcode, argsArray) {
     // determine required wire message length
     let size = 4 + 2 + 2 // id+size+opcode
-    const serverSideId = this._nextId++
+    const serverSideId = this.getNextId()
     argsArray.forEach(arg => {
       if (arg.type === 'n') { arg.value = serverSideId }
       size += arg.size // add size of the actual argument values
@@ -140,6 +163,14 @@ class Client extends DisplayRequests {
    */
   getRegistry (resource, id) {
     this._display.registry.publishGlobals(this._display.registry.createRegistryResource(this, id))
+  }
+
+  getNextId () {
+    if (this.recycledIds.length) {
+      return this.recycledIds.shift()
+    } else {
+      return this._nextId++
+    }
   }
 
   /**
@@ -186,6 +217,11 @@ class Client extends DisplayRequests {
      * @private
      */
     this._resourceDestroyListeners = []
+    /**
+     * @type {Array<function(Resource):void>}
+     * @private
+     */
+    this._resourceCreatedListeners = []
     /*
      * IDs allocated by the client are in the range [1, 0xfeffffff] while IDs allocated by the server are
      * in the range [0xff000000, 0xffffffff]. The 0 ID is reserved to represent a null or non-existent object
@@ -194,7 +230,11 @@ class Client extends DisplayRequests {
      * @type {number}
      * @private
      */
-    this._nextId = 0xff000000
+    this._nextId = SERVER_OBJECT_ID_BASE
+    /**
+     * @type {Array<number>}
+     */
+    this.recycledIds = []
   }
 }
 

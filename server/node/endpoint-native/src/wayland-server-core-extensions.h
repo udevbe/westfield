@@ -58,3 +58,6 @@ wl_display_set_global_destroyed_cb(struct wl_display *display, wl_global_cb_t gl
 
 void
 wl_resource_destroy_silently(struct wl_resource *resource);
+
+void
+wl_get_server_object_ids_batch(struct wl_client *client, uint32_t *ids, uint32_t amount);
