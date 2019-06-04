@@ -1,6 +1,6 @@
 {
   "name": "westfield-runtime-server",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "main": "index.js",
   "description": "Wayland HTML5 runtime for Node.js",
   "repository": {

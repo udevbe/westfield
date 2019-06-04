@@ -52,6 +52,7 @@ class Resource extends WlObject {
    * @param {string} msg
    */
   postError (code, msg) {
+    console.error(`Protocol error. client: ${this.client.id}, resource: ${this.id}, code: ${code}, message: ${msg}`)
     this.client.displayResource.error(this, code, msg)
   }
 

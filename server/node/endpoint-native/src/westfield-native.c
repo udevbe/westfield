@@ -522,7 +522,6 @@ sendEvents(napi_env env, napi_callback_info info) {
     struct wl_connection *connection;
     void *messages;
     int *fds;
-    int dup_fd;
     size_t messages_length, fds_length;
 
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL))
@@ -536,8 +535,7 @@ sendEvents(napi_env env, napi_callback_info info) {
 
     connection = wl_client_get_connection(client);
     for (int i = 0; i < fds_length; ++i) {
-        dup_fd = wl_os_dupfd_cloexec(fds[i], 0);
-        wl_connection_put_fd(connection, dup_fd);
+        wl_connection_put_fd(connection, fds[i]);
     }
     wl_connection_write(connection, messages, messages_length * 4);
 
