@@ -222,6 +222,13 @@ class Endpoint {
   static getServerObjectIdsBatch (wlClient, ids) {
     westfieldNative.getServerObjectIdsBatch(wlClient, ids)
   }
+
+  /**
+   * @param {Uint32Array}resultBuffer
+   */
+  static makePipe (resultBuffer) {
+    westfieldNative.makePipe(resultBuffer)
+  }
 }
 
 module.exports = Endpoint

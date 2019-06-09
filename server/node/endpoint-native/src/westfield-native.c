@@ -1,6 +1,5 @@
 
 #include <node_api.h>
-#include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -918,6 +917,29 @@ getServerObjectIdsBatch(napi_env env, napi_callback_info info) {
     return return_value;
 }
 
+napi_value
+makePipe(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value argv[argc], pipefd_value, return_value;
+    size_t amount;
+    int *pipefd;
+
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL))
+    pipefd_value = argv[0];
+
+    NAPI_CALL(env, napi_get_typedarray_info(env, pipefd_value, NULL, &amount, (void **) &pipefd, NULL, NULL))
+    if (amount < 2) {
+        // TODO error out
+    }
+
+    if (pipe(pipefd)) {
+        // TODO error out
+    }
+
+    NAPI_CALL(env, napi_get_undefined(env, &return_value))
+    return return_value;
+}
+
 // TODO temp method - to be replaced by general encoding function
 napi_value
 getShmBuffer(napi_env env, napi_callback_info info) {
@@ -997,6 +1019,7 @@ init(napi_env env, napi_value exports) {
             DECLARE_NAPI_METHOD("destroyWlResourceSilently", destroyWlResourceSilently),
             DECLARE_NAPI_METHOD("setBufferCreatedCallback", setBufferCreatedCallback),
             DECLARE_NAPI_METHOD("getServerObjectIdsBatch", getServerObjectIdsBatch),
+            DECLARE_NAPI_METHOD("makePipe", makePipe),
 
             // TODO temp method - to be replaced by general encoding function
             DECLARE_NAPI_METHOD("getShmBuffer", getShmBuffer),
