@@ -136,6 +136,8 @@ function _setupMessageHandling (display, connection, webFS) {
           return webFS.fromArrayBuffer(transferable)
         } else if (transferable instanceof ImageBitmap) {
           return webFS.fromImageBitmap(transferable)
+        } else if (transferable instanceof OffscreenCanvas) {
+          return webFS.fromOffscreenCanvas(transferable)
         }// else if (transferable instanceof MessagePort) {
         // }
         console.warn(`COMPOSITOR BUG? Unsupported transferable received from compositor: ${transferable}. WebFD will be null.`)

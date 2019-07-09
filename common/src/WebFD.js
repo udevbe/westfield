@@ -27,7 +27,7 @@ SOFTWARE.
 class WebFD {
   /**
    * @param {number}fd
-   * @param {'ImageBitmap'|'ArrayBuffer'|'MessagePort'}fdType
+   * @param {'ImageBitmap'|'ArrayBuffer'|'MessagePort|OffscreenCanvas'}fdType
    * @param {URL}fdURL
    * @param {function(WebFD): Promise<Transferable>}onGetTransferable
    * @param {function(WebFD): void} onClose

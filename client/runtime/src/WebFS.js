@@ -36,11 +36,15 @@ export default class WebFS {
    * @return {WebFD}
    */
   fromArrayBuffer (arrayBuffer) {
-    if (!(arrayBuffer instanceof ArrayBuffer)) {
-      throw new TypeError(`Expected first argument to be of type ArrayBuffer.`)
-    }
     const fd = this._nextFD++
-    const webFD = new WebFD(fd, 'ArrayBuffer', this._fdDomainUUID, () => Promise.resolve(arrayBuffer), () => { delete this._webFDs[fd] })
+    const type = 'ArrayBuffer'
+
+    const webFdURL = new URL(`client://`)
+    webFdURL.searchParams.append('fd', `${fd}`)
+    webFdURL.searchParams.append('type', type)
+    webFdURL.searchParams.append('clientId', this._fdDomainUUID)
+
+    const webFD = new WebFD(fd, type, webFdURL, () => Promise.resolve(arrayBuffer), () => { delete this._webFDs[fd] })
     this._webFDs[fd] = webFD
     return webFD
   }
@@ -50,11 +54,33 @@ export default class WebFS {
    * @return {WebFD}
    */
   fromImageBitmap (imageBitmap) {
-    if (!(imageBitmap instanceof ImageBitmap)) {
-      throw new TypeError(`Expected first argument to be of type ImageBitmap.`)
-    }
     const fd = this._nextFD++
-    const webFD = new WebFD(fd, 'ImageBitmap', this._fdDomainUUID, () => Promise.resolve(imageBitmap), () => { delete this._webFDs[fd] })
+    const type = 'ImageBitmap'
+
+    const webFdURL = new URL(`client://`)
+    webFdURL.searchParams.append('fd', `${fd}`)
+    webFdURL.searchParams.append('type', type)
+    webFdURL.searchParams.append('clientId', this._fdDomainUUID)
+
+    const webFD = new WebFD(fd, type, webFdURL, () => Promise.resolve(imageBitmap), () => { delete this._webFDs[fd] })
+    this._webFDs[fd] = webFD
+    return webFD
+  }
+
+  /**
+   * @param offscreenCanvas
+   * @return {WebFD}
+   */
+  fromOffscreenCanvas (offscreenCanvas) {
+    const fd = this._nextFD++
+    const type = 'OffscreenCanvas'
+
+    const webFdURL = new URL(`client://`)
+    webFdURL.searchParams.append('fd', `${fd}`)
+    webFdURL.searchParams.append('type', type)
+    webFdURL.searchParams.append('clientId', this._fdDomainUUID)
+
+    const webFD = new WebFD(fd, type, webFdURL, () => Promise.resolve(offscreenCanvas), () => { delete this._webFDs[fd] })
     this._webFDs[fd] = webFD
     return webFD
   }
