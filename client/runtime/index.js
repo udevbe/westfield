@@ -86,6 +86,7 @@ import GrWebShmBufferEvents from './src/protocol/GrWebShmBufferEvents'
 // web gl
 import GrWebGlBufferProxy from './src/protocol/GrWebGlBufferProxy'
 import GrWebGlProxy from './src/protocol/GrWebGlProxy'
+import GrWebGlBufferEvents from './src/protocol/GrWebGlBufferEvents'
 
 /**
  * @type {WebFS}
@@ -271,5 +272,6 @@ export {
   GrWebShmBufferEvents,
 
   GrWebGlBufferProxy,
+  GrWebGlBufferEvents,
   GrWebGlProxy
 }

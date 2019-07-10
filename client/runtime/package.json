@@ -1,6 +1,6 @@
 {
   "name": "westfield-runtime-client",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Wayland HTML5 core client protocol",
   "main": "index.js",
   "scripts": {
@@ -30,10 +30,10 @@
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
   "dependencies": {
-    "westfield-runtime-common": "0.2.4"
+    "westfield-runtime-common": "0.2.5"
   },
   "devDependencies": {
-    "westfield-scanner-client": "0.2.1",
+    "westfield-scanner-client": "0.2.2",
     "standard": "^12.0.1"
   }
 }

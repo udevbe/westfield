@@ -27,6 +27,18 @@
 
     <interface name="gr_web_gl_buffer" version="1">
         <event name="offscreen_canvas">
+            <description summary="html5 webgl capable offscreen canvas">
+                Provides the client with an offscreen canvas, capable of doing WebGL operations.
+                The canvas can be resized and drawn to according to the offscreen canvas specifications.
+                The canvas event is send as soon as the gr_web_gl_buffer is wrapped using the create_buffer request
+                in the global gr_web_gl singleton.
+
+                The reported buffer size will be same as the size of the canvas. Buffer content will be the canvas
+                content. Offscreen Canvas content is send to the compositor canvas after the web-worker event loop
+                cycles as per HTML5 offscreen canvas specifications. As such it is not required to perform double
+                buffering by the client as this is taken care of by the offscreen canvas implementation in the browser.
+                The client however is still required to attach and commit the (same) buffer to trigger a surface render.
+            </description>
             <arg name="canvas" type="fd"/>
         </event>
     </interface>
@@ -47,7 +59,7 @@
 
         <request name="create_buffer">
             <description summary="create a buffer">
-                Create a wl_buffer object from a web_array_buffer so it can be used with a surface.
+                Create a wl_buffer object from a gr_web_gl_buffer so it can be used with a surface.
             </description>
             <arg name="id" type="new_id" interface="wl_buffer" summary="The buffer to create."/>
             <arg name="gr_web_gl_buffer" type="object" interface="gr_web_gl_buffer"
