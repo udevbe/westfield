@@ -1,8 +1,13 @@
 {
   "name": "westfield-runtime-common",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "description": "Wayland HTML5 common client-server runtime",
-  "main": "index.js",
+  "main": "lib/index.js",
+  "module": "es/index.js",
+  "files": [
+    "es",
+    "lib"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/udevbe/westfield.git"
@@ -22,7 +27,16 @@
     "url": "https://github.com/udevbe/westfield/issues"
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
+  "scripts": {
+    "build": "nwb build-web-module",
+    "clean": "nwb clean-module",
+    "prepublishOnly": "npm run build",
+    "test": "nwb test",
+    "test:coverage": "nwb test --coverage",
+    "test:watch": "nwb test --server"
+  },
   "devDependencies": {
-    "standard": "^12.0.1"
+    "nwb": "^0.23.0",
+    "standard": "^14.3.1"
   }
 }

@@ -232,6 +232,11 @@ class ProtocolParser {
    */
   _writeResource (jsonProtocol, outDir, protocolItf) {
     const itfNameOrig = protocolItf.$.name
+    if (itfNameOrig === 'wl_registry' || itfNameOrig === 'wl_display') {
+      // registry & display are special cases which are implemented in the runtime part so we skip there code generation.
+      return
+    }
+
     const itfName = upperCamelCase(itfNameOrig)
     let itfVersion = 1
 
@@ -252,8 +257,8 @@ class ProtocolParser {
     })
     resourceOut.write(' */\n\n')
 
-    resourceOut.write('const { Resource } = require(\'westfield-runtime-server\')\n')
-    resourceOut.write('const { Connection } = require(\'westfield-runtime-common\')\n')
+    resourceOut.write('import Resource from \'./Resource\'\n')
+    resourceOut.write('import { Connection } from \'westfield-runtime-common\'\n')
     resourceOut.write('const { uint, uintOptional, int, intOptional, fixed, \n' +
       '\tfixedOptional, object, objectOptional, newObject, string, \n' +
       '\tstringOptional, array, arrayOptional, \n' +
@@ -354,7 +359,7 @@ class ProtocolParser {
       }
     }
 
-    resourceOut.write(`module.exports = ${resourceName}\n`)
+    resourceOut.write(`export default ${resourceName}\n`)
     resourceOut.end()
   }
 
@@ -437,7 +442,7 @@ class ProtocolParser {
     }
 
     requestsOut.write('}\n\n')
-    requestsOut.write(`module.exports = ${requestsName}\n`)
+    requestsOut.write(`export default ${requestsName}\n`)
     requestsOut.end()
   }
 }

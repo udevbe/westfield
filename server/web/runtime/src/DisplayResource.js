@@ -24,7 +24,7 @@ SOFTWARE.
 
 'use strict'
 
-import Resource from './Resource'
+import Resource from './protocol/Resource'
 import { Connection } from 'westfield-runtime-common'
 
 const { object, uint, string, n } = Connection

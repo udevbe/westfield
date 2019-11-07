@@ -1,7 +1,6 @@
 {
   "name": "westfield-runtime-server",
-  "version": "0.2.6",
-  "main": "index.js",
+  "version": "0.3.0",
   "description": "Wayland HTML5 runtime for Node.js",
   "repository": {
     "type": "git",
@@ -23,13 +22,32 @@
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
   "contributors": [],
+  "main": "lib/index.js",
+  "module": "es/index.js",
+  "files": [
+    "es",
+    "lib"
+  ],
   "scripts": {
-    "test": "mocha ./test/*.js --timeout 10000"
+    "prepare:generate:webgl": "westfield-scanner-server ../../../protocol/gr-web-gl.xml -o src/protocol",
+    "prepare:generate:webshm": "westfield-scanner-server ../../../protocol/gr-web-shm.xml -o src/protocol",
+    "prepare:generate:xdgshell": "westfield-scanner-server ../../../protocol/xdg-shell.xml -o src/protocol",
+    "prepare:generate:wayland": "westfield-scanner-server ../../../protocol/wayland.xml -o src/protocol",
+    "prepare:generate": "mkdir -p src/protocol/ && npm run prepare:generate:wayland && npm run prepare:generate:xdgshell && npm run prepare:generate:webshm && npm run prepare:generate:webgl",
+    "prepare": "npm run prepare:generate",
+    "build": "nwb build-web-module --copy-files",
+    "clean": "nwb clean-module",
+    "prepublishOnly": "npm run build",
+    "test": "nwb test",
+    "test:coverage": "nwb test --coverage",
+    "test:watch": "nwb test --server"
   },
   "dependencies": {
-    "westfield-runtime-common": "^0.2.4"
+    "westfield-runtime-common": "0.3.0"
   },
   "devDependencies": {
-    "standard": "^12.0.1"
+    "nwb": "^0.23.0",
+    "standard": "^14.3.1",
+    "westfield-scanner-server": "0.3.0"
   }
 }
