@@ -38,6 +38,14 @@ class Display {
      */
     this.clients = []
     /**
+     * @param {Client}client
+     */
+    this.onclientcreated = (client) => {}
+    /**
+     * @param {Client}client
+     */
+    this.onclientdestroyed = (client) => {}
+    /**
      * @type {number}
      * @private
      */
@@ -57,8 +65,10 @@ class Display {
       if (idx > -1) {
         this.clients.splice(idx, 1)
       }
+      this.onclientdestroyed(client)
     })
     this.clients.push(client)
+    this.onclientcreated(client)
     return client
   }
 
