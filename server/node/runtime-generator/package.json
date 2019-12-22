@@ -7,10 +7,10 @@
   },
   "bin": "westfield-scanner-server.js",
   "dependencies": {
-    "camelcase": "^5.3.1",
-    "meow": "^5.0.0",
-    "uppercamelcase": "^3.0.0",
-    "xml2js": "^0.4.19"
+    "camelcase": "5.3.1",
+    "meow": "6.0.0",
+    "uppercamelcase": "3.0.0",
+    "xml2js": "0.4.23"
   },
   "repository": {
     "type": "git",
@@ -32,6 +32,6 @@
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
   "devDependencies": {
-    "standard": "^12.0.1"
+    "standard": "14.3.1"
   }
 }

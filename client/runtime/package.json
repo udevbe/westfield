@@ -44,8 +44,8 @@
     "westfield-runtime-common": "0.3.0"
   },
   "devDependencies": {
-    "westfield-scanner-client": "0.2.2",
+    "nwb": "^0.23.0",
     "standard": "^14.3.1",
-    "nwb": "^0.23.0"
+    "westfield-scanner-client": "0.2.2"
   }
 }
