@@ -34,9 +34,9 @@ class Display {
      */
     this.registry = new Registry()
     /**
-     * @type {Array<Client>}
+     * @type {Object.<string,Client>}
      */
-    this.clients = []
+    this.clients = {}
     /**
      * @param {Client}client
      */
@@ -61,19 +61,16 @@ class Display {
   createClient () {
     const client = new Client(this, `${this._nextClientId++}`)
     client.onClose().then(() => {
-      const idx = this.clients.indexOf(client)
-      if (idx > -1) {
-        this.clients.splice(idx, 1)
-      }
       this.onclientdestroyed(client)
+      delete this.clients[client.id]
     })
-    this.clients.push(client)
+    this.clients[client.id] = client
     this.onclientcreated(client)
     return client
   }
 
   flushClients () {
-    this.clients.forEach(client => client.connection.flush())
+    Object.values(this.clients).forEach(client => client.connection.flush())
   }
 }
 
