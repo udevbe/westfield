@@ -1,6 +1,6 @@
 {
   "name": "westfield-runtime-server",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Wayland HTML5 runtime for Node.js",
   "repository": {
     "type": "git",
@@ -43,11 +43,11 @@
     "test:watch": "nwb test --server"
   },
   "dependencies": {
-    "westfield-runtime-common": "0.3.0"
+    "westfield-runtime-common": "0.3.1"
   },
   "devDependencies": {
-    "nwb": "^0.23.0",
-    "standard": "^14.3.1",
-    "westfield-scanner-server": "0.3.0"
+    "nwb": "^0.24.3",
+    "standard": "^14.3.3",
+    "westfield-scanner-server": "0.3.1"
   }
 }
