@@ -571,6 +571,26 @@ class Connection {
      * @private
      */
     this._inMessages = []
+    /**
+     * @type {(function():void)[]}
+     * @private
+     */
+    this._idleHandlers = []
+  }
+
+  /**
+   * Adds a one-shot idle handler. The idle handler is fired once, after all incoming request messages have been processed.
+   * @param {function():void}idleHandler
+   */
+  addIdleHandler (idleHandler) {
+    this._idleHandlers = [...this._idleHandlers, idleHandler]
+  }
+
+  /**
+   * @param {function():void}idleHandler
+   */
+  removeIdleHandler (idleHandler) {
+    this._idleHandlers = this._idleHandlers.filter(handler => handler !== idleHandler)
   }
 
   /**
@@ -601,6 +621,16 @@ class Connection {
     // write actual argument value to buffer
     argsArray.forEach((arg) => arg._marshallArg(wireMsg))
     this.onSend(wireMsg)
+  }
+
+  /**
+   * @return {Promise<void>}
+   * @private
+   */
+  async _idle () {
+    for (const idleHandler of this._idleHandlers) {
+      await idleHandler()
+    }
   }
 
   /**
@@ -656,6 +686,8 @@ ${e.stack}
     }
 
     this.flush()
+
+    await this._idle()
   }
 
   /**
