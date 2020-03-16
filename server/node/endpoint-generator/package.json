@@ -1,6 +1,6 @@
 {
   "name": "westfield-endpoint-generator",
-  "version": "0.2.4",
+  "version": "0.3.1",
   "bin": "src/index.js",
   "description": "Wayland HTML5 endpoint generator for Node.js",
   "repository": {
@@ -28,13 +28,13 @@
   },
   "dependencies": {
     "camelcase": "^5.3.1",
-    "meow": "^6.0.0",
+    "meow": "^6.0.1",
     "uppercamelcase": "^3.0.0",
-    "xml2js": "^0.4.19"
+    "xml2js": "^0.4.23"
   },
   "devDependencies": {
-    "mocha": "^6.2.2",
-    "sinon": "^8.0.0",
-    "standard": "^14.3.1"
+    "mocha": "^7.1.0",
+    "sinon": "^9.0.1",
+    "standard": "^14.3.3"
   }
 }
