@@ -75,8 +75,10 @@ class Registry extends RegistryRequests {
    */
   destroyGlobal (global) {
     if (this._globals[global.name]) {
-      delete this._globals[global.name]
       this._registryResources.forEach(registryResource => registryResource.globalRemove(global.name))
+      setTimeout(()=>{
+        delete this._globals[global.name]
+      },5000)
     }
   }
 
