@@ -27,6 +27,15 @@ SOFTWARE.
 import Client from './Client'
 import Registry from './Registry'
 
+/**
+ * @returns {string}
+ */
+function uuidv4 () {
+  return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+    (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+  )
+}
+
 class Display {
   constructor () {
     /**
@@ -45,11 +54,6 @@ class Display {
      * @param {Client}client
      */
     this.onclientdestroyed = (client) => {}
-    /**
-     * @type {number}
-     * @private
-     */
-    this._nextClientId = 0
   }
 
   /**
@@ -59,7 +63,7 @@ class Display {
    * @return {Client}
    */
   createClient () {
-    const client = new Client(this, `${this._nextClientId++}`)
+    const client = new Client(this, uuidv4())
     client.onClose().then(() => {
       this.onclientdestroyed(client)
       delete this.clients[client.id]
