@@ -1,6 +1,6 @@
 {
   "name": "westfield-runtime-client",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Wayland HTML5 core client protocol",
   "main": "lib/index.js",
   "module": "es/index.js",
@@ -41,11 +41,12 @@
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
   "dependencies": {
-    "westfield-runtime-common": "0.3.0"
+    "westfield-runtime-common": "^0.3.2"
   },
   "devDependencies": {
-    "nwb": "^0.23.0",
-    "standard": "^14.3.1",
-    "westfield-scanner-client": "0.2.2"
+    "inferno": "^7.4.2",
+    "nwb": "^0.24.5",
+    "standard": "^14.3.3",
+    "westfield-scanner-client": "^0.2.3"
   }
 }
