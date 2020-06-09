@@ -24,34 +24,18 @@ SOFTWARE.
 
 'use strict'
 
-import Resource from './protocol/Resource'
-import { Connection } from 'westfield-runtime-common'
+import Client from './Client'
+import RegistryResource from './RegistryResource'
 
-const { uint } = Connection
-
-class SyncCallbackResource extends Resource {
+/**
+ * @interface
+ */
+interface RegistryRequests {
   /**
-   * @param {Client}client
-   * @param {number}id
-   * @param {number}version
+   *  Binds a new, client-created object to the server using the
+   * specified name as the identifier.
    */
-  constructor (client, id, version) {
-    super(client, id, version)
-  }
-
-  /**
-   *
-   * Notify the client when the related request is done.
-   *
-   *
-   * @param {number} callbackData request-specific data for the callback
-   *
-   * @since 1
-   *
-   */
-  done (callbackData) {
-    this.client.marshall(this.id, 0, [uint(callbackData)])
-  }
+  bind(client: Client, resource: RegistryResource, name: number, interface_: string, version: number, id: number): void
 }
 
-export default SyncCallbackResource
+export default RegistryRequests

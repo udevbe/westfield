@@ -24,43 +24,23 @@ SOFTWARE.
 
 'use strict'
 
-import RegistryResource from './RegistryResource'
-import RegistryRequests from './RegistryRequests'
+import Client from './Client'
 import Global from './Global'
+import RegistryRequests from './RegistryRequests'
+import RegistryResource from './RegistryResource'
 
 /**
  * @implements {RegistryRequests}
  */
-class Registry extends RegistryRequests {
-  constructor () {
-    super()
-    /**
-     * @type {Array<RegistryResource>}
-     * @private
-     */
-    this._registryResources = []
-    /**
-     * @type {Object.<number,Global>}
-     * @private
-     */
-    this._globals = {}
-    /**
-     * @type {number}
-     * @private
-     */
-    this._nextGlobalName = 0xffff0000
-  }
+class Registry implements RegistryRequests {
+  private _registryResources: RegistryResource[] = []
+  private _globals: { [key: number]: Global } = {}
+  private _nextGlobalName: number = 0xffff0000
 
   /**
-   * Register a global to make it available to clients.
-   *
-   * @param {Object} implementation
-   * @param {string}interface_
-   * @param {number}version
-   * @param {function(Client,number,number):void}bindCallback callback with Client, id, version arguments
-   * @return {Global}
+   * Register a global to make it available to clients
    */
-  createGlobal (implementation, interface_, version, bindCallback) {
+  createGlobal(implementation: any, interface_: string, version: number, bindCallback: (client: Client, id: number, version: number) => void): Global {
     const name = ++this._nextGlobalName
     const global = new Global(this, implementation, interface_, version, name, bindCallback)
     this._globals[name] = global
@@ -71,30 +51,21 @@ class Registry extends RegistryRequests {
   /**
    * Unregister a global and revoke it from clients.
    *
-   * @param {Global} global
    */
-  destroyGlobal (global) {
+  destroyGlobal(global: Global) {
     if (this._globals[global.name]) {
       this._registryResources.forEach(registryResource => registryResource.globalRemove(global.name))
-      setTimeout(()=>{
+      setTimeout(() => {
         delete this._globals[global.name]
-      },5000)
+      }, 5000)
     }
   }
 
-  /**
-   * @param {RegistryResource} registryResource
-   */
-  publishGlobals (registryResource) {
+  publishGlobals(registryResource: RegistryResource) {
     Object.entries(this._globals).forEach(([name, global]) => registryResource.global(Number.parseInt(name), global.interface_, global.version))
   }
 
-  /**
-   *
-   * @param {Client} client
-   * @param {number} id
-   */
-  createRegistryResource (client, id) {
+  createRegistryResource(client: Client, id: number): RegistryResource {
     const registryResource = new RegistryResource(client, id, 1)
     registryResource.implementation = this
     this._registryResources.push(registryResource)
@@ -104,15 +75,8 @@ class Registry extends RegistryRequests {
   /**
    * Binds a new, client-created object to the server using the
    * specified name as the identifier.
-   * @param {Client}client
-   * @param {RegistryResource}resource
-   * @param {number}name unique numeric name of the object
-   * @param {string}interface_
-   * @param {number}version
-   * @param {number}id bounded object
-   * @override
    */
-  bind (client, resource, name, interface_, version, id) {
+  bind(client: Client, resource: RegistryResource, name: number, interface_: string, id: number, version: number) {
     this._globals[name].bindClient(client, id, version)
   }
 }

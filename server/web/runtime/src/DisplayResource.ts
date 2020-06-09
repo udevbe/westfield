@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2017 Erik De Rijcke
+Copyright (c) 2020 Erik De Rijcke
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,41 +24,33 @@ SOFTWARE.
 
 'use strict'
 
+import { n, object, string, uint, WlMessage } from 'westfield-runtime-common'
+import Client from './Client'
+import DisplayRequests from './DisplayRequests'
 import Resource from './protocol/Resource'
-import { Connection } from 'westfield-runtime-common'
 
-const { object, uint, string, n } = Connection
 
 class DisplayResource extends Resource {
-  /**
-   * @param {Client}client
-   * @param {number}id
-   * @param {number}version
-   */
-  constructor (client, id, version) {
+  implementation?: DisplayRequests
+
+  constructor(client: Client, id: number, version: number) {
     super(client, id, version)
-    /**
-     * @type {DisplayRequests}
-     */
-    this.implementation = null
   }
 
   /**
    * opcode 0 -> sync
    *
-   * @param {{buffer: Uint32Array, fds: Array<WebFD>, bufferOffset: number, consumed: number, size: number}} message
    */
-  async [0] (message) {
-    await this.implementation.sync(this, n(message))
+  async [0](message: WlMessage) {
+    await this.implementation?.sync(this, n(message))
   }
 
   /**
    * opcode 1 -> getRegistry
    *
-   * @param {{buffer: Uint32Array, fds: Array<WebFD>, bufferOffset: number, consumed: number, size: number}} message
    */
-  async [1] (message) {
-    await this.implementation.getRegistry(this, n(message))
+  async [1](message: WlMessage) {
+    await this.implementation?.getRegistry(this, n(message))
   }
 
   /**
@@ -70,11 +62,11 @@ class DisplayResource extends Resource {
    *  own set of error codes.  The message is a brief description
    *  of the error, for (debugging) convenience.
    *
-   * @param {Resource}errorObject object where the error occurred
-   * @param {number}code error code
-   * @param {string}message error description
+   * @param errorObject object where the error occurred
+   * @param code error code
+   * @param message error description
    */
-  error (errorObject, code, message) {
+  error(errorObject: Resource, code: number, message: string) {
     this.client.marshall(this.id, 0, [object(errorObject), uint(code), string(message)])
     this.client.connection.flush()
     this.client.connection.close()
@@ -87,9 +79,9 @@ class DisplayResource extends Resource {
    *  When the client receives this event, it will know that it can
    *  safely reuse the object ID.
    *
-   * @param {number}id deleted object ID
+   * @param id deleted object ID
    */
-  deleteId (id) {
+  deleteId(id: number) {
     this.client.marshall(this.id, 1, [uint(id)])
   }
 }

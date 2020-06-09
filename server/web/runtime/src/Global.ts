@@ -24,50 +24,52 @@ SOFTWARE.
 
 'use strict'
 
-import Resource from './protocol/Resource'
-import { Connection } from 'westfield-runtime-common'
+import Client from './Client'
+import Registry from './Registry'
 
-const { string, uint, u, s, n } = Connection
+class Global {
+  readonly registry: Registry
+  readonly implementation: any
+  readonly interface_: string
+  readonly version: number
+  readonly name: number
 
-class RegistryResource extends Resource {
+  private readonly _bindCallback: (client: Client, id: number, version: number) => void
+
   /**
-   * @param {Client}client
-   * @param {number}id
-   * @param {number}version
+   * Use Registry.createGlobal(..) instead.
    */
-  constructor (client, id, version) {
-    super(client, id, version)
-    /**
-     * @type {RegistryRequests}
-     */
-    this.implementation = null
+  constructor(
+    registry: Registry,
+    implementation: any,
+    interface_: string,
+    version: number,
+    name: number,
+    bindCallback: (client: Client, id: number, version: number) => void
+  ) {
+    this.registry = registry
+    this.implementation = implementation
+    this._bindCallback = bindCallback
+    this.interface_ = interface_
+    this.version = version
+    this.name = name
   }
 
   /**
-   * @param {number} name
-   * @param {string} interface_
-   * @param {number} version
-   */
-  global (name, interface_, version) {
-    this.client.marshall(this.id, 0, [uint(name), string(interface_), uint(version)])
-  }
-
-  /**
-   * Notify the client that the global with the given name id is removed.
-   * @param {number} name
-   */
-  globalRemove (name) {
-    this.client.marshall(this.id, 1, [uint(name)])
-  }
-
-  /**
-   * opcode 1 -> bind
    *
-   * @param {{buffer: Uint32Array, fds: Array<WebFD>, bufferOffset: number, consumed: number, size: number}} message
+   * Invoked when a client binds to this global. Subclasses implement this method so they can instantiate a
+   * corresponding Resource subtype.
+   *
    */
-  async [0] (message) {
-    await this.implementation.bind(this.client, this, u(message), s(message, false), u(message), n(message))
+  bindClient(client: Client, id: number, version: number) {
+    this._bindCallback(client, id, version)
+  }
+
+  destroy() {
+    if (this.registry) {
+      this.registry.destroyGlobal(this)
+    }
   }
 }
 
-export default RegistryResource
+export default Global

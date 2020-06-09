@@ -24,63 +24,44 @@ SOFTWARE.
 
 'use strict'
 
-class Global {
-  /**
-   * Use Registry.createGlobal(..) instead.
-   * @param {Registry}registry
-   * @param {Object}implementation
-   * @param {string} interface_
-   * @param {number} version
-   * @param {number}name
-   * @param {function(Client,number,number):void}bindCallback
-   */
-  constructor (registry, implementation, interface_, version, name, bindCallback) {
-    /**
-     * @type {Registry}
-     */
-    this.registry = registry
-    /**
-     * @type {Object}
-     */
-    this.implementation = implementation
-    /**
-     * @type {function(Client, number, number): void}
-     * @private
-     */
-    this._bindCallback = bindCallback
-    /**
-     * @type {string}
-     */
-    this.interface_ = interface_
-    /**
-     * @type {number}
-     */
-    this.version = version
-    /**
-     * @type {number}
-     */
-    this.name = name
-  }
+import Client from './Client'
+import Registry from './Registry'
+
+/**
+ * @returns {string}
+ */
+function uuidv4 () {
+  // @ts-ignore
+  return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+    (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+  )
+}
+
+class Display {
+  readonly registry: Registry = new Registry()
+  readonly clients: {[key: string]: Client} = {}
+  readonly onclientcreated?: (clienet: Client) => void
+  readonly onclientdestroyed?: (client: Client) => void
 
   /**
    *
    * Invoked when a client binds to this global. Subclasses implement this method so they can instantiate a
    * corresponding Resource subtype.
-   *
-   * @param {Client} client
-   * @param {number} id
-   * @param {number} version
    */
-  bindClient (client, id, version) {
-    this._bindCallback(client, id, version)
+  createClient () {
+    const client = new Client(this, uuidv4())
+    client.onClose().then(() => {
+      this.onclientdestroyed?.(client)
+      delete this.clients[client.id]
+    })
+    this.clients[client.id] = client
+    this.onclientcreated?.(client)
+    return client
   }
 
-  destroy () {
-    if (this.registry) {
-      this.registry.destroyGlobal(this)
-      this.registry = null
-    }
+  flushClients () {
+    Object.values(this.clients).forEach(client => client.connection.flush())
   }
 }
 
-export default Global
+export default Display

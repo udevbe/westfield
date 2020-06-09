@@ -24,20 +24,36 @@ SOFTWARE.
 
 'use strict'
 
-/**
- * @interface
- */
-class DisplayRequests {
+import Client from './Client'
+import Resource from './protocol/Resource'
+import { string, uint, u, s, n, WlMessage } from 'westfield-runtime-common'
+import RegistryRequests from './RegistryRequests'
+
+class RegistryResource extends Resource {
+  implementation?: RegistryRequests
+
+  constructor (client: Client, id: number, version: number) {
+    super(client, id, version)
+  }
+
+  global (name: number, interface_: string, version: number) {
+    this.client.marshall(this.id, 0, [uint(name), string(interface_), uint(version)])
+  }
+
   /**
-   * @param {DisplayResource}resource
-   * @param {number}id
+   * Notify the client that the global with the given name id is removed.
    */
-  sync (resource, id) {}
+  globalRemove (name: number) {
+    this.client.marshall(this.id, 1, [uint(name)])
+  }
+
   /**
-   * @param {DisplayResource}resource
-   * @param {number}id
+   * opcode 0 -> bind
+   *
    */
-  getRegistry (resource, id) {}
+  async [0] (message: WlMessage) {
+    await this.implementation?.bind(this.client, this, u(message), s(message), u(message), n(message))
+  }
 }
 
-export default DisplayRequests
+export default RegistryResource
