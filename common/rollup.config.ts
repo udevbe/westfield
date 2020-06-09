@@ -7,7 +7,7 @@ import json from 'rollup-plugin-json'
 
 const pkg = require('./package.json')
 
-const libraryName = 'westfield-common'
+const libraryName = 'westfield-runtime-common'
 
 export default {
   input: `src/index.ts`,

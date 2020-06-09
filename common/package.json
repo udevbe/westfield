@@ -1,10 +1,10 @@
 {
   "name": "westfield-runtime-common",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Wayland HTML5 common client-server runtime",
-  "main": "dist/greenfield-compositor.umd.js",
-  "module": "dist/greenfield-compositor.es5.js",
-  "typings": "dist/types/greenfield-compositor.d.ts",
+  "main": "dist/westfield-runtime-common.umd.js",
+  "module": "dist/westfield-runtime-common.es5.js",
+  "typings": "dist/types/index.d.ts",
   "files": [
     "dist"
   ],
@@ -94,9 +94,9 @@
     "@commitlint/config-conventional": "^8.3.4",
     "@types/jest": "^25.2.3",
     "@types/node": "^14.0.12",
-    "colors": "^1.3.2",
+    "colors": "^1.4.0",
     "commitizen": "^4.1.2",
-    "coveralls": "^3.0.2",
+    "coveralls": "^3.1.0",
     "cross-env": "^7.0.2",
     "cz-conventional-changelog": "^3.2.0",
     "husky": "^4.2.5",
@@ -115,14 +115,14 @@
     "rollup-plugin-sourcemaps": "^0.6.2",
     "rollup-plugin-typescript2": "^0.27.1",
     "semantic-release": "^17.0.8",
-    "shelljs": "^0.8.3",
-    "travis-deploy-once": "^5.0.9",
+    "shelljs": "^0.8.4",
+    "travis-deploy-once": "^5.0.11",
     "ts-jest": "^26.1.0",
     "ts-node": "^8.10.2",
     "tslint": "^6.1.2",
-    "tslint-config-prettier": "^1.15.0",
+    "tslint-config-prettier": "^1.18.0",
     "tslint-config-standard": "^9.0.0",
     "typedoc": "^0.17.7",
-    "typescript": "^3.0.3"
+    "typescript": "^3.9.5"
   }
 }

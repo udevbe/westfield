@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2017 Erik De Rijcke
+Copyright (c) 2020 Erik De Rijcke
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -76,12 +76,13 @@ class ProtocolArguments {
   /**
    * @param {string}argName
    * @param {boolean}optional
+   * @param {string}resourceName
    * @return {{signature: string, jsType: string, marshallGen: string}}
    */
-  static object (argName, optional) {
+  static object (argName, optional, resourceName) {
     return {
-      signature: `o(message, ${optional}, this.client.connection)`,
-      jsType: optional ? '?*' : '*',
+      signature: optional ? `oOptional<${resourceName}>(message, this.client.connection)` : `o<${resourceName}>(message, this.client.connection)`,
+      jsType: optional ? `Wl.${resourceName}|undefined` : `Wl.${resourceName}`,
       marshallGen: optional ? `objectOptional(${argName})` : `object(${argName})`
     }
   }
@@ -105,8 +106,8 @@ class ProtocolArguments {
    */
   static string (argName, optional) {
     return {
-      signature: `s(message, ${optional})`,
-      jsType: optional ? '?string' : 'string',
+      signature: optional ? `sOptional(message)` : 's(message)',
+      jsType: optional ? 'string|undefined' : 'string',
       marshallGen: optional ? `stringOptional(${argName})` : `string(${argName})`
     }
   }
@@ -118,8 +119,8 @@ class ProtocolArguments {
    */
   static array (argName, optional) {
     return {
-      signature: `a(message, ${optional})`,
-      jsType: optional ? '?ArrayBuffer' : 'ArrayBuffer',
+      signature: optional ? `aOptional(message, ${optional})` : 'a(message)',
+      jsType: optional ? 'ArrayBufferView|undefined' : 'ArrayBufferView',
       marshallGen: optional ? `arrayOptional(${argName})` : `array(${argName})`
     }
   }

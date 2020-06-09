@@ -40,7 +40,10 @@ class ProtocolParser {
       let processedFirstArg = false
       for (let i = 0; i < evArgs.length; i++) {
         const arg = evArgs[i]
-        if (arg.$.type === 'new_id') {
+        const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
+        const argInterface = arg.$.hasOwnProperty('interface') ? `${upperCamelCase(arg.$.interface)}Resource` : undefined
+        const argType = arg.$.type
+        if (argType === 'new_id') {
           continue
         }
 
@@ -48,20 +51,25 @@ class ProtocolParser {
         if (processedFirstArg) {
           out.write(', ')
         }
-        out.write(argName)
+        out.write(`${argName}: ${ProtocolArguments[argType](argName, optional, argInterface).jsType}`)
         processedFirstArg = true
       }
     }
   }
 
-  static _generateRequestArgs (out, ev) {
-    out.write('resource')
+  static _generateRequestArgs (out, ev, resourceName) {
+    const evArgs = ev.arg
+
+    out.write(`resource: ${resourceName}`)
     if (ev.hasOwnProperty('arg')) {
-      const evArgs = ev.arg
       for (let i = 0; i < evArgs.length; i++) {
         const arg = evArgs[i]
         const argName = camelCase(arg.$.name)
-        out.write(', ' + argName)
+        const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
+        const argInterface = arg.$.hasOwnProperty('interface') ? `${upperCamelCase(arg.$.interface)}Resource` : undefined
+        const argType = arg.$.type
+
+        out.write(`, ${argName}: ${ProtocolArguments[argType](argName, optional, argInterface).jsType}`)
       }
     }
   }
@@ -75,12 +83,13 @@ class ProtocolParser {
 
         const argName = camelCase(arg.$.name)
         const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
+        const argInterface = arg.$.hasOwnProperty('interface') ? `${upperCamelCase(arg.$.interface)}Resource` : undefined
         const argType = arg.$.type
 
         if (i !== 0) {
           evSig += ', '
         }
-        evSig += ProtocolArguments[argType](argName, optional).signature
+        evSig += ProtocolArguments[argType](argName, optional, ProtocolArguments[argType](argName, false, argInterface).jsType).signature
       }
     }
 
@@ -90,12 +99,12 @@ class ProtocolParser {
   static _generateIfRequestGlue (out, ev, opcode) {
     const evName = camelCase(ev.$.name)
 
-    out.write(`\tasync [${opcode}] (message) {\n`)
+    out.write(`\tasync [${opcode}] (message: WlMessage) {\n`)
     const evSig = ProtocolParser._parseRequestSignature(ev)
     if (evSig.length) {
-      out.write(`\t\tawait this.implementation.${evName}(this, ${evSig})\n`)
+      out.write(`\t\tawait this.implementation?.${evName}(this, ${evSig})\n`)
     } else {
-      out.write(`\t\tawait this.implementation.${evName}(this)\n`)
+      out.write(`\t\tawait this.implementation?.${evName}(this)\n`)
     }
     out.write('\t}\n')
   }
@@ -137,8 +146,8 @@ class ProtocolParser {
 
     // function
     requestsOut.write(`\t${reqName}(`)
-    ProtocolParser._generateRequestArgs(requestsOut, itfRequest)
-    requestsOut.write(') {}\n')
+    ProtocolParser._generateRequestArgs(requestsOut, itfRequest, resourceName)
+    requestsOut.write('): void\n')
   }
 
   _parseItfEvent (out, itfEvent, opcode) {
@@ -228,9 +237,10 @@ class ProtocolParser {
    * @param {Object}jsonProtocol
    * @param {string}outDir
    * @param {Object}protocolItf
+   * @param {WriteStream}out
    * @private
    */
-  _writeResource (jsonProtocol, outDir, protocolItf) {
+  _writeResource (jsonProtocol, outDir, protocolItf, out) {
     const itfNameOrig = protocolItf.$.name
     if (itfNameOrig === 'wl_registry' || itfNameOrig === 'wl_display') {
       // registry & display are special cases which are implemented in the runtime part so we skip there code generation.
@@ -247,70 +257,39 @@ class ProtocolParser {
     console.log(`Processing interface ${itfName} v${itfVersion}`)
 
     const resourceName = `${itfName}Resource`
-    const resourceOut = fs.createWriteStream(path.join(outDir, `${resourceName}.js`))
-
-    resourceOut.write('/*\n')
-    jsonProtocol.protocol.copyright.forEach((val) => {
-      val.split('\n').forEach((line) => {
-        resourceOut.write(' *' + line + '\n')
-      })
-    })
-    resourceOut.write(' */\n\n')
-
-    resourceOut.write('import Resource from \'./Resource\'\n')
-    resourceOut.write('import { Connection } from \'westfield-runtime-common\'\n')
-    resourceOut.write('const { uint, uintOptional, int, intOptional, fixed, \n' +
-      '\tfixedOptional, object, objectOptional, newObject, string, \n' +
-      '\tstringOptional, array, arrayOptional, \n' +
-      '\tfileDescriptorOptional, fileDescriptor, \n' +
-      'h, u, i, f, o, n, s, a } = Connection\n')
 
     // class docs
     const description = protocolItf.description
     if (description) {
       description.forEach((val) => {
-        resourceOut.write('\n/**\n')
+        out.write('\n/**\n')
         if (val.hasOwnProperty('_')) {
           val._.split('\n').forEach((line) => {
-            resourceOut.write(' *' + line + '\n')
+            out.write(' *' + line + '\n')
           })
         }
-        resourceOut.write(' */\n')
+        out.write(' */\n')
       })
     }
+    const requestsName = `${itfName}Requests`
 
     // class
-    resourceOut.write(`class ${resourceName} extends Resource {\n`)
+    out.write(`export class ${resourceName} extends Wl.Resource {\n`)
+    out.write(`\tstatic readonly protocolName = '${itfNameOrig}'\n\n`)
+    out.write(`\timplementation?: ${requestsName}\n\n`)
 
     // events
     if (protocolItf.hasOwnProperty('event')) {
       const itfEvents = protocolItf.event
       for (let j = 0; j < itfEvents.length; j++) {
-        this._parseItfEvent(resourceOut, itfEvents[j], j)
+        this._parseItfEvent(out, itfEvents[j], j)
       }
     }
 
-    const requestsName = `${itfName}Requests`
-
-    // requests
-    if (protocolItf.hasOwnProperty('request')) {
-      const itfRequests = protocolItf.request
-      this._writeRequests(jsonProtocol, outDir, itfRequests, resourceName, requestsName)
-    }
-
     // constructor
-    resourceOut.write('\n/**\n')
-    resourceOut.write('\t *@param {Client}client\n')
-    resourceOut.write('\t *@param {number}id\n')
-    resourceOut.write('\t *@param {number}version\n')
-    resourceOut.write('\t */\n')
-    resourceOut.write('\tconstructor (client, id, version) {\n')
-    resourceOut.write('\t\tsuper(client, id, version)\n')
-    resourceOut.write('\t\t/**\n')
-    resourceOut.write(`\t\t * @type {${requestsName}|null}\n`)
-    resourceOut.write('\t\t */\n')
-    resourceOut.write('\t\tthis.implementation = null\n')
-    resourceOut.write('\t}\n\n')
+    out.write('\tconstructor (client: Wl.Client, id: number, version: number) {\n')
+    out.write('\t\tsuper(client, id, version)\n')
+    out.write('\t}\n\n')
 
     // glue request functions
     if (protocolItf.hasOwnProperty('request')) {
@@ -322,12 +301,16 @@ class ProtocolParser {
           since = itfRequest.$.since
         }
 
-        ProtocolParser._generateIfRequestGlue(resourceOut, itfRequest, j)
+        ProtocolParser._generateIfRequestGlue(out, itfRequest, j)
       }
     }
 
-    resourceOut.write('}\n')
-    resourceOut.write(`${resourceName}.protocolName = '${itfNameOrig}'\n\n`)
+    out.write('}\n')
+    // requests
+    if (protocolItf.hasOwnProperty('request')) {
+      const itfRequests = protocolItf.request
+      this._writeRequests(jsonProtocol, outDir, itfRequests, resourceName, requestsName, out)
+    }
 
     // enums
     if (protocolItf.hasOwnProperty('enum')) {
@@ -337,7 +320,7 @@ class ProtocolParser {
         const itfEnum = itfEnums[j]
         const enumName = upperCamelCase(itfEnum.$.name)
 
-        resourceOut.write(`${resourceName}.${enumName} = {\n`)
+        out.write(`export enum ${resourceName}${enumName} {\n`)
 
         let firstArg = true
         itfEnum.entry.forEach((entry) => {
@@ -346,43 +329,40 @@ class ProtocolParser {
           const entrySummary = entry.$.summary || ''
 
           if (!firstArg) {
-            resourceOut.write(',\n')
+            out.write(',\n')
           }
           firstArg = false
 
-          resourceOut.write('  /**\n')
-          resourceOut.write(`   * ${entrySummary}\n`)
-          resourceOut.write('   */\n')
-          resourceOut.write(`  ${entryName}: ${entryValue}`)
+          out.write('  /**\n')
+          out.write(`   * ${entrySummary}\n`)
+          out.write('   */\n')
+          out.write(`  ${entryName} = ${entryValue}`)
         })
-        resourceOut.write('\n}\n\n')
+        out.write('\n}\n\n')
       }
     }
-
-    resourceOut.write(`export default ${resourceName}\n`)
-    resourceOut.end()
   }
 
-  /**
-   * @param {Object}jsonProtocol
-   * @param {string}outDir
-   * @param {Object}protocolItf
-   * @private
-   */
-  _parseInterface (jsonProtocol, outDir, protocolItf) {
-    this._writeResource(jsonProtocol, outDir, protocolItf)
-  }
-
-  // TODO make outFile -> outDir
   /**
    * @param {Object}jsonProtocol
    * @param {string}outDir
    * @private
    */
   _parseProtocol (jsonProtocol, outDir) {
-    jsonProtocol.protocol.interface.forEach((itf) => {
-      this._parseInterface(jsonProtocol, outDir, itf)
+    const out = fs.createWriteStream(path.join(outDir, `${jsonProtocol.protocol.$.name}.ts`))
+    out.write('/*\n')
+    jsonProtocol.protocol.copyright.forEach((val) => {
+      val.split('\n').forEach((line) => {
+        out.write(' *' + line + '\n')
+      })
     })
+    out.write(' */\n\n')
+    out.write('import { WlMessage, fileDescriptor, uint, int, \n' +
+      '\tfixed, object, objectOptional, newObject, string, stringOptional, \n' +
+      '\tarray, arrayOptional, u, i, f, oOptional, o, n, sOptional, s, aOptional, a, h,' +
+      '\tWebFD, Fixed } from \'westfield-runtime-common\'\n')
+    out.write('import * as Wl from \'..\'\n\n')
+    jsonProtocol.protocol.interface.forEach((itf) => { this._writeResource(jsonProtocol, outDir, itf, out) })
     console.log('Done')
   }
 
@@ -419,31 +399,15 @@ class ProtocolParser {
     this.protocolFile = protocolFile
   }
 
-  _writeRequests (jsonProtocol, outDir, itfRequests, resourceName, requestsName) {
-    const requestsFile = path.join(outDir, `${requestsName}.js`)
-    const requestsOut = fs.createWriteStream(requestsFile)
-
-    requestsOut.write('/*\n')
-    jsonProtocol.protocol.copyright.forEach((val) => {
-      val.split('\n').forEach((line) => {
-        requestsOut.write(' *' + line + '\n')
-      })
-    })
-    requestsOut.write(' */\n\n')
-
-    requestsOut.write('/**\n')
-    requestsOut.write(' * @interface\n')
-    requestsOut.write(' */\n')
-    requestsOut.write(`class ${requestsName} {\n`)
+  _writeRequests (jsonProtocol, outDir, itfRequests, resourceName, requestsName, out) {
+    out.write(`\nexport interface ${requestsName} {\n`)
 
     for (let j = 0; j < itfRequests.length; j++) {
       const itfRequest = itfRequests[j]
-      this._parseItfRequest(requestsOut, resourceName, itfRequest)
+      this._parseItfRequest(out, resourceName, itfRequest)
     }
 
-    requestsOut.write('}\n\n')
-    requestsOut.write(`export default ${requestsName}\n`)
-    requestsOut.end()
+    out.write('}\n\n')
   }
 }
 

@@ -150,3 +150,7 @@ fabric.properties
 /server/web/runtime/src/protocol/XdgToplevelResource.js
 /server/web/runtime/src/protocol/XdgWmBaseRequests.js
 /server/web/runtime/src/protocol/XdgWmBaseResource.js
+/server/web/runtime/src/protocol/gr_web_gl.ts
+/server/web/runtime/src/protocol/gr_web_shm.ts
+/server/web/runtime/src/protocol/wayland.ts
+/server/web/runtime/src/protocol/xdg_shell.ts
