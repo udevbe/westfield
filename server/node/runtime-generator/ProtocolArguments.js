@@ -82,7 +82,7 @@ class ProtocolArguments {
   static object (argName, optional, resourceName) {
     return {
       signature: optional ? `oOptional<${resourceName}>(message, this.client.connection)` : `o<${resourceName}>(message, this.client.connection)`,
-      jsType: optional ? `Wl.${resourceName}|undefined` : `Wl.${resourceName}`,
+      jsType: optional ? `Westfield.${resourceName}|undefined` : `Westfield.${resourceName}`,
       marshallGen: optional ? `objectOptional(${argName})` : `object(${argName})`
     }
   }

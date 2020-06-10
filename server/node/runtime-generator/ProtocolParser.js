@@ -125,16 +125,14 @@ class ProtocolParser {
         }
 
         requestsOut.write('\t *\n')
-        requestsOut.write(`\t * @param {${resourceName}} resource \n`)
+        requestsOut.write(`\t * @param resource The protocol resource of this implementation.\n`)
         if (itfRequest.hasOwnProperty('arg')) {
           const evArgs = itfRequest.arg
           evArgs.forEach((arg) => {
             const argDescription = arg.$.summary || ''
             const argName = camelCase(arg.$.name)
-            const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
-            const argType = arg.$.type
 
-            requestsOut.write(`\t * @param {${ProtocolArguments[argType](argName, optional).jsType}} ${argName} ${argDescription} \n`)
+            requestsOut.write(`\t * @param ${argName} ${argDescription} \n`)
           })
         }
         requestsOut.write('\t *\n')
@@ -172,10 +170,9 @@ class ProtocolParser {
           reqArgs.forEach((arg) => {
             const argDescription = arg.$.summary || ''
             const argName = camelCase(arg.$.name)
-            const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
             const argType = arg.$.type
             if (argType !== 'new_id') {
-              out.write(`\t * @param {${ProtocolArguments[argType](argName, optional).jsType}} ${argName} ${argDescription} \n`)
+              out.write(`\t * @param ${argName} ${argDescription} \n`)
             }
           })
 
@@ -183,7 +180,7 @@ class ProtocolParser {
             const argDescription = arg.$.summary || ''
             const argType = arg.$.type
             if (argType === 'new_id') {
-              out.write(`\t * @return {number} resource id. ${argDescription} \n`)
+              out.write(`\t * @return resource id. ${argDescription} \n`)
             }
           })
           out.write('\t *\n')
@@ -271,12 +268,14 @@ class ProtocolParser {
         out.write(' */\n')
       })
     }
-    const requestsName = `${itfName}Requests`
+    const requestsName = protocolItf.hasOwnProperty('request') ? `${itfName}Requests` : 'never'
 
     // class
-    out.write(`export class ${resourceName} extends Wl.Resource {\n`)
+    out.write(`export class ${resourceName} extends Westfield.Resource {\n`)
     out.write(`\tstatic readonly protocolName = '${itfNameOrig}'\n\n`)
-    out.write(`\timplementation?: ${requestsName}\n\n`)
+    if (protocolItf.hasOwnProperty('request')) {
+      out.write(`\timplementation?: ${requestsName}\n\n`)
+    }
 
     // events
     if (protocolItf.hasOwnProperty('event')) {
@@ -287,7 +286,7 @@ class ProtocolParser {
     }
 
     // constructor
-    out.write('\tconstructor (client: Wl.Client, id: number, version: number) {\n')
+    out.write('\tconstructor (client: Westfield.Client, id: number, version: number) {\n')
     out.write('\t\tsuper(client, id, version)\n')
     out.write('\t}\n\n')
 
@@ -324,7 +323,10 @@ class ProtocolParser {
 
         let firstArg = true
         itfEnum.entry.forEach((entry) => {
-          const entryName = camelCase(entry.$.name)
+          let entryName = camelCase(entry.$.name)
+          if (!isNaN(entryName[0])) {
+            entryName = `_${entryName}`
+          }
           const entryValue = entry.$.value
           const entrySummary = entry.$.summary || ''
 
@@ -361,7 +363,7 @@ class ProtocolParser {
       '\tfixed, object, objectOptional, newObject, string, stringOptional, \n' +
       '\tarray, arrayOptional, u, i, f, oOptional, o, n, sOptional, s, aOptional, a, h,' +
       '\tWebFD, Fixed } from \'westfield-runtime-common\'\n')
-    out.write('import * as Wl from \'..\'\n\n')
+    out.write('import * as Westfield from \'..\'\n\n')
     jsonProtocol.protocol.interface.forEach((itf) => { this._writeResource(jsonProtocol, outDir, itf, out) })
     console.log('Done')
   }
