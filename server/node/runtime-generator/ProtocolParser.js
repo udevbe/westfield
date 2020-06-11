@@ -51,7 +51,8 @@ class ProtocolParser {
         if (processedFirstArg) {
           out.write(', ')
         }
-        out.write(`${argName}: ${ProtocolArguments[argType](argName, optional, argInterface).jsType}`)
+        const tsType = ProtocolArguments[argType](argName, optional, argInterface).jsType
+        out.write(`${argName}: ${tsType}`)
         processedFirstArg = true
       }
     }
@@ -102,9 +103,9 @@ class ProtocolParser {
     out.write(`\tasync [${opcode}] (message: WlMessage) {\n`)
     const evSig = ProtocolParser._parseRequestSignature(ev)
     if (evSig.length) {
-      out.write(`\t\tawait this.implementation?.${evName}(this, ${evSig})\n`)
+      out.write(`\t\tawait this.implementation.${evName}(this, ${evSig})\n`)
     } else {
-      out.write(`\t\tawait this.implementation?.${evName}(this)\n`)
+      out.write(`\t\tawait this.implementation.${evName}(this)\n`)
     }
     out.write('\t}\n')
   }
@@ -273,8 +274,11 @@ class ProtocolParser {
     // class
     out.write(`export class ${resourceName} extends Westfield.Resource {\n`)
     out.write(`\tstatic readonly protocolName = '${itfNameOrig}'\n\n`)
+    out.write('\t//@ts-ignore Should always be set when resource is created.\n')
     if (protocolItf.hasOwnProperty('request')) {
-      out.write(`\timplementation?: ${requestsName}\n\n`)
+      out.write(`\timplementation: ${requestsName}\n\n`)
+    } else {
+      out.write(`\timplementation: any\n\n`)
     }
 
     // events
