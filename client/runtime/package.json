@@ -1,12 +1,11 @@
 {
   "name": "westfield-runtime-client",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Wayland HTML5 core client protocol",
-  "main": "lib/index.js",
-  "module": "es/index.js",
+  "module": "dist/index.js",
+  "typings": "types/index.d.ts",
   "files": [
-    "es",
-    "lib"
+    "dist"
   ],
   "scripts": {
     "prepare:generate:webgl": "westfield-scanner-client ../../protocol/gr-web-gl.xml -o src/protocol",
@@ -15,12 +14,18 @@
     "prepare:generate:wayland": "westfield-scanner-client ../../protocol/wayland.xml -o src/protocol",
     "prepare:generate": "mkdir -p src/protocol/ && npm run prepare:generate:wayland && npm run prepare:generate:xdgshell && npm run prepare:generate:webshm && npm run prepare:generate:webgl",
     "prepare": "npm run prepare:generate",
-    "build": "nwb build-web-module",
-    "clean": "nwb clean-module",
-    "prepublishOnly": "npm run build",
-    "test": "nwb test",
-    "test:coverage": "nwb test --coverage",
-    "test:watch": "nwb test --server"
+    "lint": "tslint  --project tsconfig.json -t codeFrame 'src/**/*.ts' 'test/**/*.ts'",
+    "prebuild": "rimraf dist types",
+    "build": "tsc && typedoc --includeDeclarations --excludeExternals --excludeNotExported --excludePrivate --ignoreCompilerErrors --out docs --target es6 --theme minimal --mode modules --inputFiles src/index.ts",
+    "test": "jest --coverage",
+    "test:watch": "jest --coverage --watch",
+    "test:prod": "npm run lint && npm run test -- --no-cache",
+    "deploy-docs": "ts-node tools/gh-pages-publish",
+    "report-coverage": "cat ./coverage/lcov.info | coveralls",
+    "commit": "git-cz",
+    "semantic-release": "semantic-release",
+    "semantic-release-prepare": "ts-node tools/semantic-release-prepare",
+    "precommit": "lint-staged"
   },
   "repository": {
     "type": "git",
@@ -41,12 +46,84 @@
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
   "dependencies": {
-    "westfield-runtime-common": "^0.3.2"
+    "westfield-runtime-common": "^0.4.0"
+  },
+  "lint-staged": {
+    "{src,test}/**/*.ts": [
+      "prettier --write",
+      "git add"
+    ]
+  },
+  "config": {
+    "commitizen": {
+      "path": "node_modules/cz-conventional-changelog"
+    }
+  },
+  "jest": {
+    "transform": {
+      ".(ts|tsx)": "ts-jest"
+    },
+    "testEnvironment": "node",
+    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/test/"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 90,
+        "functions": 95,
+        "lines": 95,
+        "statements": 95
+      }
+    },
+    "collectCoverageFrom": [
+      "src/*.{js,ts}"
+    ]
+  },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
   },
   "devDependencies": {
-    "inferno": "^7.4.2",
-    "nwb": "^0.24.5",
-    "standard": "^14.3.3",
-    "westfield-scanner-client": "^0.2.3"
+    "westfield-scanner-client": "^0.2.3",
+    "@commitlint/cli": "^8.3.5",
+    "@commitlint/config-conventional": "^8.3.4",
+    "@types/jest": "^26.0.0",
+    "@types/node": "^14.0.13",
+    "colors": "^1.4.0",
+    "commitizen": "^4.1.2",
+    "coveralls": "^3.1.0",
+    "cross-env": "^7.0.2",
+    "cz-conventional-changelog": "^3.2.0",
+    "husky": "^4.2.5",
+    "jest": "^26.0.1",
+    "jest-config": "^26.0.1",
+    "lint-staged": "^10.2.10",
+    "lodash.camelcase": "^4.3.0",
+    "prettier": "^2.0.5",
+    "prompt": "^1.0.0",
+    "replace-in-file": "^6.1.0",
+    "rimraf": "^3.0.2",
+    "semantic-release": "^17.0.8",
+    "shelljs": "^0.8.4",
+    "travis-deploy-once": "^5.0.11",
+    "ts-jest": "^26.1.0",
+    "ts-node": "^8.10.2",
+    "tslint": "^6.1.2",
+    "tslint-config-prettier": "^1.18.0",
+    "tslint-config-standard": "^9.0.0",
+    "typedoc": "^0.17.7",
+    "typescript": "^3.9.5"
   }
 }

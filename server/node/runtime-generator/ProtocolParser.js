@@ -323,7 +323,7 @@ class ProtocolParser {
         const itfEnum = itfEnums[j]
         const enumName = upperCamelCase(itfEnum.$.name)
 
-        out.write(`export enum ${resourceName}${enumName} {\n`)
+        out.write(`export enum ${itfName}${enumName} {\n`)
 
         let firstArg = true
         itfEnum.entry.forEach((entry) => {

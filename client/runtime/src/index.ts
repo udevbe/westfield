@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2017 Erik De Rijcke
+Copyright (c) 2020 Erik De Rijcke
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,112 +24,86 @@ SOFTWARE.
 
 'use strict'
 
-import WebFS from './WebFS'
+import { Connection, WebFD } from 'westfield-runtime-common'
 import Display from './Display'
-import { Connection } from 'westfield-runtime-common'
-
-// core wayland protocol
-import WlDisplayProxy from './protocol/WlDisplayProxy'
-import WlRegistryProxy from './protocol/WlRegistryProxy'
-import WlCallbackProxy from './protocol/WlCallbackProxy'
-import WlCompositorProxy from './protocol/WlCompositorProxy'
-// import WlShmPoolProxy from './protocol/WlShmPoolProxy'
-// import WlShmProxy from './protocol/WlShmProxy'
-import WlBufferProxy from './protocol/WlBufferProxy'
-import WlDataOfferProxy from './protocol/WlDataOfferProxy'
-import WlDataSourceProxy from './protocol/WlDataSourceProxy'
-import WlDataDeviceProxy from './protocol/WlDataDeviceProxy'
-import WlDataDeviceManagerProxy from './protocol/WlDataDeviceManagerProxy'
-import WlShellProxy from './protocol/WlShellProxy'
-import WlShellSurfaceProxy from './protocol/WlShellSurfaceProxy'
-import WlSurfaceProxy from './protocol/WlSurfaceProxy'
-import WlSeatProxy from './protocol/WlSeatProxy'
-import WlPointerProxy from './protocol/WlPointerProxy'
-import WlKeyboardProxy from './protocol/WlKeyboardProxy'
-import WlTouchProxy from './protocol/WlTouchProxy'
-import WlOutputProxy from './protocol/WlOutputProxy'
-import WlRegionProxy from './protocol/WlRegionProxy'
-import WlSubcompositorProxy from './protocol/WlSubcompositorProxy'
-import WlSubsurfaceProxy from './protocol/WlSubsurfaceProxy'
-import WlDisplayEvents from './protocol/WlDisplayEvents'
-import WlRegistryEvents from './protocol/WlRegistryEvents'
-import WlCallbackEvents from './protocol/WlCallbackEvents'
-// import WlShmEvents from './protocol/WlShmEvents'
-import WlBufferEvents from './protocol/WlBufferEvents'
-import WlDataOfferEvents from './protocol/WlDataOfferEvents'
-import WlDataSourceEvents from './protocol/WlDataSourceEvents'
-import WlDataDeviceEvents from './protocol/WlDataDeviceEvents'
-import WlShellSurfaceEvents from './protocol/WlShellSurfaceEvents'
-import WlSurfaceEvents from './protocol/WlSurfaceEvents'
-import WlSeatEvents from './protocol/WlSeatEvents'
-import WlPointerEvents from './protocol/WlPointerEvents'
-import WlKeyboardEvents from './protocol/WlKeyboardEvents'
-import WlTouchEvents from './protocol/WlTouchEvents'
-import WlOutputEvents from './protocol/WlOutputEvents'
-
-// xdg_shell
-import XdgWmBaseProxy from './protocol/XdgWmBaseProxy'
-import XdgPositionerProxy from './protocol/XdgPositionerProxy'
-import XdgSurfaceProxy from './protocol/XdgSurfaceProxy'
-import XdgToplevelProxy from './protocol/XdgToplevelProxy'
-import XdgPopupProxy from './protocol/XdgPopupProxy'
-import XdgWmBaseEvents from './protocol/XdgWmBaseEvents'
-import XdgSurfaceEvents from './protocol/XdgSurfaceEvents'
-import XdgToplevelEvents from './protocol/XdgToplevelEvents'
-import XdgPopupEvents from './protocol/XdgPopupEvents'
-
-// web shm
-import GrWebShmBufferProxy from './protocol/GrWebShmBufferProxy'
-import GrWebShmProxy from './protocol/GrWebShmProxy'
-import GrWebShmBufferEvents from './protocol/GrWebShmBufferEvents'
-
+import GrWebGlBufferEvents from './protocol/GrWebGlBufferEvents'
 // web gl
 import GrWebGlBufferProxy from './protocol/GrWebGlBufferProxy'
 import GrWebGlProxy from './protocol/GrWebGlProxy'
-import GrWebGlBufferEvents from './protocol/GrWebGlBufferEvents'
+import GrWebShmBufferEvents from './protocol/GrWebShmBufferEvents'
+// web shm
+import GrWebShmBufferProxy from './protocol/GrWebShmBufferProxy'
+import GrWebShmProxy from './protocol/GrWebShmProxy'
+// import WlShmEvents from './protocol/WlShmEvents'
+import WlBufferEvents from './protocol/WlBufferEvents'
+// import WlShmPoolProxy from './protocol/WlShmPoolProxy'
+// import WlShmProxy from './protocol/WlShmProxy'
+import WlBufferProxy from './protocol/WlBufferProxy'
+import WlCallbackEvents from './protocol/WlCallbackEvents'
+import WlCallbackProxy from './protocol/WlCallbackProxy'
+import WlCompositorProxy from './protocol/WlCompositorProxy'
+import WlDataDeviceEvents from './protocol/WlDataDeviceEvents'
+import WlDataDeviceManagerProxy from './protocol/WlDataDeviceManagerProxy'
+import WlDataDeviceProxy from './protocol/WlDataDeviceProxy'
+import WlDataOfferEvents from './protocol/WlDataOfferEvents'
+import WlDataOfferProxy from './protocol/WlDataOfferProxy'
+import WlDataSourceEvents from './protocol/WlDataSourceEvents'
+import WlDataSourceProxy from './protocol/WlDataSourceProxy'
+import WlDisplayEvents from './protocol/WlDisplayEvents'
+// core wayland protocol
+import WlDisplayProxy from './protocol/WlDisplayProxy'
+import WlKeyboardEvents from './protocol/WlKeyboardEvents'
+import WlKeyboardProxy from './protocol/WlKeyboardProxy'
+import WlOutputEvents from './protocol/WlOutputEvents'
+import WlOutputProxy from './protocol/WlOutputProxy'
+import WlPointerEvents from './protocol/WlPointerEvents'
+import WlPointerProxy from './protocol/WlPointerProxy'
+import WlRegionProxy from './protocol/WlRegionProxy'
+import WlRegistryEvents from './protocol/WlRegistryEvents'
+import WlRegistryProxy from './protocol/WlRegistryProxy'
+import WlSeatEvents from './protocol/WlSeatEvents'
+import WlSeatProxy from './protocol/WlSeatProxy'
+import WlShellProxy from './protocol/WlShellProxy'
+import WlShellSurfaceEvents from './protocol/WlShellSurfaceEvents'
+import WlShellSurfaceProxy from './protocol/WlShellSurfaceProxy'
+import WlSubcompositorProxy from './protocol/WlSubcompositorProxy'
+import WlSubsurfaceProxy from './protocol/WlSubsurfaceProxy'
+import WlSurfaceEvents from './protocol/WlSurfaceEvents'
+import WlSurfaceProxy from './protocol/WlSurfaceProxy'
+import WlTouchEvents from './protocol/WlTouchEvents'
+import WlTouchProxy from './protocol/WlTouchProxy'
+import XdgPopupEvents from './protocol/XdgPopupEvents'
+import XdgPopupProxy from './protocol/XdgPopupProxy'
+import XdgPositionerProxy from './protocol/XdgPositionerProxy'
+import XdgSurfaceEvents from './protocol/XdgSurfaceEvents'
+import XdgSurfaceProxy from './protocol/XdgSurfaceProxy'
+import XdgToplevelEvents from './protocol/XdgToplevelEvents'
+import XdgToplevelProxy from './protocol/XdgToplevelProxy'
+import XdgWmBaseEvents from './protocol/XdgWmBaseEvents'
+// xdg_shell
+import XdgWmBaseProxy from './protocol/XdgWmBaseProxy'
+import WebFS from './WebFS'
 
-/**
- * @type {WebFS}
- */
 const webFS = WebFS.create(_uuidv4())
-/**
- * @type {Connection}
- */
 const connection = new Connection()
-/**
- * @type {Display}
- */
 const display = new Display(connection)
 
-/**
- * @returns {string}
- * @private
- */
-function _uuidv4 () {
+function _uuidv4(): string {
+  // @ts-ignore
   return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
     (c ^ self.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
   )
 }
 
-/**
- * @param {Display}display
- * @param {Connection}connection
- * @param {WebFS}webFS
- * @private
- */
-function _setupMessageHandling (display, connection, webFS) {
-  /**
-   * @type {Array<Array<{buffer: ArrayBuffer, fds: Array<WebFD>}>>}
-   * @private
-   */
-  const _flushQueue = []
-  /**
-   * @param {MessageEvent}event
-   */
-  onmessage = (event) => {
-    if (connection.closed) { return }
+function _setupMessageHandling(display: Display, connection: Connection, webFS: WebFS) {
+  const _flushQueue: { buffer: ArrayBuffer, fds: Array<WebFD> }[][] = []
 
-    const webWorkerMessage = /** @type {{protocolMessage:ArrayBuffer, meta:Array<Transferable>}} */event.data
+  onmessage = (event: MessageEvent) => {
+    if (connection.closed) {
+      return
+    }
+
+    const webWorkerMessage = event.data as { protocolMessage: ArrayBuffer, meta: Transferable[] }
     if (webWorkerMessage.protocolMessage instanceof ArrayBuffer) {
       const buffer = new Uint32Array(/** @type {ArrayBuffer} */webWorkerMessage.protocolMessage)
       const fds = webWorkerMessage.meta.map(transferable => {
@@ -141,8 +115,9 @@ function _setupMessageHandling (display, connection, webFS) {
           return webFS.fromOffscreenCanvas(transferable)
         }// else if (transferable instanceof MessagePort) {
         // }
-        console.warn(`COMPOSITOR BUG? Unsupported transferable received from compositor: ${transferable}. WebFD will be null.`)
-        return null
+        else {
+          throw new Error(`COMPOSITOR BUG? Unsupported transferable received from compositor: ${transferable}.`)
+        }
       })
       try {
         connection.message({ buffer, fds })
@@ -161,11 +136,7 @@ function _setupMessageHandling (display, connection, webFS) {
     }
   }
 
-  /**
-   * @param {Array<{buffer: ArrayBuffer, fds: Array<WebFD>}>}wireMessages
-   * @return {Promise<void>}
-   */
-  connection.onFlush = async (wireMessages) => {
+  connection.onFlush = async (wireMessages: { buffer: ArrayBuffer, fds: Array<WebFD> }[]): Promise<void> => {
     _flushQueue.push(wireMessages)
 
     if (_flushQueue.length > 1) {
@@ -180,7 +151,7 @@ function _setupMessageHandling (display, connection, webFS) {
 
       const sendBuffer = new Uint32Array(new ArrayBuffer(messagesSize))
       let offset = 0
-      const meta = []
+      const meta: Transferable[] = []
       for (const wireMessage of sendWireMessages) {
         for (const webFd of wireMessage.fds) {
           const transferable = await webFd.getTransferable()
@@ -191,7 +162,7 @@ function _setupMessageHandling (display, connection, webFS) {
         offset += message.length
       }
 
-      postMessage({ protocolMessage: sendBuffer.buffer, meta }, [sendBuffer.buffer].concat(meta))
+      self.postMessage({ protocolMessage: sendBuffer.buffer, meta }, [sendBuffer.buffer, ...meta])
       _flushQueue.shift()
     }
   }
@@ -199,16 +170,12 @@ function _setupMessageHandling (display, connection, webFS) {
 
 _setupMessageHandling(display, connection, webFS)
 
-/**
- * @param {WlSurfaceProxy}wlSurfaceProxy
- * @return {function(): Promise<number>}
- */
-function frame (wlSurfaceProxy) {
+function frame(wlSurfaceProxy: WlSurfaceProxy): () => Promise<number> {
   return () => {
     return new Promise(resolve => {
       const wlCallbackProxy = wlSurfaceProxy.frame()
       wlCallbackProxy.listener = {
-        done: (data) => {
+        done: (data: number) => {
           resolve(data)
           wlCallbackProxy.destroy()
         }
