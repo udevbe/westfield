@@ -1,11 +1,12 @@
 {
   "name": "westfield-runtime-server",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Wayland HTML5 runtime for Node.js",
   "module": "dist/index.js",
   "typings": "types/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "types"
   ],
   "repository": {
     "type": "git",
@@ -32,14 +33,13 @@
     "prepare:generate:webshm": "westfield-scanner-server ../../../protocol/gr-web-shm.xml -o src/protocol",
     "prepare:generate:xdgshell": "westfield-scanner-server ../../../protocol/xdg-shell.xml -o src/protocol",
     "prepare:generate:wayland": "westfield-scanner-server ../../../protocol/wayland.xml -o src/protocol",
-    "prepare:generate": "mkdir -p src/protocol/ && npm run prepare:generate:wayland && npm run prepare:generate:xdgshell && npm run prepare:generate:webshm && npm run prepare:generate:webgl",
-    "prepare": "npm run prepare:generate",
+    "prepare:generate": "mkdir -p src/protocol/ && yarn prepare:generate:wayland && yarn prepare:generate:xdgshell && yarn prepare:generate:webshm && yarn prepare:generate:webgl",
     "lint": "tslint  --project tsconfig.json -t codeFrame 'src/**/*.ts' 'test/**/*.ts'",
-    "prebuild": "rimraf dist types",
+    "prebuild": "rimraf dist types && yarn prepare:generate",
     "build": "tsc && typedoc --includeDeclarations --excludeExternals --excludeNotExported --excludePrivate --ignoreCompilerErrors --out docs --target es6 --theme minimal --mode modules --inputFiles src/index.ts",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",
-    "test:prod": "npm run lint && npm run test -- --no-cache",
+    "test:prod": "yarn lint && yarn test -- --no-cache",
     "deploy-docs": "ts-node tools/gh-pages-publish",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
     "commit": "git-cz",
@@ -48,12 +48,12 @@
     "precommit": "lint-staged"
   },
   "dependencies": {
-    "westfield-runtime-common": "0.4.0"
+    "westfield-runtime-common": "0.4.2"
   },
   "devDependencies": {
     "@commitlint/cli": "^8.3.5",
     "@commitlint/config-conventional": "^8.3.4",
-    "@types/jest": "^25.2.3",
+    "@types/jest": "^26.0.0",
     "@types/node": "^14.0.12",
     "colors": "^1.3.2",
     "commitizen": "^4.1.2",
@@ -79,7 +79,7 @@
     "tslint-config-standard": "^9.0.0",
     "typedoc": "^0.17.7",
     "typescript": "^3.9.5",
-    "westfield-scanner-server": "0.3.1"
+    "westfield-scanner-server": "0.4.0"
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [
