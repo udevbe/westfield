@@ -345,7 +345,7 @@ export class Registry implements RegistryRequests {
    * Binds a new, client-created object to the server using the
    * specified name as the identifier.
    */
-  bind(client: Client, resource: RegistryResource, name: number, interface_: string, id: number, version: number) {
+  bind(client: Client, resource: RegistryResource, name: number, interface_: string, version: number, id: number) {
     this._globals[name].bindClient(client, id, version)
   }
 }
