@@ -2,9 +2,8 @@
   "name": "westfield-runtime-server",
   "version": "0.4.0",
   "description": "Wayland HTML5 runtime for Node.js",
-  "main": "dist/westfield-runtime-server.umd.js",
-  "module": "dist/westfield-runtime-server.es5.js",
-  "typings": "dist/types/index.d.ts",
+  "module": "dist/index.js",
+  "typings": "types/index.d.ts",
   "files": [
     "dist"
   ],
@@ -36,8 +35,8 @@
     "prepare:generate": "mkdir -p src/protocol/ && npm run prepare:generate:wayland && npm run prepare:generate:xdgshell && npm run prepare:generate:webshm && npm run prepare:generate:webgl",
     "prepare": "npm run prepare:generate",
     "lint": "tslint  --project tsconfig.json -t codeFrame 'src/**/*.ts' 'test/**/*.ts'",
-    "prebuild": "rimraf dist",
-    "build": "tsc --module commonjs && rollup -c rollup.config.ts && typedoc --out docs --target es6 --theme minimal --mode file src",
+    "prebuild": "rimraf dist types",
+    "build": "tsc && typedoc --includeDeclarations --excludeExternals --excludeNotExported --excludePrivate --ignoreCompilerErrors --out docs --target es6 --theme minimal --mode modules --inputFiles src/index.ts",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",

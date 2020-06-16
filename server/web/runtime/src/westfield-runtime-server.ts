@@ -20,7 +20,8 @@ const SERVER_OBJECT_ID_BASE = 0xff000000
 export class Client implements DisplayRequests {
   readonly id: string
   readonly connection: Connection
-  readonly displayResource: DisplayResource = new DisplayResource(this, 1, 0)
+  readonly displayResource: DisplayResource
+  recycledIds: number[] = []
   private _display: Display
   private _syncEventSerial: number = 0
   // @ts-ignore
@@ -33,12 +34,12 @@ export class Client implements DisplayRequests {
    * in the range [0xff000000, 0xffffffff]. The 0 ID is reserved to represent a null or non-existent object
    */
   private _nextId: number = SERVER_OBJECT_ID_BASE
-  private recycledIds: number[] = []
 
   constructor(display: Display, id: string) {
     this.id = id
-    this.connection = new Connection()
     this._display = display
+    this.connection = new Connection()
+    this.displayResource = new DisplayResource(this, 1, 0)
     this.displayResource.implementation = this
   }
 

@@ -2,9 +2,8 @@
   "name": "westfield-runtime-common",
   "version": "0.4.0",
   "description": "Wayland HTML5 common client-server runtime",
-  "main": "dist/westfield-runtime-common.umd.js",
-  "module": "dist/westfield-runtime-common.es5.js",
-  "typings": "dist/types/index.d.ts",
+  "module": "dist/index.js",
+  "typings": "types/index.d.ts",
   "files": [
     "dist"
   ],
@@ -29,8 +28,8 @@
   "homepage": "https://github.com/udevbe/westfield#readme",
   "scripts": {
     "lint": "tslint  --project tsconfig.json -t codeFrame 'src/**/*.ts' 'test/**/*.ts'",
-    "prebuild": "rimraf dist",
-    "build": "tsc --module commonjs && rollup -c rollup.config.ts && typedoc --out docs --target es6 --theme minimal --mode file src",
+    "prebuild": "rimraf dist types",
+    "build": "tsc && typedoc --includeDeclarations --excludeExternals --excludeNotExported --excludePrivate --ignoreCompilerErrors --out docs --target es6 --theme minimal --mode modules --inputFiles src/index.ts",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",

@@ -86,14 +86,14 @@ export class Fixed {
 
 export class WebFD {
   readonly fd: number
-  readonly type: 'ImageBitmap' | 'ArrayBuffer' | 'MessagePort|OffscreenCanvas'
+  readonly type: 'ImageBitmap' | 'ArrayBuffer' | 'MessagePort' | 'OffscreenCanvas'
   readonly url: URL
   private readonly _onGetTransferable: (webFd: WebFD) => Promise<Transferable>
   private readonly _onClose: (webFd: WebFD) => void
 
   constructor(
     fd: number,
-    fdType: 'ImageBitmap' | 'ArrayBuffer' | 'MessagePort|OffscreenCanvas',
+    fdType: 'ImageBitmap' | 'ArrayBuffer' | 'MessagePort' | 'OffscreenCanvas',
     fdURL: URL,
     onGetTransferable: (webFd: WebFD) => Promise<Transferable>,
     onClose: (webFd: WebFD) => void

@@ -154,3 +154,5 @@ fabric.properties
 /server/web/runtime/src/protocol/gr_web_shm.ts
 /server/web/runtime/src/protocol/wayland.ts
 /server/web/runtime/src/protocol/xdg_shell.ts
+/common/types/
+/server/web/runtime/types/
