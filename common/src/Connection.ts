@@ -430,7 +430,7 @@ export function aOptional(message: WlMessage, optional: boolean): ArrayBuffer | 
   }
 }
 
-export function a(message: WlMessage): ArrayBuffer | undefined {
+export function a(message: WlMessage): ArrayBuffer {
   checkMessageSize(message, 4)
   const arraySize = message.buffer[message.bufferOffset++]
 
