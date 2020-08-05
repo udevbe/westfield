@@ -32,7 +32,7 @@ class ProtocolArguments {
   static fd (argName) {
     return {
       signature: 'h(message)',
-      jsType: 'WebFD',
+      jsType: ': WebFD',
       marshallGen: `fileDescriptor(${argName})`
     }
   }
@@ -44,7 +44,7 @@ class ProtocolArguments {
   static uint (argName) {
     return {
       signature: 'u(message)',
-      jsType: 'number',
+      jsType: ': number',
       marshallGen: `uint(${argName})`
     }
   }
@@ -56,7 +56,7 @@ class ProtocolArguments {
   static int (argName) {
     return {
       signature: 'i(message)',
-      jsType: 'number',
+      jsType: ': number',
       marshallGen: `int(${argName})`
     }
   }
@@ -68,7 +68,7 @@ class ProtocolArguments {
   static fixed (argName) {
     return {
       signature: 'f(message)',
-      jsType: 'Fixed',
+      jsType: ': Fixed',
       marshallGen: `fixed(${argName})`
     }
   }
@@ -76,24 +76,27 @@ class ProtocolArguments {
   /**
    * @param {string}argName
    * @param {boolean}optional
+   * @param {string}proxyName
    * @return {{signature: string, jsType: string, marshallGen: string}}
    */
-  static object (argName, optional) {
+  static object (argName, optional, proxyName) {
     return {
-      signature: `o(message, ${optional}, this._connection)`,
-      jsType: optional ? '?*' : '*',
+      signature: optional ? `oOptional(message, this._connection)` : `o(message, this._connection)`,
+      jsType: optional ? `: Westfield.${proxyName}|undefined` : `: Westfield.${proxyName}`,
       marshallGen: optional ? `objectOptional(${argName})` : `object(${argName})`
     }
   }
 
   /**
    * @param {string}argName
+   * @param {boolean}optional
+   * @param {string}proxyName
    * @return {{signature: string, jsType: string, marshallGen: string}}
    */
-  static new_id (argName) {
+  static new_id (argName, optional, proxyName) {
     return {
       signature: 'n(message)',
-      jsType: 'number',
+      jsType: `: Westfield.${proxyName}`,
       marshallGen: 'newObject()'
     }
   }
@@ -105,8 +108,8 @@ class ProtocolArguments {
    */
   static string (argName, optional) {
     return {
-      signature: `s(message, ${optional})`,
-      jsType: optional ? '?string' : 'string',
+      signature: optional ? `sOptional(message)` : `s(message)`,
+      jsType: optional ? ': string|undefined' : ': string',
       marshallGen: optional ? `stringOptional(${argName})` : `string(${argName})`
     }
   }
@@ -118,8 +121,8 @@ class ProtocolArguments {
    */
   static array (argName, optional) {
     return {
-      signature: `a(message, ${optional})`,
-      jsType: optional ? '?ArrayBuffer' : 'ArrayBuffer',
+      signature: optional ? `aOptional(message)` : `a(message)`,
+      jsType: optional ? ': ArrayBuffer|undefined' : ': ArrayBuffer',
       marshallGen: optional ? `arrayOptional(${argName})` : `array(${argName})`
     }
   }
