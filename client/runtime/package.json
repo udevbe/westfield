@@ -46,7 +46,7 @@
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
   "dependencies": {
-    "westfield-runtime-common": "^0.4.0"
+    "westfield-runtime-common": "0.4.3"
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [
@@ -96,9 +96,8 @@
     ]
   },
   "devDependencies": {
-    "westfield-scanner-client": "^0.2.3",
-    "@commitlint/cli": "^8.3.5",
-    "@commitlint/config-conventional": "^8.3.4",
+    "@commitlint/cli": "^9.1.1",
+    "@commitlint/config-conventional": "^9.1.1",
     "@types/jest": "^26.0.0",
     "@types/node": "^14.0.13",
     "colors": "^1.4.0",
@@ -124,6 +123,7 @@
     "tslint-config-prettier": "^1.18.0",
     "tslint-config-standard": "^9.0.0",
     "typedoc": "^0.17.7",
-    "typescript": "^3.9.5"
+    "typescript": "^3.9.5",
+    "westfield-scanner-client": "0.3.0"
   }
 }

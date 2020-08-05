@@ -27,11 +27,11 @@
   "homepage": "https://github.com/udevbe/westfield#readme",
   "dependencies": {
     "camelcase": "^6.0.0",
-    "meow": "^6.1.0",
+    "meow": "^7.0.1",
     "uppercamelcase": "^3.0.0",
     "xml2js": "^0.4.23"
   },
   "devDependencies": {
-    "standard": "^14.3.3"
+    "standard": "^14.3.4"
   }
 }

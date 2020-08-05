@@ -25,64 +25,8 @@ SOFTWARE.
 'use strict'
 
 import { Connection, WebFD } from 'westfield-runtime-common'
-import Display from './Display'
-import GrWebGlBufferEvents from './protocol/GrWebGlBufferEvents'
-// web gl
-import GrWebGlBufferProxy from './protocol/GrWebGlBufferProxy'
-import GrWebGlProxy from './protocol/GrWebGlProxy'
-import GrWebShmBufferEvents from './protocol/GrWebShmBufferEvents'
-// web shm
-import GrWebShmBufferProxy from './protocol/GrWebShmBufferProxy'
-import GrWebShmProxy from './protocol/GrWebShmProxy'
-// import WlShmEvents from './protocol/WlShmEvents'
-import WlBufferEvents from './protocol/WlBufferEvents'
-// import WlShmPoolProxy from './protocol/WlShmPoolProxy'
-// import WlShmProxy from './protocol/WlShmProxy'
-import WlBufferProxy from './protocol/WlBufferProxy'
-import WlCallbackEvents from './protocol/WlCallbackEvents'
-import WlCallbackProxy from './protocol/WlCallbackProxy'
-import WlCompositorProxy from './protocol/WlCompositorProxy'
-import WlDataDeviceEvents from './protocol/WlDataDeviceEvents'
-import WlDataDeviceManagerProxy from './protocol/WlDataDeviceManagerProxy'
-import WlDataDeviceProxy from './protocol/WlDataDeviceProxy'
-import WlDataOfferEvents from './protocol/WlDataOfferEvents'
-import WlDataOfferProxy from './protocol/WlDataOfferProxy'
-import WlDataSourceEvents from './protocol/WlDataSourceEvents'
-import WlDataSourceProxy from './protocol/WlDataSourceProxy'
-import WlDisplayEvents from './protocol/WlDisplayEvents'
-// core wayland protocol
-import WlDisplayProxy from './protocol/WlDisplayProxy'
-import WlKeyboardEvents from './protocol/WlKeyboardEvents'
-import WlKeyboardProxy from './protocol/WlKeyboardProxy'
-import WlOutputEvents from './protocol/WlOutputEvents'
-import WlOutputProxy from './protocol/WlOutputProxy'
-import WlPointerEvents from './protocol/WlPointerEvents'
-import WlPointerProxy from './protocol/WlPointerProxy'
-import WlRegionProxy from './protocol/WlRegionProxy'
-import WlRegistryEvents from './protocol/WlRegistryEvents'
-import WlRegistryProxy from './protocol/WlRegistryProxy'
-import WlSeatEvents from './protocol/WlSeatEvents'
-import WlSeatProxy from './protocol/WlSeatProxy'
-import WlShellProxy from './protocol/WlShellProxy'
-import WlShellSurfaceEvents from './protocol/WlShellSurfaceEvents'
-import WlShellSurfaceProxy from './protocol/WlShellSurfaceProxy'
-import WlSubcompositorProxy from './protocol/WlSubcompositorProxy'
-import WlSubsurfaceProxy from './protocol/WlSubsurfaceProxy'
-import WlSurfaceEvents from './protocol/WlSurfaceEvents'
-import WlSurfaceProxy from './protocol/WlSurfaceProxy'
-import WlTouchEvents from './protocol/WlTouchEvents'
-import WlTouchProxy from './protocol/WlTouchProxy'
-import XdgPopupEvents from './protocol/XdgPopupEvents'
-import XdgPopupProxy from './protocol/XdgPopupProxy'
-import XdgPositionerProxy from './protocol/XdgPositionerProxy'
-import XdgSurfaceEvents from './protocol/XdgSurfaceEvents'
-import XdgSurfaceProxy from './protocol/XdgSurfaceProxy'
-import XdgToplevelEvents from './protocol/XdgToplevelEvents'
-import XdgToplevelProxy from './protocol/XdgToplevelProxy'
-import XdgWmBaseEvents from './protocol/XdgWmBaseEvents'
-// xdg_shell
-import XdgWmBaseProxy from './protocol/XdgWmBaseProxy'
-import WebFS from './WebFS'
+import { WlSurfaceProxy } from './protocol/wayland'
+import { Display, Proxy, WebFS } from './westfield-runtime-client'
 
 const webFS = WebFS.create(_uuidv4())
 const connection = new Connection()
@@ -187,58 +131,14 @@ function frame(wlSurfaceProxy: WlSurfaceProxy): () => Promise<number> {
 export {
   webFS,
   display,
+  Display,
+  Connection,
   frame,
-
-  WlDisplayProxy,
-  WlRegistryProxy,
-  WlCallbackProxy,
-  WlCompositorProxy,
-  WlBufferProxy,
-  WlDataOfferProxy,
-  WlDataSourceProxy,
-  WlDataDeviceProxy,
-  WlDataDeviceManagerProxy,
-  WlShellProxy,
-  WlShellSurfaceProxy,
-  WlSurfaceProxy,
-  WlSeatProxy,
-  WlPointerProxy,
-  WlKeyboardProxy,
-  WlTouchProxy,
-  WlOutputProxy,
-  WlRegionProxy,
-  WlSubcompositorProxy,
-  WlSubsurfaceProxy,
-  WlDisplayEvents,
-  WlRegistryEvents,
-  WlCallbackEvents,
-  WlBufferEvents,
-  WlDataOfferEvents,
-  WlDataSourceEvents,
-  WlDataDeviceEvents,
-  WlShellSurfaceEvents,
-  WlSurfaceEvents,
-  WlSeatEvents,
-  WlPointerEvents,
-  WlKeyboardEvents,
-  WlTouchEvents,
-  WlOutputEvents,
-
-  XdgWmBaseProxy,
-  XdgPositionerProxy,
-  XdgSurfaceProxy,
-  XdgToplevelProxy,
-  XdgPopupProxy,
-  XdgWmBaseEvents,
-  XdgSurfaceEvents,
-  XdgToplevelEvents,
-  XdgPopupEvents,
-
-  GrWebShmBufferProxy,
-  GrWebShmProxy,
-  GrWebShmBufferEvents,
-
-  GrWebGlBufferProxy,
-  GrWebGlBufferEvents,
-  GrWebGlProxy
+  Proxy
 }
+
+export * from './protocol/wayland'
+export * from './protocol/gr_web_gl'
+export * from './protocol/gr_web_shm'
+export * from './protocol/xdg_shell'
+
