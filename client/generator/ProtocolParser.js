@@ -68,7 +68,7 @@ class ProtocolParser {
             argTsType = ProtocolArguments[argType](argName, optional).jsType
           }
         } else if (argType === 'new_id' && !arg.$.hasOwnProperty('interface')) {
-          argTsType = '{ new(display: Westfield.Display, connection: Westfield.Connection, id: number): Proxy }'
+          argTsType = '{ new(display: Display, connection: Connection, id: number): Proxy }'
         }
         codeLines.push(`${argName}${argTsType}`)
         processedFirstArg = true
@@ -86,9 +86,13 @@ class ProtocolParser {
       const arg0Type = arg0.$.type
 
       let arg0TsType
-      if (arg0Type === 'object'|| arg0Type === 'new_id') {
-        const proxyTypeName = arg0.$.hasOwnProperty('interface') ? `${upperCamelCase(arg0.$['interface'])}Proxy` : 'Proxy'
-        arg0TsType = ProtocolArguments[arg0Type](arg0Name, optional0, proxyTypeName).jsType
+      if (arg0Type === 'object' || arg0Type === 'new_id') {
+        if (arg0.$.hasOwnProperty('interface')) {
+          let proxyName = `${upperCamelCase(arg0.$['interface'])}Proxy`
+          arg0TsType = ProtocolArguments[arg0Type](arg0Name, optional0, proxyName).jsType
+        } else {
+          arg0TsType = ': Proxy'
+        }
       } else {
         arg0TsType = ProtocolArguments[arg0Type](arg0Name, optional0).jsType
       }
@@ -103,11 +107,15 @@ class ProtocolParser {
         }
         const optional = arg.$.hasOwnProperty('allow-null') && (arg.$['allow-null'] === 'true')
         const argType = arg.$.type
-        let argTsType
 
+        let argTsType
         if (argType === 'object' || argType === 'new_id') {
-          const proxyTypeName = arg.$.hasOwnProperty('interface') ? `${upperCamelCase(arg.$['interface'])}Proxy` : 'Proxy'
-          argTsType = ProtocolArguments[argType](argName, optional, proxyTypeName).jsType
+          if (arg.$.hasOwnProperty('interface')) {
+            let proxyName = `${upperCamelCase(arg.$['interface'])}Proxy`
+            argTsType = ProtocolArguments[argType](argName, optional, proxyName).jsType
+          } else {
+            argTsType = ': Proxy'
+          }
         } else {
           argTsType = ProtocolArguments[argType](argName, optional).jsType
         }
@@ -190,7 +198,7 @@ class ProtocolParser {
 \t* Binds a new, client-created object to the server using the specified name as the identifier.
 \t*
 \t*/
-\tbind<T extends Westfield.Proxy> (name: number, interface_: string, proxyClass: { new(display: Westfield.Display, connection: Westfield.Connection, id: number): T }, version: number): T {
+\tbind<T extends Proxy> (name: number, interface_: string, proxyClass: { new(display: Display, connection: Connection, id: number): T }, version: number): T {
 \t\treturn this._marshallConstructor(this.id, 0, proxyClass, [uint(name), string(interface_), uint(version), newObject()])
 \t}\n`
     )
@@ -258,7 +266,7 @@ class ProtocolParser {
           if (arg.$.hasOwnProperty('interface')) {
             returnTsType = `Westfield.${upperCamelCase(argItf)}Proxy`
           } else {
-            returnTsType = 'Westfield.Proxy'
+            returnTsType = 'Proxy'
           }
         }
       })
@@ -273,9 +281,6 @@ class ProtocolParser {
     }
 
     if (itfName) {
-      // if (itfName !== 'any') {
-      //   importLines.push(`import ${itfName}Proxy from './${itfName}Proxy'\n`)
-      // }
       codeLines.push(`\t\treturn this._marshallConstructor(this.id, ${opcode}, Westfield.${itfName}Proxy, ${argArray})\n`)
     } else {
       codeLines.push(`\t\tthis._marshall(this.id, ${opcode}, ${argArray})\n`)
@@ -322,7 +327,7 @@ class ProtocolParser {
     }
 
     // class
-    codeLines.push(`export class ${proxyName} extends Westfield.Proxy {\n`)
+    codeLines.push(`export class ${proxyName} extends Proxy {\n`)
     const eventsName = `${itfName}Events`
 
     // constructor
@@ -332,7 +337,7 @@ class ProtocolParser {
     codeLines.push('\n\t/**\n')
     codeLines.push('\t * Do not construct proxies directly. Instead use one of the factory methods from other proxies.\n')
     codeLines.push('\t */\n')
-    codeLines.push('\tconstructor (display: Westfield.Display, connection: Westfield.Connection, id: number) {\n')
+    codeLines.push('\tconstructor (display: Display, connection: Connection, id: number) {\n')
     codeLines.push('\t\tsuper(display, connection, id)\n')
     codeLines.push('\t}\n\n')
 
@@ -420,11 +425,12 @@ class ProtocolParser {
       })
     })
     out.write(' */\n\n')
-    out.write('import { WlMessage, fileDescriptor, uint, int, \n' +
+    out.write('import { Connection, WlMessage, fileDescriptor, uint, int, \n' +
       '\tfixed, object, objectOptional, newObject, string, stringOptional, \n' +
       '\tarray, arrayOptional, u, i, f, oOptional, o, n, sOptional, s, aOptional, a, h,' +
       '\tWebFD, Fixed } from \'westfield-runtime-common\'\n')
-    out.write('import * as Westfield from \'..\'\n\n')
+    out.write('import * as Westfield from \'.\'\n')
+    out.write('import { Proxy, Display } from \'../westfield-runtime-client\'\n\n')
     jsonProtocol.protocol.interface.forEach((itf) => {
       this._writeProxy(jsonProtocol, outDir, itf, out)
     })

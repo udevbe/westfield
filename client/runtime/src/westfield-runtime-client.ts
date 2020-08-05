@@ -1,5 +1,16 @@
-import { Connection, MessageMarshallingContext, WebFD, WlObject } from 'westfield-runtime-common'
-import { WlDisplayProxy, WlRegistryProxy } from './protocol/wayland'
+import {
+  Connection,
+  MessageMarshallingContext,
+  newObject,
+  o,
+  s,
+  string,
+  u,
+  uint,
+  WebFD,
+  WlMessage,
+  WlObject
+} from 'westfield-runtime-common'
 
 export class Proxy extends WlObject {
   readonly display: Display
@@ -48,7 +59,123 @@ export class Proxy extends WlObject {
   }
 }
 
-export class Display {
+// c/p to break circular dep.
+interface WlDisplayEvents {
+  error(objectId: Proxy, code: number, message: string): void
+
+  deleteId(id: number): void
+}
+
+// c/p to break circular dep.
+class WlDisplayProxy extends Proxy {
+  listener?: WlDisplayEvents
+
+  constructor(display: Display, connection: Connection, id: number) {
+    super(display, connection, id)
+  }
+
+  sync(): WlCallbackProxy {
+    return this._marshallConstructor(this.id, 0, WlCallbackProxy, [newObject()])
+  }
+
+  getRegistry(): WlRegistryProxy {
+    return this._marshallConstructor(this.id, 1, WlRegistryProxy, [newObject()])
+  }
+
+  async [0](message: WlMessage) {
+    await this.listener?.error(o(message, this._connection), u(message), s(message))
+  }
+
+  async [1](message: WlMessage) {
+    await this.listener?.deleteId(u(message))
+  }
+}
+
+// c/p to break circular dep.
+class WlRegistryProxy extends Proxy {
+  listener?: WlRegistryEvents
+
+  constructor(display: Display, connection: Connection, id: number) {
+    super(display, connection, id)
+  }
+
+  bind<T extends Proxy>(name: number, interface_: string, proxyClass: { new(display: Display, connection: Connection, id: number): T }, version: number): T {
+    return this._marshallConstructor(this.id, 0, proxyClass, [uint(name), string(interface_), uint(version), newObject()])
+  }
+
+  async [0](message: WlMessage) {
+    await this.listener?.global(u(message), s(message), u(message))
+  }
+
+  async [1](message: WlMessage) {
+    await this.listener?.globalRemove(u(message))
+  }
+
+}
+
+// c/p to break circular dep.
+interface WlRegistryEvents {
+  global(name: number, interface_: string, version: number): void
+
+  globalRemove(name: number): void
+}
+
+interface WlCallbackEvents {
+  done(callbackData: number): void
+}
+
+// c/p to break circular dep.
+class WlCallbackProxy extends Proxy {
+  listener?: WlCallbackEvents
+
+  constructor(display: Display, connection: Connection, id: number) {
+    super(display, connection, id)
+  }
+
+  async [0](message: WlMessage) {
+    await this.listener?.done(u(message))
+  }
+}
+
+export interface Display {
+  close(): void
+
+  /**
+   * Resolves once the connection is closed normally ie. with a call to close(). The promise will be rejected with an
+   * error if the connection is closed abnormally ie when a protocol error is received.
+   */
+  onClose(): Promise<void>
+
+  getRegistry(): WlRegistryProxy
+
+  /**
+   * Wait for the compositor to have send us all remaining events.
+   *
+   * The data in the resolved promise is the event serial.
+   *
+   * Don't 'await' this sync call as it will result in a deadlock where the worker will block all incoming events,
+   * including the event the resolves the await state. Instead use the classic 'then(..)' construct.
+   *
+   */
+  sync(): Promise<number>
+
+  /**
+   * Send queued messages to the compositor.
+   */
+  flush(): void
+
+  /**
+   * Set this to have a default 'catch-all' application error handler. Can be undefined for default behavior.
+   */
+  errorHandler?: (error: Error) => void
+
+  /**
+   * For internal use. Generates the id of the next proxy object.
+   */
+  generateNextId(): number
+}
+
+export class DisplayImpl implements Display {
   private _recycledIds: number[] = []
   private readonly _connection: Connection
   private _displayProxy: WlDisplayProxy
@@ -58,10 +185,6 @@ export class Display {
   // @ts-ignore
   private _destroyReject: (reason?: any) => void
   private readonly _destroyPromise: Promise<void>
-  /**
-   * Set this to have a default 'catch-all' application error handler. Can be undefined for default behavior.
-   */
-  errorHandler?: (error: Error) => void
 
   constructor(connection: Connection) {
     this._connection = connection
@@ -97,10 +220,7 @@ export class Display {
     this._destroyReject(new Error(`Protocol error. type: ${proxy.constructor.name}, id: ${proxy.id}, code: ${code}, message: ${message}`))
   }
 
-  /**
-   * Resolves once the connection is closed normally ie. with a call to close(). The promise will be rejected with an
-   * error if the connection is closed abnormally ie when a protocol error is received.
-   */
+
   onClose(): Promise<void> {
     return this._destroyPromise
   }
@@ -109,9 +229,6 @@ export class Display {
     return this._displayProxy.getRegistry()
   }
 
-  /**
-   * For internal use. Generates the id of the next proxy object.
-   */
   generateNextId(): number {
     if (this._recycledIds.length) {
       return this._recycledIds.shift()!
@@ -120,15 +237,7 @@ export class Display {
     }
   }
 
-  /**
-   * Wait for the compositor to have send us all remaining events.
-   *
-   * The data in the resolved promise is the event serial.
-   *
-   * Don't 'await' this sync call as it will result in a deadlock where the worker will block all incoming events,
-   * including the event the resolves the await state. Instead use the classic 'then(..)' construct.
-   *
-   */
+
   sync(): Promise<number> {
     return new Promise<number>(resolve => {
       const wlCallbackProxy = this._displayProxy.sync()
@@ -141,9 +250,6 @@ export class Display {
     })
   }
 
-  /**
-   * Send queued messages to the compositor.
-   */
   flush() {
     this._connection.flush()
   }

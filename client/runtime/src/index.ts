@@ -25,12 +25,12 @@ SOFTWARE.
 'use strict'
 
 import { Connection, WebFD } from 'westfield-runtime-common'
-import { WlSurfaceProxy } from './protocol/wayland'
-import { Display, Proxy, WebFS } from './westfield-runtime-client'
+import { Display, DisplayImpl, Proxy, WebFS } from './westfield-runtime-client'
+import { WlSurfaceProxy } from './protocol'
 
 const webFS = WebFS.create(_uuidv4())
 const connection = new Connection()
-const display = new Display(connection)
+const display = new DisplayImpl(connection)
 
 function _uuidv4(): string {
   // @ts-ignore
@@ -132,13 +132,9 @@ export {
   webFS,
   display,
   Display,
-  Connection,
   frame,
   Proxy
 }
 
-export * from './protocol/wayland'
-export * from './protocol/gr_web_gl'
-export * from './protocol/gr_web_shm'
-export * from './protocol/xdg_shell'
+export * from './protocol'
 

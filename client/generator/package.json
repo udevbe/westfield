@@ -1,6 +1,6 @@
 {
   "name": "westfield-scanner-client",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "description": "Wayland HTML5 protocol generator for the browser",
   "scripts": {
     "test": "standard --verbose"
@@ -30,8 +30,5 @@
     "meow": "^7.0.1",
     "uppercamelcase": "^3.0.0",
     "xml2js": "^0.4.23"
-  },
-  "devDependencies": {
-    "standard": "^14.3.4"
   }
 }
