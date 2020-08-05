@@ -156,3 +156,5 @@ fabric.properties
 /server/web/runtime/src/protocol/xdg_shell.ts
 /common/types/
 /server/web/runtime/types/
+/client/runtime/docs/
+/client/runtime/types/

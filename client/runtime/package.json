@@ -1,11 +1,12 @@
 {
   "name": "westfield-runtime-client",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Wayland HTML5 core client protocol",
   "module": "dist/index.js",
   "typings": "types/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "types"
   ],
   "scripts": {
     "prepare:generate:webgl": "westfield-scanner-client ../../protocol/gr-web-gl.xml -o src/protocol",
