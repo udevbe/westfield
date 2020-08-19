@@ -194,7 +194,7 @@ class Endpoint {
    *
    * @param {Object}wlClient
    * @param {number}wlResourceId
-   * @return {{ buffer:ArrayBuffer, width:number, height:number, stride:number }}
+   * @return {{ buffer:Object, width:number, height:number, stride:number }}
    */
   static getShmBuffer (wlClient, wlResourceId) {
     return westfieldNative.getShmBuffer(wlClient, wlResourceId)
