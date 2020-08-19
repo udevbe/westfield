@@ -1,5 +1,5 @@
-dist: xenial
-language:
+dist: bionic
+language: node_js
 node_js:
   - 12
   - 13
