@@ -8,7 +8,7 @@ build () {
 
     printf "======[ BUILD $component STARTED ]======\n"
     pushd ${component}
-    npm ci
+    yarn install --frozen-lockfile
     popd
     printf "======[ BUILD $component DONE ]======\n"
 }
