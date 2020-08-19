@@ -969,8 +969,7 @@ getShmBuffer(napi_env env, napi_callback_info info) {
         const int32_t stride = wl_shm_buffer_get_stride(shm_buffer);
         const int32_t format = wl_shm_buffer_get_format(shm_buffer);
 
-        NAPI_CALL(env,
-                  napi_create_external_arraybuffer(env, data, (size_t) (stride * height), NULL, NULL, &data_value))
+        NAPI_CALL(env, napi_create_external(env, data, NULL, NULL, &data_value))
         NAPI_CALL(env, napi_create_int32(env, width, &width_value))
         NAPI_CALL(env, napi_create_int32(env, height, &height_value))
         NAPI_CALL(env, napi_create_int32(env, stride, &stride_value))
