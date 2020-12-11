@@ -27,14 +27,14 @@
     "test": "mocha ./test/*.js --timeout 10000"
   },
   "dependencies": {
-    "camelcase": "^5.3.1",
-    "meow": "^6.0.1",
+    "camelcase": "^6.2.0",
+    "meow": "^8.0.0",
     "uppercamelcase": "^3.0.0",
     "xml2js": "^0.4.23"
   },
   "devDependencies": {
-    "mocha": "^7.1.0",
-    "sinon": "^9.0.1",
-    "standard": "^14.3.3"
+    "mocha": "^8.2.1",
+    "sinon": "^9.2.2",
+    "standard": "^16.0.3"
   }
 }
