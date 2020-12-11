@@ -122,6 +122,7 @@ export interface MessageMarshallingContext<V extends number | WebFD | Fixed | Wl
   readonly size: number,
   readonly optional: boolean,
   readonly _marshallArg: (wireMsg: { buffer: ArrayBuffer, fds: Array<WebFD>, bufferOffset: number }) => void
+  readonly toString: () => string
 }
 
 export interface WlMessage {
@@ -146,6 +147,9 @@ export function uint(arg: number): MessageMarshallingContext<number, 'u', 4> {
     _marshallArg: function(wireMsg) {
       new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = arg
       wireMsg.bufferOffset += this.size
+    },
+    toString: function() {
+      return `{type: ${this.type}, value: ${this.value}}`
     }
   }
 }
@@ -158,6 +162,9 @@ export function fileDescriptor(arg: WebFD): MessageMarshallingContext<WebFD, 'h'
     optional: false,
     _marshallArg: function(wireMsg) {
       wireMsg.fds.push(arg)
+    },
+    toString: function() {
+      return `{type: ${this.type}, value: ${this.value}}`
     }
   }
 }
@@ -171,6 +178,9 @@ export function int(arg: number): MessageMarshallingContext<number, 'i', 4> {
     _marshallArg: function(wireMsg) {
       new Int32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value
       wireMsg.bufferOffset += this.size
+    },
+    toString: function() {
+      return `{type: ${this.type}, value: ${this.value}}`
     }
   }
 }
@@ -184,6 +194,9 @@ export function fixed(arg: Fixed): MessageMarshallingContext<Fixed, 'f', 4> {
     _marshallArg: function(wireMsg) {
       new Int32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value._raw
       wireMsg.bufferOffset += this.size
+    },
+    toString: function() {
+      return `{type: ${this.type}, value: ${this.value}}`
     }
   }
 }
@@ -197,6 +210,9 @@ export function object(arg: WlObject): MessageMarshallingContext<WlObject, 'o', 
     _marshallArg: function(wireMsg) {
       new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value.id
       wireMsg.bufferOffset += this.size
+    },
+    toString: function() {
+      return `{type: ${this.type}, value: ${this.value}}`
     }
   }
 }
@@ -210,6 +226,9 @@ export function objectOptional(arg?: WlObject): MessageMarshallingContext<WlObje
     _marshallArg: function(wireMsg) {
       new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = (this.value === undefined ? 0 : this.value.id)
       wireMsg.bufferOffset += this.size
+    },
+    toString: function() {
+      return `{type: ${this.type}, value: ${this.value}}`
     }
   }
 }
@@ -223,6 +242,9 @@ export function newObject(): MessageMarshallingContext<0, 'n', 4> {
     _marshallArg: function(wireMsg) {
       new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value
       wireMsg.bufferOffset += this.size
+    },
+    toString: function() {
+      return `{type: ${this.type}, value: ${this.value}}`
     }
   }
 }
@@ -246,6 +268,9 @@ export function string(arg: string): MessageMarshallingContext<string, 's', numb
         buf8[i] = this.value[i].charCodeAt(0)
       }
       wireMsg.bufferOffset += this.size
+    },
+    toString: function() {
+      return `{type: ${this.type}, value: ${this.value}}`
     }
   }
 }
@@ -277,6 +302,9 @@ export function stringOptional(arg?: string): MessageMarshallingContext<string |
         }
       }
       wireMsg.bufferOffset += this.size
+    },
+    toString: function() {
+      return `{type: ${this.type}, value: ${this.value}}`
     }
   }
 }
@@ -297,6 +325,9 @@ export function array(arg: ArrayBufferView): MessageMarshallingContext<ArrayBuff
       new Uint8Array(wireMsg.buffer, wireMsg.bufferOffset + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength))
 
       wireMsg.bufferOffset += this.size
+    },
+    toString: function() {
+      return `{type: ${this.type}, value: ${this.value}}`
     }
   }
 }
@@ -324,6 +355,9 @@ export function arrayOptional(arg?: ArrayBufferView): MessageMarshallingContext<
         new Uint8Array(wireMsg.buffer, wireMsg.bufferOffset + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength))
       }
       wireMsg.bufferOffset += this.size
+    },
+    toString: function() {
+      return `{type: ${this.type}, value: ${this.value}}`
     }
   }
 }
@@ -459,13 +493,14 @@ export class Connection {
   onFlush?: (outMsg: SendMessage[]) => void
   private _outMessages: SendMessage[] = []
   private _inMessages: WlMessage[] = []
-  private _idleHandlers: (() => void)[] = []
+  private _idleHandlers: (() => any)[] = []
 
   /**
    * Adds a one-shot idle handler. The idle handler is fired once, after all incoming request messages have been processed.
    */
-  addIdleHandler(idleHandler: () => void) {
+  addIdleHandler<T>(idleHandler: () => T): () => T {
     this._idleHandlers = [...this._idleHandlers, idleHandler]
+    return idleHandler
   }
 
   removeIdleHandler(idleHandler: () => void) {
@@ -492,9 +527,11 @@ export class Connection {
     this.onSend(wireMsg)
   }
 
-  private async _idle(): Promise<void> {
-    for (const idleHandler of this._idleHandlers) {
-      await idleHandler()
+  private _idle() {
+    const idleHandlers = [...this._idleHandlers]
+    this._idleHandlers = []
+    for (const idle of idleHandlers) {
+      idle()
     }
   }
 
@@ -517,47 +554,55 @@ export class Connection {
     }
 
     while (this._inMessages.length) {
-      const wireMessages = this._inMessages[0]
-      while (wireMessages.bufferOffset < wireMessages.buffer.length) {
-        const id = wireMessages.buffer[wireMessages.bufferOffset]
-        const sizeOpcode = wireMessages.buffer[wireMessages.bufferOffset + 1]
-        wireMessages.size = sizeOpcode >>> 16
-        const opcode = sizeOpcode & 0x0000FFFF
+      this._idle()
+      this.flush()
 
-        if (wireMessages.size > wireMessages.buffer.byteLength) {
-          throw new Error('Request buffer too small')
-        }
+      const messagesToProcess = [...this._inMessages]
 
-        const wlObject = this.wlObjects[id]
-        if (wlObject) {
-          wireMessages.bufferOffset += 2
-          wireMessages.consumed = 8
-          try {
-            // @ts-ignore
-            await wlObject[opcode](wireMessages)
-          } catch (e) {
-            console.error(`
+      for (const wireMessages of messagesToProcess) {
+        while (wireMessages.bufferOffset < wireMessages.buffer.length) {
+          const id = wireMessages.buffer[wireMessages.bufferOffset]
+          const sizeOpcode = wireMessages.buffer[wireMessages.bufferOffset + 1]
+          wireMessages.size = sizeOpcode >>> 16
+          const opcode = sizeOpcode & 0x0000FFFF
+
+          if (wireMessages.size > wireMessages.buffer.byteLength) {
+            throw new Error('Request buffer too small')
+          }
+
+          const wlObject = this.wlObjects[id]
+          if (wlObject) {
+            wireMessages.bufferOffset += 2
+            wireMessages.consumed = 8
+            try {
+              // @ts-ignore
+              await wlObject[opcode](wireMessages)
+            } catch (e) {
+              console.error(`
 wlObject: ${wlObject.constructor.name}[${opcode}](..)
 name: ${e.name} message: ${e.message} text: ${e.text}
 error object stack:
 ${e.stack}
 `)
-            this.close()
-            throw e
+              this.close()
+              throw e
+            }
+            if (this.closed) {
+              return
+            }
+          } else {
+            throw new Error(`invalid object ${id}`)
           }
-          if (this.closed) {
-            return
-          }
-        } else {
-          throw new Error(`invalid object ${id}`)
         }
       }
-      this._inMessages.shift()
+
+      this._idle()
+      this.flush()
+
+      this._inMessages = this._inMessages.filter(value => !messagesToProcess.includes(value))
     }
-
+    this._idle()
     this.flush()
-
-    await this._idle()
   }
 
   /**

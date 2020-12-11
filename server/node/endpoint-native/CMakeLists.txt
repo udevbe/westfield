@@ -8,6 +8,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
 find_package(LibFFI REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
+        src/string-helpers.h
         src/wayland-server/protocol/wayland-server-protocol.h
         src/wayland-server/protocol/wayland-protocol.c
         src/westfield-native.c
@@ -25,13 +26,15 @@ add_library(${PROJECT_NAME} SHARED
         src/wayland-server/wayland-util.c
         src/westfield-fdutils.c
         src/westfield-fdutils.h
-        src/wayland-server-core-extensions.h)
+        src/wayland-server-core-extensions.h
+        src/westfield-xwayland.h
+        src/westfield-xwayland.c)
 
 target_include_directories(${PROJECT_NAME}
-    PRIVATE ${CMAKE_JS_INC}
-    PRIVATE "${CMAKE_SOURCE_DIR}/src/wayland-server"
-    PRIVATE "${CMAKE_SOURCE_DIR}/src/wayland-server/protocol"
-    )
+        PRIVATE ${CMAKE_JS_INC}
+        PRIVATE "${CMAKE_SOURCE_DIR}/src/wayland-server"
+        PRIVATE "${CMAKE_SOURCE_DIR}/src/wayland-server/protocol"
+        )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
 target_link_libraries(${PROJECT_NAME} ${CMAKE_JS_LIB} ${LIBFFI_LIBRARIES})

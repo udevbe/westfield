@@ -187,6 +187,23 @@ class Endpoint {
   }
 
   /**
+   * @param {Object}wlDisplay
+   * @param {function(wmFd:number, wlClient: Object):void}onXWaylandStarting
+   * @param {function():void}onXWaylandDestroyed
+   * @return {Object|undefined}
+   */
+  static setupXWayland (wlDisplay, onXWaylandStarting, onXWaylandDestroyed) {
+    return westfieldNative.setupXWayland(wlDisplay, onXWaylandStarting, onXWaylandDestroyed)
+  }
+
+  /**
+   * @param {Object}westfieldXWayland
+   */
+  static teardownXWayland (westfieldXWayland) {
+    westfieldNative.teardownXWayland(westfieldXWayland)
+  }
+
+  /**
    * temp function.
    *
    * @deprecated do all encoding directly on the native side & return an h264/png/jpeg frame with meta-data. ie:
@@ -228,6 +245,23 @@ class Endpoint {
    */
   static makePipe (resultBuffer) {
     westfieldNative.makePipe(resultBuffer)
+  }
+
+  /**
+   * @param {object}objectA
+   * @param {object}objectB
+   * @return {boolean}
+   */
+  static equalValueExternal (objectA, objectB) {
+    return westfieldNative.equalValueExternal(objectA, objectB)
+  }
+
+  /**
+   * @param {object}xWayland
+   * @return {number}
+   */
+  static getXWaylandDisplay (xWayland) {
+    return westfieldNative.getXWaylandDisplay(xWayland)
   }
 }
 

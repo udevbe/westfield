@@ -1,19 +1,14 @@
-
 #include <node_api.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
-
 #include "wayland-server-core-extensions.h"
 #include "connection.h"
-
 #include "westfield-fdutils.h"
-#include "wayland-server/wayland-os.h"
+#include "westfield-xwayland.h"
 
 #define DECLARE_NAPI_METHOD(name, func)                          \
   { name, 0, func, 0, 0, 0, napi_default, 0 }
@@ -55,13 +50,18 @@ struct client_destruction_listener {
     napi_ref buffer_created_cb_ref;
 };
 
+struct weston_xwayland_callbacks {
+    napi_env env;
+    napi_ref xwwayland_destroyed_cb_ref;
+    napi_ref xwayland_starting_cb_ref;
+};
 
-void
+static void
 finalize_cb(napi_env env, void *finalize_data, void *finalize_hint) {
     free(finalize_data);
 }
 
-void
+static void
 on_display_destroyed(struct wl_listener *listener, void *data) {
     struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) listener;
     napi_env env = display_destruction_listener->env;
@@ -71,7 +71,7 @@ on_display_destroyed(struct wl_listener *listener, void *data) {
     NAPI_CALL(env, napi_delete_reference(env, display_destruction_listener->global_destroyed_cb_ref))
 }
 
-void
+static void
 on_client_destroyed(struct wl_listener *listener, void *data) {
     struct client_destruction_listener *destruction_listener = (struct client_destruction_listener *) listener;
     if (destruction_listener->destroy_cb_ref) {
@@ -111,7 +111,7 @@ on_client_destroyed(struct wl_listener *listener, void *data) {
     }
 }
 
-int
+static int
 on_wire_message(struct wl_client *client, int32_t *wire_message,
                 size_t wire_message_size, int object_id, int opcode) {
     struct client_destruction_listener *destruction_listener = (struct client_destruction_listener *) wl_client_get_destroy_listener(
@@ -143,7 +143,7 @@ on_wire_message(struct wl_client *client, int32_t *wire_message,
     }
 }
 
-void
+static void
 on_wire_message_end(struct wl_client *client, int *fds_in, size_t fds_in_length) {
     struct client_destruction_listener *destruction_listener = (struct client_destruction_listener *) wl_client_get_destroy_listener(
             client, on_client_destroyed);
@@ -193,7 +193,7 @@ on_wire_message_end(struct wl_client *client, int *fds_in, size_t fds_in_length)
     }
 }
 
-void
+static void
 on_registry_created(struct wl_client *client, struct wl_resource *registry, uint32_t registry_id) {
     struct client_destruction_listener *destruction_listener = (struct client_destruction_listener *) wl_client_get_destroy_listener(
             client,
@@ -215,7 +215,7 @@ on_registry_created(struct wl_client *client, struct wl_resource *registry, uint
     }
 }
 
-void
+static void
 on_resource_created(struct wl_listener *listener, void *data) {
     struct wl_resource *resource = data;
     struct wl_client *client = wl_resource_get_client(resource);
@@ -239,7 +239,7 @@ on_resource_created(struct wl_listener *listener, void *data) {
     }
 }
 
-void
+static void
 on_client_created(struct wl_listener *listener, void *data) {
     struct wl_client *client = data;
     struct display_destruction_listener *display_destruction_listener;
@@ -367,7 +367,7 @@ setWireMessageEndCallback(napi_env env, napi_callback_info info) {
 }
 
 
-void
+static void
 on_global_created(struct wl_display *display, uint32_t global_name) {
     struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
             display, on_display_destroyed);
@@ -381,7 +381,7 @@ on_global_created(struct wl_display *display, uint32_t global_name) {
     NAPI_CALL(env, napi_call_function(env, global, cb, 1, argv, &cb_result))
 }
 
-void
+static void
 on_global_destroyed(struct wl_display *display, uint32_t global_name) {
     struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
             display, on_display_destroyed);
@@ -993,9 +993,132 @@ getShmBuffer(napi_env env, napi_callback_info info) {
     }
 }
 
+static void
+westfield_xserver_starting(void *user_data, int wm_fd, struct wl_client *client) {
+    struct weston_xwayland_callbacks *weston_xwayland_callbacks;
+    napi_value starting_js_cb, global, cb_result, wm_fd_value, client_value;
+    napi_env env;
+
+    weston_xwayland_callbacks = user_data;
+    env = weston_xwayland_callbacks->env;
+
+    NAPI_CALL(env, napi_get_reference_value(env, weston_xwayland_callbacks->xwayland_starting_cb_ref, &starting_js_cb))
+    NAPI_CALL(env, napi_get_global(env, &global))
+    NAPI_CALL(env, napi_create_int32(env, wm_fd, &wm_fd_value))
+    NAPI_CALL(env, napi_create_external(env, client, NULL, NULL, &client_value))
+    napi_value argv[2] = {wm_fd_value, client_value};
+    NAPI_CALL(env, napi_call_function(env, global, starting_js_cb, 2, argv, &cb_result))
+}
+
+static void
+westfield_xserver_destroyed(void *user_data) {
+    struct weston_xwayland_callbacks *weston_xwayland_callbacks;
+    napi_value destroyed_js_cb, global, cb_result;
+    napi_env env;
+
+    weston_xwayland_callbacks = user_data;
+    env = weston_xwayland_callbacks->env;
+
+    NAPI_CALL(env,
+              napi_get_reference_value(env, weston_xwayland_callbacks->xwwayland_destroyed_cb_ref, &destroyed_js_cb))
+    NAPI_CALL(env, napi_get_global(env, &global))
+    napi_value argv[0] = {};
+    NAPI_CALL(env, napi_call_function(env, global, destroyed_js_cb, 0, argv, &cb_result))
+    free(weston_xwayland_callbacks);
+}
+
+napi_value
+setupXWayland(napi_env env, napi_callback_info info) {
+    size_t argc = 3;
+    napi_value argv[argc], display_value, starting_js_cb, destroyed_js_cb, return_value;
+    struct wl_display *display;
+    struct westfield_xwayland *westfield_xwayland;
+    struct weston_xwayland_callbacks *weston_xwayland_callbacks;
+    napi_ref starting_cb_ref, destroyed_cb_ref;
+
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL))
+
+    display_value = argv[0];
+    starting_js_cb = argv[1];
+    destroyed_js_cb = argv[2];
+
+    NAPI_CALL(env, napi_create_reference(env, starting_js_cb, 1, &starting_cb_ref))
+    NAPI_CALL(env, napi_create_reference(env, destroyed_js_cb, 1, &destroyed_cb_ref))
+
+    weston_xwayland_callbacks = calloc(1, sizeof(struct weston_xwayland_callbacks));
+    weston_xwayland_callbacks->env = env;
+    weston_xwayland_callbacks->xwayland_starting_cb_ref = starting_cb_ref;
+    weston_xwayland_callbacks->xwwayland_destroyed_cb_ref = destroyed_cb_ref;
+
+    NAPI_CALL(env, napi_get_value_external(env, display_value, (void **) &display))
+    westfield_xwayland = setup_xwayland((struct wl_dislay *) display,
+                                        weston_xwayland_callbacks,
+                                        westfield_xserver_starting,
+                                        westfield_xserver_destroyed);
+
+    if (westfield_xwayland) {
+        NAPI_CALL(env, napi_create_external(env, westfield_xwayland, NULL, NULL, &return_value))
+    } else {
+        NAPI_CALL(env, napi_get_undefined(env, &return_value))
+    }
+    return return_value;
+}
+
+napi_value
+teardownXWayland(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value argv[argc], westfield_xwayland_value, return_value;
+    struct westfield_xwayland *westfield_xwayland;
+
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL))
+
+    westfield_xwayland_value = argv[0];
+    NAPI_CALL(env, napi_get_value_external(env, westfield_xwayland_value, (void **) &westfield_xwayland));
+
+    teardown_xwayland(westfield_xwayland);
+
+    NAPI_CALL(env, napi_get_undefined(env, &return_value))
+    return return_value;
+}
+
+napi_value
+equalValueExternal(napi_env env, napi_callback_info info) {
+    size_t argc = 2;
+    napi_value argv[argc], wrapped_value_a, wrapped_value_b, return_value;
+    void *wrapped_a, *wrapped_b;
+
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL))
+
+    wrapped_value_a = argv[0];
+    wrapped_value_b = argv[1];
+
+    NAPI_CALL(env, napi_get_value_external(env, wrapped_value_a, (void **) &wrapped_a))
+    NAPI_CALL(env, napi_get_value_external(env, wrapped_value_b, (void **) &wrapped_b))
+    NAPI_CALL(env, napi_get_boolean(env, wrapped_a == wrapped_b, &return_value))
+
+    return return_value;
+}
+
+napi_value
+getXWaylandDisplay(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value argv[argc], xwayland_value, return_value;
+    struct westfield_xwayland *westfield_xwayland;
+
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL))
+
+    xwayland_value = argv[0];
+
+    NAPI_CALL(env, napi_get_value_external(env, xwayland_value, (void **) &westfield_xwayland))
+    NAPI_CALL(env, napi_create_int32(env, xwayland_get_display(westfield_xwayland), &return_value))
+
+    return return_value;
+}
+
 napi_value
 init(napi_env env, napi_value exports) {
     napi_property_descriptor desc[] = {
+            // core
             DECLARE_NAPI_METHOD("createDisplay", createDisplay),
             DECLARE_NAPI_METHOD("destroyDisplay", destroyDisplay),
             DECLARE_NAPI_METHOD("addSocketAuto", addSocketAuto),
@@ -1019,12 +1142,20 @@ init(napi_env env, napi_value exports) {
             DECLARE_NAPI_METHOD("setBufferCreatedCallback", setBufferCreatedCallback),
             DECLARE_NAPI_METHOD("getServerObjectIdsBatch", getServerObjectIdsBatch),
             DECLARE_NAPI_METHOD("makePipe", makePipe),
-
             // TODO temp method - to be replaced by general encoding function
             DECLARE_NAPI_METHOD("getShmBuffer", getShmBuffer),
+            DECLARE_NAPI_METHOD("equalValueExternal", equalValueExternal),
+
+            // xwayland
+            DECLARE_NAPI_METHOD("setupXWayland", setupXWayland),
+            DECLARE_NAPI_METHOD("teardownXWayland", teardownXWayland),
+            DECLARE_NAPI_METHOD("getXWaylandDisplay", getXWaylandDisplay),
     };
 
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(napi_property_descriptor), desc))
+
+    init_westfield_xwayland();
+
     return exports;
 }
 
