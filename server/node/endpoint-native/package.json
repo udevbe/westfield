@@ -1,6 +1,6 @@
 {
   "name": "westfield-native",
-  "version": "0.3.2",
+  "version": "0.4.4",
   "main": "./build/Release/westfield-native.node",
   "license": "MIT",
   "scripts": {
