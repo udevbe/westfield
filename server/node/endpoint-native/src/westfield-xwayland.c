@@ -286,15 +286,15 @@ spawn_xserver(void *user_data, const char *display, int abstract_fd, int unix_fd
             if (execlp("Xwayland",
                        "Xwayland",
                        display,
+                       "-ac",
                        "-rootless",
                        "-listen", abstract_fd_str,
                        "-listen", unix_fd_str,
                        "-wm", wm_fd_str,
-                       "-terminate",
                        (char *) NULL) < 0)
-                printf("exec of '%s %s -rootless "
+                printf("exec of '%s %s -ac -rootless "
                        "-listen %s -listen %s -wm %s "
-                       "-terminate' failed: %s\n",
+                       "' failed: %s\n",
                        "XWayland",
                        display,
                        abstract_fd_str,
