@@ -1,6 +1,6 @@
 {
   "name": "westfield-endpoint",
-  "version": "0.4.15",
+  "version": "0.4.16",
   "main": "src/index.js",
   "description": "Wayland HTML5 runtime for Node.js",
   "repository": {
@@ -8,7 +8,11 @@
     "url": "git+https://github.com/udevbe/westfield.git"
   },
   "files": [
-    "src/**.js"
+    "src/**.js",
+    "CMakeLists.txt",
+    "LICENSE",
+    "cmake/**",
+    "native/**"
   ],
   "keywords": [
     "wayland",
