@@ -94,3 +94,5 @@ fabric.properties
 /client/runtime/src/protocol/gr_web_shm.ts
 /client/runtime/src/protocol/wayland.ts
 /client/runtime/src/protocol/xdg_shell.ts
+/server/node/endpoint/src/westfield-native.node
+/server/node/endpoint/build/

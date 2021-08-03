@@ -24,7 +24,7 @@ SOFTWARE.
 
 'use strict'
 
-const westfieldNative = require('westfield-native')
+const westfieldNative = require('./westfield-native')
 
 class FdUtils {
   /**

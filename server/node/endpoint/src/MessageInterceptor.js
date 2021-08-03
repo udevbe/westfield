@@ -1,6 +1,6 @@
 'use strict'
 
-const { Endpoint } = require('westfield-native')
+const { Endpoint } = require('./westfield-native')
 
 class MessageInterceptor {
   /**
