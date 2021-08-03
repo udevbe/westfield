@@ -1,6 +1,6 @@
 {
   "name": "westfield-endpoint",
-  "version": "0.4.14",
+  "version": "0.4.15",
   "main": "src/index.js",
   "description": "Wayland HTML5 runtime for Node.js",
   "repository": {
@@ -27,7 +27,7 @@
   "homepage": "https://github.com/udevbe/westfield#readme",
   "contributors": [],
   "scripts": {
-    "preinstall": "cmake-js",
+    "postinstall": "cmake-js",
     "test": "mocha ./test/*.js --timeout 10000"
   },
   "devDependencies": {
