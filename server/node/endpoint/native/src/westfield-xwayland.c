@@ -31,12 +31,10 @@ struct westfield_xserver {
     void *user_data;
     struct wl_display *wl_display;
     struct wl_event_loop *loop;
-    struct wl_event_source *abstract_source;
     struct wl_event_source *unix_source;
     westfield_xserver_starting_func_t starting_func;
     westfield_xserver_destroyed_func_t destroyed_func;
     struct westfield_xwayland *xwayland;
-    int abstract_fd;
     int unix_fd;
     int display;
     pid_t pid;
@@ -72,45 +70,14 @@ westfield_xserver_shutdown(struct westfield_xserver *wxs) {
     snprintf(path, sizeof path, "/tmp/.X11-unix/X%d", wxs->display);
     unlink(path);
     if (wxs->pid == 0) {
-        wl_event_source_remove(wxs->abstract_source);
         wl_event_source_remove(wxs->unix_source);
     }
-    close(wxs->abstract_fd);
     close(wxs->unix_fd);
 
     if (wxs->destroyed_func)
         wxs->destroyed_func(wxs->user_data);
     wxs->destroyed_func = NULL;
     wxs->loop = NULL;
-}
-
-static int
-bind_to_abstract_socket(int display) {
-    struct sockaddr_un addr;
-    socklen_t size, name_size;
-    int fd;
-
-    fd = socket(PF_LOCAL, SOCK_STREAM | SOCK_CLOEXEC, 0);
-    if (fd < 0)
-        return -1;
-
-    addr.sun_family = AF_LOCAL;
-    name_size = snprintf(addr.sun_path, sizeof addr.sun_path,
-                         "%c/tmp/.X11-unix/X%d", 0, display);
-    size = offsetof(struct sockaddr_un, sun_path) + name_size;
-    if (bind(fd, (struct sockaddr *) &addr, size) < 0) {
-        printf("failed to bind to @%s: %s\n", addr.sun_path + 1,
-               strerror(errno));
-        close(fd);
-        return -1;
-    }
-
-    if (listen(fd, 1) < 0) {
-        close(fd);
-        return -1;
-    }
-
-    return fd;
 }
 
 static int
@@ -230,10 +197,10 @@ teardown_xwayland(struct westfield_xwayland *wxw) {
 
 
 static pid_t
-spawn_xserver(void *user_data, const char *display, int abstract_fd, int unix_fd) {
+spawn_xserver(void *user_data, const char *display, int unix_fd) {
     struct westfield_xwayland *wxw = user_data;
     pid_t pid;
-    char s[12], abstract_fd_str[12], unix_fd_str[12], wm_fd_str[12];
+    char s[12], unix_fd_str[12], wm_fd_str[12];
     int sv[2], wm[2], fd;
 
     if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sv) < 0) {
@@ -253,10 +220,7 @@ spawn_xserver(void *user_data, const char *display, int abstract_fd, int unix_fd
     pid = fork();
     switch (pid) {
         case 0:
-//            setenv("WAYLAND_DEBUG", "client", 1);
-//            int output_fd = open("xwayland-out", O_WRONLY | O_CREAT | O_TRUNC, 0600);
-//            dup2(output_fd, STDOUT_FILENO);
-//            dup2(output_fd, STDERR_FILENO);
+            dup2(1, 2);
             /* SOCK_CLOEXEC closes both ends, so we need to unset
              * the flag on the client fd. */
             fd = dup(sv[1]);
@@ -266,11 +230,6 @@ spawn_xserver(void *user_data, const char *display, int abstract_fd, int unix_fd
             snprintf(s, sizeof s, "%d", fd);
             setenv("WAYLAND_SOCKET", s, 1);
 
-            fd = dup(abstract_fd);
-            if (fd < 0) {
-                goto fail;
-            }
-            snprintf(abstract_fd_str, sizeof abstract_fd_str, "%d", fd);
             fd = dup(unix_fd);
             if (fd < 0) {
                 goto fail;
@@ -288,16 +247,14 @@ spawn_xserver(void *user_data, const char *display, int abstract_fd, int unix_fd
                        display,
                        "-ac",
                        "-rootless",
-                       "-listen", abstract_fd_str,
                        "-listen", unix_fd_str,
                        "-wm", wm_fd_str,
                        (char *) NULL) < 0)
                 printf("exec of '%s %s -ac -rootless "
-                       "-listen %s -listen %s -wm %s "
+                       "-listen %s -wm %s "
                        "' failed: %s\n",
                        "XWayland",
                        display,
-                       abstract_fd_str,
                        unix_fd_str,
                        wm_fd_str,
                        strerror(errno));
@@ -326,14 +283,13 @@ westfield_xserver_handle_event(int listen_fd, uint32_t mask, void *data) {
 
     snprintf(display, sizeof display, ":%d", wxs->display);
 
-    wxs->pid = spawn_xserver(wxs->xwayland, display, wxs->abstract_fd, wxs->unix_fd);
+    wxs->pid = spawn_xserver(wxs->xwayland, display, wxs->unix_fd);
     if (wxs->pid == -1) {
         printf("Failed to spawn the Xwayland server\n");
         return 1;
     }
 
     printf("Spawned Xwayland server, pid %d\n", wxs->pid);
-    wl_event_source_remove(wxs->abstract_source);
     wl_event_source_remove(wxs->unix_source);
 
     return 1;
@@ -342,7 +298,7 @@ westfield_xserver_handle_event(int listen_fd, uint32_t mask, void *data) {
 static int
 westfield_xserver_listen(struct westfield_xserver *wxs) {
     char lockfile[256], display_name[8];
-    wxs->display = 0;
+    wxs->display = 1;
     retry:
     if (create_lockfile(wxs->display, lockfile, sizeof lockfile) < 0) {
         if (errno == EAGAIN) {
@@ -356,17 +312,9 @@ westfield_xserver_listen(struct westfield_xserver *wxs) {
         }
     }
 
-    wxs->abstract_fd = bind_to_abstract_socket(wxs->display);
-    if (wxs->abstract_fd < 0 && errno == EADDRINUSE) {
-        wxs->display++;
-        unlink(lockfile);
-        goto retry;
-    }
-
     wxs->unix_fd = bind_to_unix_socket(wxs->display);
     if (wxs->unix_fd < 0) {
         unlink(lockfile);
-        close(wxs->abstract_fd);
         free(wxs);
         return -1;
     }
@@ -376,10 +324,6 @@ westfield_xserver_listen(struct westfield_xserver *wxs) {
     setenv("DISPLAY", display_name, 1);
 
     wxs->loop = wl_display_get_event_loop(wxs->wl_display);
-    wxs->abstract_source =
-            wl_event_loop_add_fd(wxs->loop, wxs->abstract_fd,
-                                 WL_EVENT_READABLE,
-                                 westfield_xserver_handle_event, wxs);
     wxs->unix_source =
             wl_event_loop_add_fd(wxs->loop, wxs->unix_fd,
                                  WL_EVENT_READABLE,
@@ -393,10 +337,6 @@ westfield_xserver_exited(struct westfield_xserver *wxs,
                          int exit_status) {
     wxs->pid = 0;
 
-    wxs->abstract_source =
-            wl_event_loop_add_fd(wxs->loop, wxs->abstract_fd,
-                                 WL_EVENT_READABLE,
-                                 westfield_xserver_handle_event, wxs);
     wxs->unix_source =
             wl_event_loop_add_fd(wxs->loop, wxs->unix_fd,
                                  WL_EVENT_READABLE,
