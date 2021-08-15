@@ -1,6 +1,7 @@
 {
   "name": "westfield-scanner-server",
-  "version": "0.4.0",
+  "version": "0.5.1",
+  "type": "commonjs",
   "description": "Wayland HTML5 protocol generator for Node.js",
   "scripts": {
     "test": "standard --verbose"
@@ -8,7 +9,7 @@
   "bin": "westfield-scanner-server.js",
   "dependencies": {
     "camelcase": "6.2.0",
-    "meow": "8.0.0",
+    "meow": "^9.0.0",
     "uppercamelcase": "3.0.0",
     "xml2js": "0.4.23"
   },
