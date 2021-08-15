@@ -1,6 +1,6 @@
 {
   "name": "westfield-runtime-common",
-  "version": "0.4.4",
+  "version": "0.5.0",
   "description": "Wayland HTML5 common client-server runtime",
   "module": "dist/index.js",
   "typings": "types/index.d.ts",
@@ -28,94 +28,19 @@
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
   "scripts": {
-    "lint": "tslint  --project tsconfig.json -t codeFrame 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist types",
-    "build": "tsc && typedoc --includeDeclarations --excludeExternals --excludeNotExported --excludePrivate --ignoreCompilerErrors --out docs --target es6 --theme minimal --mode modules --inputFiles src/index.ts",
-    "test": "jest --coverage",
-    "test:watch": "jest --coverage --watch",
-    "test:prod": "npm run lint && npm run test -- --no-cache",
-    "deploy-docs": "ts-node tools/gh-pages-publish",
-    "report-coverage": "cat ./coverage/lcov.info | coveralls",
-    "commit": "git-cz",
-    "semantic-release": "semantic-release",
-    "semantic-release-prepare": "ts-node tools/semantic-release-prepare",
-    "precommit": "lint-staged"
-  },
-  "lint-staged": {
-    "{src,test}/**/*.ts": [
-      "prettier --write",
-      "git add"
-    ]
-  },
-  "config": {
-    "commitizen": {
-      "path": "node_modules/cz-conventional-changelog"
-    }
-  },
-  "jest": {
-    "transform": {
-      ".(ts|tsx)": "ts-jest"
-    },
-    "testEnvironment": "node",
-    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
-    "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js"
-    ],
-    "coveragePathIgnorePatterns": [
-      "/node_modules/",
-      "/test/"
-    ],
-    "coverageThreshold": {
-      "global": {
-        "branches": 90,
-        "functions": 95,
-        "lines": 95,
-        "statements": 95
-      }
-    },
-    "collectCoverageFrom": [
-      "src/*.{js,ts}"
-    ]
-  },
-  "prettier": {
-    "semi": false,
-    "singleQuote": true
-  },
-  "commitlint": {
-    "extends": [
-      "@commitlint/config-conventional"
-    ]
+    "build": "tsc"
   },
   "devDependencies": {
-    "@commitlint/cli": "^11.0.0",
-    "@commitlint/config-conventional": "^11.0.0",
-    "@types/jest": "^26.0.16",
-    "@types/node": "^14.14.10",
-    "colors": "^1.4.0",
-    "commitizen": "^4.2.2",
-    "coveralls": "^3.1.0",
-    "cross-env": "^7.0.3",
-    "cz-conventional-changelog": "^3.3.0",
-    "husky": "^4.3.4",
-    "jest": "^26.6.3",
-    "jest-config": "^26.6.3",
-    "lint-staged": "^10.5.3",
-    "lodash.camelcase": "^4.3.0",
-    "prettier": "^2.2.1",
-    "prompt": "^1.0.0",
-    "replace-in-file": "^6.1.0",
+    "@commitlint/cli": "^13.1.0",
+    "@commitlint/config-conventional": "^13.1.0",
+    "@types/jest": "^27.0.1",
+    "@types/node": "^16.6.1",
+    "eslint": "^7.31.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^3.4.0",
+    "prettier": "^2.3.2",
     "rimraf": "^3.0.2",
-    "semantic-release": "^17.3.0",
-    "shelljs": "^0.8.4",
-    "travis-deploy-once": "^5.0.11",
-    "ts-jest": "^26.4.4",
-    "ts-node": "^9.1.0",
-    "tslint": "^6.1.3",
-    "tslint-config-prettier": "^1.18.0",
-    "tslint-config-standard": "^9.0.0",
-    "typedoc": "^0.19.2",
-    "typescript": "^4.1.2"
+    "typescript": "^4.3.5"
   }
 }
