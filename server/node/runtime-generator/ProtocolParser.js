@@ -100,12 +100,12 @@ class ProtocolParser {
   static _generateIfRequestGlue (out, ev, opcode) {
     const evName = camelCase(ev.$.name)
 
-    out.write(`\tasync [${opcode}] (message: WlMessage) {\n`)
+    out.write(`\t[${opcode}] (message: WlMessage) {\n`)
     const evSig = ProtocolParser._parseRequestSignature(ev)
     if (evSig.length) {
-      out.write(`\t\tawait this.implementation.${evName}(this, ${evSig})\n`)
+      out.write(`\t\treturn this.implementation.${evName}(this, ${evSig})\n`)
     } else {
-      out.write(`\t\tawait this.implementation.${evName}(this)\n`)
+      out.write(`\t\treturn this.implementation.${evName}(this)\n`)
     }
     out.write('\t}\n')
   }

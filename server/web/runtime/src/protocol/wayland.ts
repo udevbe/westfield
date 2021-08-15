@@ -82,11 +82,11 @@ export class WlCompositorResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.createSurface(this, n(message))
+	[0] (message: WlMessage) {
+		return this.implementation.createSurface(this, n(message))
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.createRegion(this, n(message))
+	[1] (message: WlMessage) {
+		return this.implementation.createRegion(this, n(message))
 	}
 }
 
@@ -141,14 +141,14 @@ export class WlShmPoolResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.createBuffer(this, n(message), i(message), i(message), i(message), i(message), u(message))
+	[0] (message: WlMessage) {
+		return this.implementation.createBuffer(this, n(message), i(message), i(message), i(message), i(message), u(message))
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.destroy(this)
+	[1] (message: WlMessage) {
+		return this.implementation.destroy(this)
 	}
-	async [2] (message: WlMessage) {
-		await this.implementation.resize(this, i(message))
+	[2] (message: WlMessage) {
+		return this.implementation.resize(this, i(message))
 	}
 }
 
@@ -255,8 +255,8 @@ export class WlShmResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.createPool(this, n(message), h(message), i(message))
+	[0] (message: WlMessage) {
+		return this.implementation.createPool(this, n(message), h(message), i(message))
 	}
 }
 
@@ -574,8 +574,8 @@ export class WlBufferResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.destroy(this)
+	[0] (message: WlMessage) {
+		return this.implementation.destroy(this)
 	}
 }
 
@@ -697,20 +697,20 @@ export class WlDataOfferResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.accept(this, u(message), sOptional(message))
+	[0] (message: WlMessage) {
+		return this.implementation.accept(this, u(message), sOptional(message))
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.receive(this, s(message), h(message))
+	[1] (message: WlMessage) {
+		return this.implementation.receive(this, s(message), h(message))
 	}
-	async [2] (message: WlMessage) {
-		await this.implementation.destroy(this)
+	[2] (message: WlMessage) {
+		return this.implementation.destroy(this)
 	}
-	async [3] (message: WlMessage) {
-		await this.implementation.finish(this)
+	[3] (message: WlMessage) {
+		return this.implementation.finish(this)
 	}
-	async [4] (message: WlMessage) {
-		await this.implementation.setActions(this, u(message), u(message))
+	[4] (message: WlMessage) {
+		return this.implementation.setActions(this, u(message), u(message))
 	}
 }
 
@@ -1025,14 +1025,14 @@ export class WlDataSourceResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.offer(this, s(message))
+	[0] (message: WlMessage) {
+		return this.implementation.offer(this, s(message))
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.destroy(this)
+	[1] (message: WlMessage) {
+		return this.implementation.destroy(this)
 	}
-	async [2] (message: WlMessage) {
-		await this.implementation.setActions(this, u(message))
+	[2] (message: WlMessage) {
+		return this.implementation.setActions(this, u(message))
 	}
 }
 
@@ -1242,14 +1242,14 @@ export class WlDataDeviceResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.startDrag(this, oOptional<Westfield.WlDataSourceResource>(message, this.client.connection), o<Westfield.WlSurfaceResource>(message, this.client.connection), oOptional<Westfield.WlSurfaceResource>(message, this.client.connection), u(message))
+	[0] (message: WlMessage) {
+		return this.implementation.startDrag(this, oOptional<Westfield.WlDataSourceResource>(message, this.client.connection), o<Westfield.WlSurfaceResource>(message, this.client.connection), oOptional<Westfield.WlSurfaceResource>(message, this.client.connection), u(message))
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.setSelection(this, oOptional<Westfield.WlDataSourceResource>(message, this.client.connection), u(message))
+	[1] (message: WlMessage) {
+		return this.implementation.setSelection(this, oOptional<Westfield.WlDataSourceResource>(message, this.client.connection), u(message))
 	}
-	async [2] (message: WlMessage) {
-		await this.implementation.release(this)
+	[2] (message: WlMessage) {
+		return this.implementation.release(this)
 	}
 }
 
@@ -1359,11 +1359,11 @@ export class WlDataDeviceManagerResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.createDataSource(this, n(message))
+	[0] (message: WlMessage) {
+		return this.implementation.createDataSource(this, n(message))
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.getDataDevice(this, n(message), o<Westfield.WlSeatResource>(message, this.client.connection))
+	[1] (message: WlMessage) {
+		return this.implementation.getDataDevice(this, n(message), o<Westfield.WlSeatResource>(message, this.client.connection))
 	}
 }
 
@@ -1436,8 +1436,8 @@ export class WlShellResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.getShellSurface(this, n(message), o<Westfield.WlSurfaceResource>(message, this.client.connection))
+	[0] (message: WlMessage) {
+		return this.implementation.getShellSurface(this, n(message), o<Westfield.WlSurfaceResource>(message, this.client.connection))
 	}
 }
 
@@ -1555,35 +1555,35 @@ export class WlShellSurfaceResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.pong(this, u(message))
+	[0] (message: WlMessage) {
+		return this.implementation.pong(this, u(message))
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.move(this, o<Westfield.WlSeatResource>(message, this.client.connection), u(message))
+	[1] (message: WlMessage) {
+		return this.implementation.move(this, o<Westfield.WlSeatResource>(message, this.client.connection), u(message))
 	}
-	async [2] (message: WlMessage) {
-		await this.implementation.resize(this, o<Westfield.WlSeatResource>(message, this.client.connection), u(message), u(message))
+	[2] (message: WlMessage) {
+		return this.implementation.resize(this, o<Westfield.WlSeatResource>(message, this.client.connection), u(message), u(message))
 	}
-	async [3] (message: WlMessage) {
-		await this.implementation.setToplevel(this)
+	[3] (message: WlMessage) {
+		return this.implementation.setToplevel(this)
 	}
-	async [4] (message: WlMessage) {
-		await this.implementation.setTransient(this, o<Westfield.WlSurfaceResource>(message, this.client.connection), i(message), i(message), u(message))
+	[4] (message: WlMessage) {
+		return this.implementation.setTransient(this, o<Westfield.WlSurfaceResource>(message, this.client.connection), i(message), i(message), u(message))
 	}
-	async [5] (message: WlMessage) {
-		await this.implementation.setFullscreen(this, u(message), u(message), oOptional<Westfield.WlOutputResource>(message, this.client.connection))
+	[5] (message: WlMessage) {
+		return this.implementation.setFullscreen(this, u(message), u(message), oOptional<Westfield.WlOutputResource>(message, this.client.connection))
 	}
-	async [6] (message: WlMessage) {
-		await this.implementation.setPopup(this, o<Westfield.WlSeatResource>(message, this.client.connection), u(message), o<Westfield.WlSurfaceResource>(message, this.client.connection), i(message), i(message), u(message))
+	[6] (message: WlMessage) {
+		return this.implementation.setPopup(this, o<Westfield.WlSeatResource>(message, this.client.connection), u(message), o<Westfield.WlSurfaceResource>(message, this.client.connection), i(message), i(message), u(message))
 	}
-	async [7] (message: WlMessage) {
-		await this.implementation.setMaximized(this, oOptional<Westfield.WlOutputResource>(message, this.client.connection))
+	[7] (message: WlMessage) {
+		return this.implementation.setMaximized(this, oOptional<Westfield.WlOutputResource>(message, this.client.connection))
 	}
-	async [8] (message: WlMessage) {
-		await this.implementation.setTitle(this, s(message))
+	[8] (message: WlMessage) {
+		return this.implementation.setTitle(this, s(message))
 	}
-	async [9] (message: WlMessage) {
-		await this.implementation.setClass(this, s(message))
+	[9] (message: WlMessage) {
+		return this.implementation.setClass(this, s(message))
 	}
 }
 
@@ -1980,35 +1980,35 @@ export class WlSurfaceResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.destroy(this)
+	[0] (message: WlMessage) {
+		return this.implementation.destroy(this)
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.attach(this, oOptional<Westfield.WlBufferResource>(message, this.client.connection), i(message), i(message))
+	[1] (message: WlMessage) {
+		return this.implementation.attach(this, oOptional<Westfield.WlBufferResource>(message, this.client.connection), i(message), i(message))
 	}
-	async [2] (message: WlMessage) {
-		await this.implementation.damage(this, i(message), i(message), i(message), i(message))
+	[2] (message: WlMessage) {
+		return this.implementation.damage(this, i(message), i(message), i(message), i(message))
 	}
-	async [3] (message: WlMessage) {
-		await this.implementation.frame(this, n(message))
+	[3] (message: WlMessage) {
+		return this.implementation.frame(this, n(message))
 	}
-	async [4] (message: WlMessage) {
-		await this.implementation.setOpaqueRegion(this, oOptional<Westfield.WlRegionResource>(message, this.client.connection))
+	[4] (message: WlMessage) {
+		return this.implementation.setOpaqueRegion(this, oOptional<Westfield.WlRegionResource>(message, this.client.connection))
 	}
-	async [5] (message: WlMessage) {
-		await this.implementation.setInputRegion(this, oOptional<Westfield.WlRegionResource>(message, this.client.connection))
+	[5] (message: WlMessage) {
+		return this.implementation.setInputRegion(this, oOptional<Westfield.WlRegionResource>(message, this.client.connection))
 	}
-	async [6] (message: WlMessage) {
-		await this.implementation.commit(this, u(message))
+	[6] (message: WlMessage) {
+		return this.implementation.commit(this, u(message))
 	}
-	async [7] (message: WlMessage) {
-		await this.implementation.setBufferTransform(this, i(message))
+	[7] (message: WlMessage) {
+		return this.implementation.setBufferTransform(this, i(message))
 	}
-	async [8] (message: WlMessage) {
-		await this.implementation.setBufferScale(this, i(message))
+	[8] (message: WlMessage) {
+		return this.implementation.setBufferScale(this, i(message))
 	}
-	async [9] (message: WlMessage) {
-		await this.implementation.damageBuffer(this, i(message), i(message), i(message), i(message))
+	[9] (message: WlMessage) {
+		return this.implementation.damageBuffer(this, i(message), i(message), i(message), i(message))
 	}
 }
 
@@ -2465,17 +2465,17 @@ export class WlSeatResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.getPointer(this, n(message))
+	[0] (message: WlMessage) {
+		return this.implementation.getPointer(this, n(message))
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.getKeyboard(this, n(message))
+	[1] (message: WlMessage) {
+		return this.implementation.getKeyboard(this, n(message))
 	}
-	async [2] (message: WlMessage) {
-		await this.implementation.getTouch(this, n(message))
+	[2] (message: WlMessage) {
+		return this.implementation.getTouch(this, n(message))
 	}
-	async [3] (message: WlMessage) {
-		await this.implementation.release(this)
+	[3] (message: WlMessage) {
+		return this.implementation.release(this)
 	}
 }
 
@@ -2860,11 +2860,11 @@ export class WlPointerResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.setCursor(this, u(message), oOptional<Westfield.WlSurfaceResource>(message, this.client.connection), i(message), i(message))
+	[0] (message: WlMessage) {
+		return this.implementation.setCursor(this, u(message), oOptional<Westfield.WlSurfaceResource>(message, this.client.connection), i(message), i(message))
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.release(this)
+	[1] (message: WlMessage) {
+		return this.implementation.release(this)
 	}
 }
 
@@ -3115,8 +3115,8 @@ export class WlKeyboardResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.release(this)
+	[0] (message: WlMessage) {
+		return this.implementation.release(this)
 	}
 }
 
@@ -3345,8 +3345,8 @@ export class WlTouchResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.release(this)
+	[0] (message: WlMessage) {
+		return this.implementation.release(this)
 	}
 }
 
@@ -3481,8 +3481,8 @@ export class WlOutputResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.release(this)
+	[0] (message: WlMessage) {
+		return this.implementation.release(this)
 	}
 }
 
@@ -3594,14 +3594,14 @@ export class WlRegionResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.destroy(this)
+	[0] (message: WlMessage) {
+		return this.implementation.destroy(this)
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.add(this, i(message), i(message), i(message), i(message))
+	[1] (message: WlMessage) {
+		return this.implementation.add(this, i(message), i(message), i(message), i(message))
 	}
-	async [2] (message: WlMessage) {
-		await this.implementation.subtract(this, i(message), i(message), i(message), i(message))
+	[2] (message: WlMessage) {
+		return this.implementation.subtract(this, i(message), i(message), i(message), i(message))
 	}
 }
 
@@ -3686,11 +3686,11 @@ export class WlSubcompositorResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.destroy(this)
+	[0] (message: WlMessage) {
+		return this.implementation.destroy(this)
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.getSubsurface(this, n(message), o<Westfield.WlSurfaceResource>(message, this.client.connection), o<Westfield.WlSurfaceResource>(message, this.client.connection))
+	[1] (message: WlMessage) {
+		return this.implementation.getSubsurface(this, n(message), o<Westfield.WlSurfaceResource>(message, this.client.connection), o<Westfield.WlSurfaceResource>(message, this.client.connection))
 	}
 }
 
@@ -3803,23 +3803,23 @@ export class WlSubsurfaceResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.destroy(this)
+	[0] (message: WlMessage) {
+		return this.implementation.destroy(this)
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.setPosition(this, i(message), i(message))
+	[1] (message: WlMessage) {
+		return this.implementation.setPosition(this, i(message), i(message))
 	}
-	async [2] (message: WlMessage) {
-		await this.implementation.placeAbove(this, o<Westfield.WlSurfaceResource>(message, this.client.connection))
+	[2] (message: WlMessage) {
+		return this.implementation.placeAbove(this, o<Westfield.WlSurfaceResource>(message, this.client.connection))
 	}
-	async [3] (message: WlMessage) {
-		await this.implementation.placeBelow(this, o<Westfield.WlSurfaceResource>(message, this.client.connection))
+	[3] (message: WlMessage) {
+		return this.implementation.placeBelow(this, o<Westfield.WlSurfaceResource>(message, this.client.connection))
 	}
-	async [4] (message: WlMessage) {
-		await this.implementation.setSync(this)
+	[4] (message: WlMessage) {
+		return this.implementation.setSync(this)
 	}
-	async [5] (message: WlMessage) {
-		await this.implementation.setDesync(this)
+	[5] (message: WlMessage) {
+		return this.implementation.setDesync(this)
 	}
 }
 

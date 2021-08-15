@@ -211,16 +211,16 @@ export class DisplayResource extends Resource {
    * opcode 0 -> sync
    *
    */
-  async [0](message: WlMessage) {
-    await this.implementation?.sync(this, n(message))
+  [0](message: WlMessage) {
+    this.implementation?.sync(this, n(message))
   }
 
   /**
    * opcode 1 -> getRegistry
    *
    */
-  async [1](message: WlMessage) {
-    await this.implementation?.getRegistry(this, n(message))
+  [1](message: WlMessage) {
+    this.implementation?.getRegistry(this, n(message))
   }
 
   /**
@@ -380,8 +380,8 @@ export class RegistryResource extends Resource {
    * opcode 0 -> bind
    *
    */
-  async [0](message: WlMessage) {
-    await this.implementation?.bind(this.client, this, u(message), s(message), u(message), n(message))
+  [0](message: WlMessage) {
+    this.implementation?.bind(this.client, this, u(message), s(message), u(message), n(message))
   }
 }
 

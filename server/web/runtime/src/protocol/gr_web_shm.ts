@@ -56,8 +56,8 @@ export class GrWebShmBufferResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.attach(this, h(message))
+	[0] (message: WlMessage) {
+		return this.implementation.attach(this, h(message))
 	}
 }
 
@@ -100,11 +100,11 @@ export class GrWebShmResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.createWebArrayBuffer(this, n(message))
+	[0] (message: WlMessage) {
+		return this.implementation.createWebArrayBuffer(this, n(message))
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.createBuffer(this, n(message), o<Westfield.GrWebShmBufferResource>(message, this.client.connection), i(message), i(message))
+	[1] (message: WlMessage) {
+		return this.implementation.createBuffer(this, n(message), o<Westfield.GrWebShmBufferResource>(message, this.client.connection), i(message), i(message))
 	}
 }
 

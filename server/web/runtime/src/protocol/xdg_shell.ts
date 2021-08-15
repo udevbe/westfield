@@ -77,17 +77,17 @@ export class XdgWmBaseResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.destroy(this)
+	[0] (message: WlMessage) {
+		return this.implementation.destroy(this)
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.createPositioner(this, n(message))
+	[1] (message: WlMessage) {
+		return this.implementation.createPositioner(this, n(message))
 	}
-	async [2] (message: WlMessage) {
-		await this.implementation.getXdgSurface(this, n(message), o<Westfield.WlSurfaceResource>(message, this.client.connection))
+	[2] (message: WlMessage) {
+		return this.implementation.getXdgSurface(this, n(message), o<Westfield.WlSurfaceResource>(message, this.client.connection))
 	}
-	async [3] (message: WlMessage) {
-		await this.implementation.pong(this, u(message))
+	[3] (message: WlMessage) {
+		return this.implementation.pong(this, u(message))
 	}
 }
 
@@ -224,26 +224,26 @@ export class XdgPositionerResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.destroy(this)
+	[0] (message: WlMessage) {
+		return this.implementation.destroy(this)
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.setSize(this, i(message), i(message))
+	[1] (message: WlMessage) {
+		return this.implementation.setSize(this, i(message), i(message))
 	}
-	async [2] (message: WlMessage) {
-		await this.implementation.setAnchorRect(this, i(message), i(message), i(message), i(message))
+	[2] (message: WlMessage) {
+		return this.implementation.setAnchorRect(this, i(message), i(message), i(message), i(message))
 	}
-	async [3] (message: WlMessage) {
-		await this.implementation.setAnchor(this, u(message))
+	[3] (message: WlMessage) {
+		return this.implementation.setAnchor(this, u(message))
 	}
-	async [4] (message: WlMessage) {
-		await this.implementation.setGravity(this, u(message))
+	[4] (message: WlMessage) {
+		return this.implementation.setGravity(this, u(message))
 	}
-	async [5] (message: WlMessage) {
-		await this.implementation.setConstraintAdjustment(this, u(message))
+	[5] (message: WlMessage) {
+		return this.implementation.setConstraintAdjustment(this, u(message))
 	}
-	async [6] (message: WlMessage) {
-		await this.implementation.setOffset(this, i(message), i(message))
+	[6] (message: WlMessage) {
+		return this.implementation.setOffset(this, i(message), i(message))
 	}
 }
 
@@ -589,20 +589,20 @@ export class XdgSurfaceResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.destroy(this)
+	[0] (message: WlMessage) {
+		return this.implementation.destroy(this)
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.getToplevel(this, n(message))
+	[1] (message: WlMessage) {
+		return this.implementation.getToplevel(this, n(message))
 	}
-	async [2] (message: WlMessage) {
-		await this.implementation.getPopup(this, n(message), oOptional<Westfield.XdgSurfaceResource>(message, this.client.connection), o<Westfield.XdgPositionerResource>(message, this.client.connection))
+	[2] (message: WlMessage) {
+		return this.implementation.getPopup(this, n(message), oOptional<Westfield.XdgSurfaceResource>(message, this.client.connection), o<Westfield.XdgPositionerResource>(message, this.client.connection))
 	}
-	async [3] (message: WlMessage) {
-		await this.implementation.setWindowGeometry(this, i(message), i(message), i(message), i(message))
+	[3] (message: WlMessage) {
+		return this.implementation.setWindowGeometry(this, i(message), i(message), i(message), i(message))
 	}
-	async [4] (message: WlMessage) {
-		await this.implementation.ackConfigure(this, u(message))
+	[4] (message: WlMessage) {
+		return this.implementation.ackConfigure(this, u(message))
 	}
 }
 
@@ -831,47 +831,47 @@ export class XdgToplevelResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.destroy(this)
+	[0] (message: WlMessage) {
+		return this.implementation.destroy(this)
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.setParent(this, oOptional<Westfield.XdgToplevelResource>(message, this.client.connection))
+	[1] (message: WlMessage) {
+		return this.implementation.setParent(this, oOptional<Westfield.XdgToplevelResource>(message, this.client.connection))
 	}
-	async [2] (message: WlMessage) {
-		await this.implementation.setTitle(this, s(message))
+	[2] (message: WlMessage) {
+		return this.implementation.setTitle(this, s(message))
 	}
-	async [3] (message: WlMessage) {
-		await this.implementation.setAppId(this, s(message))
+	[3] (message: WlMessage) {
+		return this.implementation.setAppId(this, s(message))
 	}
-	async [4] (message: WlMessage) {
-		await this.implementation.showWindowMenu(this, o<Westfield.WlSeatResource>(message, this.client.connection), u(message), i(message), i(message))
+	[4] (message: WlMessage) {
+		return this.implementation.showWindowMenu(this, o<Westfield.WlSeatResource>(message, this.client.connection), u(message), i(message), i(message))
 	}
-	async [5] (message: WlMessage) {
-		await this.implementation.move(this, o<Westfield.WlSeatResource>(message, this.client.connection), u(message))
+	[5] (message: WlMessage) {
+		return this.implementation.move(this, o<Westfield.WlSeatResource>(message, this.client.connection), u(message))
 	}
-	async [6] (message: WlMessage) {
-		await this.implementation.resize(this, o<Westfield.WlSeatResource>(message, this.client.connection), u(message), u(message))
+	[6] (message: WlMessage) {
+		return this.implementation.resize(this, o<Westfield.WlSeatResource>(message, this.client.connection), u(message), u(message))
 	}
-	async [7] (message: WlMessage) {
-		await this.implementation.setMaxSize(this, i(message), i(message))
+	[7] (message: WlMessage) {
+		return this.implementation.setMaxSize(this, i(message), i(message))
 	}
-	async [8] (message: WlMessage) {
-		await this.implementation.setMinSize(this, i(message), i(message))
+	[8] (message: WlMessage) {
+		return this.implementation.setMinSize(this, i(message), i(message))
 	}
-	async [9] (message: WlMessage) {
-		await this.implementation.setMaximized(this)
+	[9] (message: WlMessage) {
+		return this.implementation.setMaximized(this)
 	}
-	async [10] (message: WlMessage) {
-		await this.implementation.unsetMaximized(this)
+	[10] (message: WlMessage) {
+		return this.implementation.unsetMaximized(this)
 	}
-	async [11] (message: WlMessage) {
-		await this.implementation.setFullscreen(this, oOptional<Westfield.WlOutputResource>(message, this.client.connection))
+	[11] (message: WlMessage) {
+		return this.implementation.setFullscreen(this, oOptional<Westfield.WlOutputResource>(message, this.client.connection))
 	}
-	async [12] (message: WlMessage) {
-		await this.implementation.unsetFullscreen(this)
+	[12] (message: WlMessage) {
+		return this.implementation.unsetFullscreen(this)
 	}
-	async [13] (message: WlMessage) {
-		await this.implementation.setMinimized(this)
+	[13] (message: WlMessage) {
+		return this.implementation.setMinimized(this)
 	}
 }
 
@@ -1449,11 +1449,11 @@ export class XdgPopupResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.destroy(this)
+	[0] (message: WlMessage) {
+		return this.implementation.destroy(this)
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.grab(this, o<Westfield.WlSeatResource>(message, this.client.connection), u(message))
+	[1] (message: WlMessage) {
+		return this.implementation.grab(this, o<Westfield.WlSeatResource>(message, this.client.connection), u(message))
 	}
 }
 

@@ -82,11 +82,11 @@ export class GrWebGlResource extends Westfield.Resource {
 		super(client, id, version)
 	}
 
-	async [0] (message: WlMessage) {
-		await this.implementation.createWebGlBuffer(this, n(message))
+	[0] (message: WlMessage) {
+		return this.implementation.createWebGlBuffer(this, n(message))
 	}
-	async [1] (message: WlMessage) {
-		await this.implementation.createBuffer(this, n(message), o<Westfield.GrWebGlBufferResource>(message, this.client.connection))
+	[1] (message: WlMessage) {
+		return this.implementation.createBuffer(this, n(message), o<Westfield.GrWebGlBufferResource>(message, this.client.connection))
 	}
 }
 

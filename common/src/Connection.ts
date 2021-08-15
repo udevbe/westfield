@@ -24,6 +24,8 @@ SOFTWARE.
 const textDecoder = new TextDecoder('utf8')
 
 export class WlObject {
+  [opcode: number]: (wlMessage: WlMessage) => void | Promise<void>
+
   readonly id: number
   // @ts-ignore
   private _destroyResolver: () => void
@@ -55,6 +57,14 @@ export class WlObject {
 export class Fixed {
   readonly _raw: number
 
+  /**
+   * use parseFixed instead
+   * @param {number}raw
+   */
+  constructor(raw: number) {
+    this._raw = raw
+  }
+
   static parse(data: number): Fixed {
     return new Fixed((data * 256.0) >> 0)
   }
@@ -73,14 +83,6 @@ export class Fixed {
    */
   asDouble(): number {
     return this._raw / 256.0
-  }
-
-  /**
-   * use parseFixed instead
-   * @param {number}raw
-   */
-  constructor(raw: number) {
-    this._raw = raw
   }
 }
 
@@ -493,19 +495,6 @@ export class Connection {
   onFlush?: (outMsg: SendMessage[]) => void
   private _outMessages: SendMessage[] = []
   private _inMessages: WlMessage[] = []
-  private _idleHandlers: (() => any)[] = []
-
-  /**
-   * Adds a one-shot idle handler. The idle handler is fired once, after all incoming request messages have been processed.
-   */
-  addIdleHandler<T>(idleHandler: () => T): () => T {
-    this._idleHandlers = [...this._idleHandlers, idleHandler]
-    return idleHandler
-  }
-
-  removeIdleHandler(idleHandler: () => void) {
-    this._idleHandlers = this._idleHandlers.filter(handler => handler !== idleHandler)
-  }
 
   marshallMsg(id: number, opcode: number, size: number, argsArray: MessageMarshallingContext<any, any, any>[]) {
     const wireMsg = {
@@ -527,14 +516,6 @@ export class Connection {
     this.onSend(wireMsg)
   }
 
-  private _idle() {
-    const idleHandlers = [...this._idleHandlers]
-    this._idleHandlers = []
-    for (const idle of idleHandlers) {
-      idle()
-    }
-  }
-
   /**
    * Handle received wire messages.
    */
@@ -554,7 +535,6 @@ export class Connection {
     }
 
     while (this._inMessages.length) {
-      this._idle()
       this.flush()
 
       const messagesToProcess = [...this._inMessages]
@@ -575,8 +555,10 @@ export class Connection {
             wireMessages.bufferOffset += 2
             wireMessages.consumed = 8
             try {
-              // @ts-ignore
-              await wlObject[opcode](wireMessages)
+              const promiseOrVoid = wlObject[opcode](wireMessages)
+              if (promiseOrVoid instanceof Promise) {
+                await promiseOrVoid
+              }
             } catch (e) {
               console.error(`
 wlObject: ${wlObject.constructor.name}[${opcode}](..)
@@ -595,13 +577,10 @@ ${e.stack}
           }
         }
       }
-
-      this._idle()
       this.flush()
 
       this._inMessages = this._inMessages.filter(value => !messagesToProcess.includes(value))
     }
-    this._idle()
     this.flush()
   }
 
