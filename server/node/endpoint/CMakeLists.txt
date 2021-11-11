@@ -14,7 +14,7 @@ string(REGEX REPLACE "[\r\n\"]" "" NODE_API_DIR ${NODE_API_DIR})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
 find_package(LibFFI REQUIRED)
 
-add_library(westfield-wayland-server SHARED
+add_library(wayland-server SHARED
         native/src/wayland-server/protocol/wayland-server-protocol.h
         native/src/wayland-server/protocol/wayland-protocol.c
         native/src/wayland-server/westfield-extra.h
@@ -29,8 +29,8 @@ add_library(westfield-wayland-server SHARED
         native/src/wayland-server/wayland-shm.c
         native/src/wayland-server/wayland-util.h
         native/src/wayland-server/wayland-util.c)
-target_link_libraries(westfield-wayland-server ${CMAKE_JS_LIB} ${LIBFFI_LIBRARIES})
-set_target_properties(westfield-wayland-server
+target_link_libraries(wayland-server ${LIBFFI_LIBRARIES})
+set_target_properties(wayland-server
         PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ../src
         )
@@ -50,7 +50,7 @@ target_include_directories(${PROJECT_NAME}
         )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
-target_link_libraries(${PROJECT_NAME} westfield-wayland-server ${CMAKE_JS_LIB} ${LIBFFI_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} wayland-server ${CMAKE_JS_LIB} ${LIBFFI_LIBRARIES})
 set_target_properties(${PROJECT_NAME}
     PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ../src
