@@ -23,8 +23,27 @@
  * SOFTWARE.
  */
 
-#include "wayland-server/wayland-server.h"
-#include "connection.h"
+#define _GNU_SOURCE
+
+#include "wayland-server.h"
+
+struct wl_connection;
+
+size_t
+wl_connection_fds_in_size(struct wl_connection *connection);
+
+void
+wl_connection_copy_fds_in(struct wl_connection *connection, int *fds_in, size_t fds_in_size);
+
+int
+wl_connection_put_fd(struct wl_connection *connection, int32_t fd);
+
+int
+wl_connection_write(struct wl_connection *connection,
+                    const void *data, size_t count);
+
+int
+wl_connection_flush(struct wl_connection *connection);
 
 struct wl_connection *
 wl_client_get_connection(struct wl_client *client);
@@ -35,7 +54,7 @@ typedef int (*wl_connection_wire_message_t)(struct wl_client *client, int32_t *w
 void
 wl_client_set_wire_message_cb(struct wl_client *client, wl_connection_wire_message_t wire_message_cb);
 
-typedef void (*wl_connection_wire_message_end_t) (struct wl_client *client, int *fds_in, size_t fds_in_size);
+typedef void (*wl_connection_wire_message_end_t)(struct wl_client *client, int *fds_in, size_t fds_in_size);
 
 void
 wl_client_set_wire_message_end_cb(struct wl_client *client, wl_connection_wire_message_end_t wire_message_end_cb);

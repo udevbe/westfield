@@ -5,8 +5,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "wayland-server-core-extensions.h"
-#include "connection.h"
+#include "westfield-extra.h"
 #include "westfield-fdutils.h"
 #include "westfield-xwayland.h"
 
@@ -940,59 +939,6 @@ makePipe(napi_env env, napi_callback_info info) {
     return return_value;
 }
 
-// TODO temp method - to be replaced by general encoding function
-napi_value
-getShmBuffer(napi_env env, napi_callback_info info) {
-    size_t argc = 2;
-    napi_value argv[argc], client_value, id_value, result;
-    uint32_t id;
-    struct wl_client *client;
-    struct wl_resource *resource;
-    struct wl_shm_buffer *shm_buffer;
-
-    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL))
-    client_value = argv[0];
-    id_value = argv[1];
-
-    NAPI_CALL(env, napi_get_value_external(env, client_value, (void **) &client))
-    NAPI_CALL(env, napi_get_value_uint32(env, id_value, &id))
-
-    resource = wl_client_get_object(client, id);
-
-    shm_buffer = wl_shm_buffer_get(resource);
-    if (shm_buffer) {
-        napi_value data_value, width_value, height_value, stride_value, format_value;
-
-        void *data = wl_shm_buffer_get_data(shm_buffer);
-        const int32_t width = wl_shm_buffer_get_width(shm_buffer);
-        const int32_t height = wl_shm_buffer_get_height(shm_buffer);
-        const int32_t stride = wl_shm_buffer_get_stride(shm_buffer);
-        const int32_t format = wl_shm_buffer_get_format(shm_buffer);
-
-        NAPI_CALL(env, napi_create_external(env, data, NULL, NULL, &data_value))
-        NAPI_CALL(env, napi_create_int32(env, width, &width_value))
-        NAPI_CALL(env, napi_create_int32(env, height, &height_value))
-        NAPI_CALL(env, napi_create_int32(env, stride, &stride_value))
-        NAPI_CALL(env, napi_create_int32(env, format, &format_value))
-
-        const napi_property_descriptor properties[] = {
-                {"buffer", NULL, NULL, NULL, NULL, data_value,   napi_default, NULL},
-                {"format", NULL, NULL, NULL, NULL, format_value, napi_default, NULL},
-                {"width",  NULL, NULL, NULL, NULL, width_value,  napi_default, NULL},
-                {"height", NULL, NULL, NULL, NULL, height_value, napi_default, NULL},
-                {"stride", NULL, NULL, NULL, NULL, stride_value, napi_default, NULL},
-        };
-
-        NAPI_CALL(env, napi_create_object(env, &result))
-        NAPI_CALL(env, napi_define_properties(env, result, sizeof(properties) / sizeof(napi_property_descriptor),
-                                              properties))
-        return result;
-    } else {
-        NAPI_CALL(env, napi_get_null(env, &result))
-        return result;
-    }
-}
-
 static void
 westfield_xserver_starting(void *user_data, int wm_fd, struct wl_client *client) {
     struct weston_xwayland_callbacks *weston_xwayland_callbacks;
@@ -1142,8 +1088,6 @@ init(napi_env env, napi_value exports) {
             DECLARE_NAPI_METHOD("setBufferCreatedCallback", setBufferCreatedCallback),
             DECLARE_NAPI_METHOD("getServerObjectIdsBatch", getServerObjectIdsBatch),
             DECLARE_NAPI_METHOD("makePipe", makePipe),
-            // TODO temp method - to be replaced by general encoding function
-            DECLARE_NAPI_METHOD("getShmBuffer", getShmBuffer),
             DECLARE_NAPI_METHOD("equalValueExternal", equalValueExternal),
 
             // xwayland

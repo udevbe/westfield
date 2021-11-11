@@ -96,3 +96,5 @@ fabric.properties
 /client/runtime/src/protocol/xdg_shell.ts
 /server/node/endpoint/src/westfield-native.node
 /server/node/endpoint/build/
+/server/node/endpoint/src/libwestfield-wayland-server.so
+/server/node/endpoint/cmake-build-debug/

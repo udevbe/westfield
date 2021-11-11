@@ -204,20 +204,6 @@ class Endpoint {
   }
 
   /**
-   * temp function.
-   *
-   * @deprecated do all encoding directly on the native side & return an h264/png/jpeg frame with meta-data. ie:
-   * const { buffer, type, width, height, stride } = Endpoint.encode(wlClient, this.userData.bufferResourceId, config) instead.
-   *
-   * @param {Object}wlClient
-   * @param {number}wlResourceId
-   * @return {{ buffer:Object, width:number, height:number, stride:number }}
-   */
-  static getShmBuffer (wlClient, wlResourceId) {
-    return westfieldNative.getShmBuffer(wlClient, wlResourceId)
-  }
-
-  /**
    * @param {Object}wlClient
    * @param {function(bufferId:number):void}onBufferCreated
    */

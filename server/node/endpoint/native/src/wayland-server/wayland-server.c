@@ -36,17 +36,15 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <dlfcn.h>
 #include <assert.h>
-#include <sys/time.h>
 #include <fcntl.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 
 #include "wayland-util.h"
 #include "wayland-private.h"
-#include "../wayland-server-core-extensions.h"
 #include "wayland-os.h"
+#include "westfield-extra.h"
 
 /* This is the size of the char array in struct sock_addr_un.
  * No Wayland socket can be created with a path longer than this,
