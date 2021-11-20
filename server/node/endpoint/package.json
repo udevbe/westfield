@@ -1,6 +1,6 @@
 {
   "name": "westfield-endpoint",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "main": "src/index.js",
   "description": "Wayland HTML5 runtime for Node.js",
   "repository": {
