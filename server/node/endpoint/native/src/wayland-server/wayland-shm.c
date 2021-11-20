@@ -31,7 +31,6 @@
 #define _GNU_SOURCE
 
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -77,32 +76,10 @@ struct wl_shm_sigbus_data {
 };
 
 static void
-shm_pool_finish_resize(struct wl_shm_pool *pool)
-{
-	void *data;
-
-	if (pool->size == pool->new_size)
-		return;
-
-	data = mremap(pool->data, pool->size, pool->new_size, MREMAP_MAYMOVE);
-	if (data == MAP_FAILED) {
-		wl_resource_post_error(pool->resource,
-				       WL_SHM_ERROR_INVALID_FD,
-				       "failed mremap");
-		return;
-	}
-
-	pool->data = data;
-	pool->size = pool->new_size;
-}
-
-static void
 shm_pool_unref(struct wl_shm_pool *pool, bool external)
 {
 	if (external) {
 		pool->external_refcount--;
-		if (pool->external_refcount == 0)
-			shm_pool_finish_resize(pool);
 	} else {
 		pool->internal_refcount--;
 	}
@@ -228,8 +205,10 @@ shm_pool_resize(struct wl_client *client, struct wl_resource *resource,
 		int32_t size)
 {
 	struct wl_shm_pool *pool = wl_resource_get_user_data(resource);
+    void *data;
 
-	if (size < pool->size) {
+
+    if (size < pool->size) {
 		wl_resource_post_error(resource,
 				       WL_SHM_ERROR_INVALID_FD,
 				       "shrinking pool invalid");
@@ -238,13 +217,19 @@ shm_pool_resize(struct wl_client *client, struct wl_resource *resource,
 
 	pool->new_size = size;
 
-	/* If the compositor has taken references on this pool it
-	 * may be caching pointers into it. In that case we
-	 * defer the resize (which may move the entire mapping)
-	 * until the compositor finishes dereferencing the pool.
-	 */
-	if (pool->external_refcount == 0)
-		shm_pool_finish_resize(pool);
+    if (pool->size == pool->new_size)
+        return;
+
+    data = mremap(pool->data, pool->external_refcount ? 0 : pool->size, pool->new_size, MREMAP_MAYMOVE);
+    if (data == MAP_FAILED) {
+        wl_resource_post_error(pool->resource,
+                               WL_SHM_ERROR_INVALID_FD,
+                               "failed mremap");
+        return;
+    }
+
+    pool->data = data;
+    pool->size = pool->new_size;
 }
 
 static const struct wl_shm_pool_interface shm_pool_interface = {
@@ -389,12 +374,7 @@ wl_shm_buffer_get_data(struct wl_shm_buffer *buffer)
 	if (!buffer->pool)
 		return NULL;
 
-	if (buffer->pool->external_refcount &&
-	    (buffer->pool->size != buffer->pool->new_size))
-		wl_log("Buffer address requested when its parent pool "
-		       "has an external reference and a deferred resize "
-		       "pending.\n");
-	return buffer->pool->data + buffer->offset;
+    return buffer->pool->data + buffer->offset;
 }
 
 WL_EXPORT uint32_t
