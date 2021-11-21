@@ -51,6 +51,12 @@ static pthread_once_t wl_shm_sigbus_once = PTHREAD_ONCE_INIT;
 static pthread_key_t wl_shm_sigbus_data_key;
 static struct sigaction wl_shm_old_sigbus_action;
 
+struct wl_shm_pool_mapping {
+    struct wl_list link;
+    char *data;
+    int32_t size;
+};
+
 struct wl_shm_pool {
 	struct wl_resource *resource;
 	int internal_refcount;
@@ -58,6 +64,7 @@ struct wl_shm_pool {
 	char *data;
 	int32_t size;
 	int32_t new_size;
+    struct wl_list mappings;
 };
 
 struct wl_shm_buffer {
@@ -78,8 +85,17 @@ struct wl_shm_sigbus_data {
 static void
 shm_pool_unref(struct wl_shm_pool *pool, bool external)
 {
+    struct wl_shm_pool_mapping *mapping, *tmp_mapping;
 	if (external) {
 		pool->external_refcount--;
+        if(pool->external_refcount == 0) {
+            wl_list_for_each_safe(mapping, tmp_mapping, &pool->mappings, link) {
+                munmap(mapping->data, mapping->size);
+                wl_list_remove(&mapping->link);
+                free(mapping);
+            }
+            wl_list_init(&pool->mappings);
+        }
 	} else {
 		pool->internal_refcount--;
 	}
@@ -206,6 +222,7 @@ shm_pool_resize(struct wl_client *client, struct wl_resource *resource,
 {
 	struct wl_shm_pool *pool = wl_resource_get_user_data(resource);
     void *data;
+    struct wl_shm_pool_mapping *mapping;
 
 
     if (size < pool->size) {
@@ -221,6 +238,15 @@ shm_pool_resize(struct wl_client *client, struct wl_resource *resource,
         return;
 
     data = mremap(pool->data, pool->external_refcount ? 0 : pool->size, pool->new_size, MREMAP_MAYMOVE);
+
+    // keep track of mappings, so we can clean them up once the pool ref drops to zero.
+    if(pool->external_refcount && data != pool->data) {
+        mapping = malloc(sizeof(struct wl_shm_pool_mapping));
+        mapping->data = pool->data;
+        mapping->size = pool->size;
+        wl_list_insert(&pool->mappings, &mapping->link);
+    }
+
     if (data == MAP_FAILED) {
         wl_resource_post_error(pool->resource,
                                WL_SHM_ERROR_INVALID_FD,
@@ -261,6 +287,7 @@ shm_create_pool(struct wl_client *client, struct wl_resource *resource,
 	pool->external_refcount = 0;
 	pool->size = size;
 	pool->new_size = size;
+    wl_list_init(&pool->mappings);
 	pool->data = mmap(NULL, size,
 			  PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	if (pool->data == MAP_FAILED) {
