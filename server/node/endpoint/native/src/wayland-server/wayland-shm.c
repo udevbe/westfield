@@ -31,15 +31,20 @@
 #define _GNU_SOURCE
 
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <assert.h>
 #include <signal.h>
 #include <pthread.h>
+#include <errno.h>
+#include <fcntl.h>
 
+#include "wayland-os.h"
 #include "wayland-util.h"
 #include "wayland-private.h"
 #include "wayland-server.h"
@@ -52,9 +57,9 @@ static pthread_key_t wl_shm_sigbus_data_key;
 static struct sigaction wl_shm_old_sigbus_action;
 
 struct wl_shm_pool_mapping {
-    struct wl_list link;
-    char *data;
-    int32_t size;
+	struct wl_list link;
+	char *data;
+	int32_t size;
 };
 
 struct wl_shm_pool {
@@ -62,11 +67,26 @@ struct wl_shm_pool {
 	int internal_refcount;
 	int external_refcount;
 	char *data;
-	int32_t size;
-	int32_t new_size;
+	ssize_t size;
+	ssize_t new_size;
+	/* The following three fields are needed for mremap() emulation. */
+	int mmap_fd;
+	int mmap_flags;
+	int mmap_prot;
+	bool sigbus_is_impossible;
+    /* list of struct wl_shm_pool_mapping */
     struct wl_list mappings;
 };
 
+/** \class wl_shm_buffer
+ *
+ * \brief A SHM buffer
+ *
+ * wl_shm_buffer provides a helper for accessing the contents of a wl_buffer
+ * resource created via the wl_shm interface.
+ *
+ * A wl_shm_buffer becomes invalid as soon as its #wl_resource is destroyed.
+ */
 struct wl_shm_buffer {
 	struct wl_resource *resource;
 	int32_t width, height;
@@ -82,28 +102,52 @@ struct wl_shm_sigbus_data {
 	int fallback_mapping_used;
 };
 
+static void *
+shm_pool_grow_mapping(struct wl_shm_pool *pool)
+{
+	void *data;
+
+#ifdef MREMAP_MAYMOVE
+	data = mremap(pool->data, pool->external_refcount ? 0 : pool->size, pool->new_size, MREMAP_MAYMOVE);
+#else
+	data = wl_os_mremap_maymove(pool->mmap_fd, pool->data, &pool->size,
+				    pool->new_size, pool->mmap_prot,
+				    pool->mmap_flags, pool->external_refcount > 0);
+	if (pool->size != 0) {
+		wl_resource_post_error(pool->resource,
+				       WL_SHM_ERROR_INVALID_FD,
+				       "leaked old mapping");
+	}
+#endif
+	return data;
+}
+
 static void
 shm_pool_unref(struct wl_shm_pool *pool, bool external)
 {
     struct wl_shm_pool_mapping *mapping, *tmp_mapping;
-	if (external) {
+
+    if (external) {
 		pool->external_refcount--;
-        if(pool->external_refcount == 0) {
-            wl_list_for_each_safe(mapping, tmp_mapping, &pool->mappings, link) {
-                munmap(mapping->data, mapping->size);
-                wl_list_remove(&mapping->link);
-                free(mapping);
-            }
-            wl_list_init(&pool->mappings);
-        }
+		assert(pool->external_refcount >= 0);
+		if (pool->external_refcount == 0) {
+			wl_list_for_each_safe(mapping, tmp_mapping, &pool->mappings, link) {
+				munmap(mapping->data, mapping->size);
+				wl_list_remove(&mapping->link);
+				free(mapping);
+			}
+			wl_list_init(&pool->mappings);
+		}
 	} else {
 		pool->internal_refcount--;
+		assert(pool->internal_refcount >= 0);
 	}
 
-	if (pool->internal_refcount + pool->external_refcount)
+	if (pool->internal_refcount + pool->external_refcount > 0)
 		return;
 
 	munmap(pool->data, pool->size);
+	close(pool->mmap_fd);
 	free(pool);
 }
 
@@ -112,8 +156,7 @@ destroy_buffer(struct wl_resource *resource)
 {
 	struct wl_shm_buffer *buffer = wl_resource_get_user_data(resource);
 
-	if (buffer->pool)
-		shm_pool_unref(buffer->pool, false);
+	shm_pool_unref(buffer->pool, false);
 	free(buffer);
 }
 
@@ -165,7 +208,7 @@ shm_pool_create_buffer(struct wl_client *client, struct wl_resource *resource,
 	}
 
 	if (offset < 0 || width <= 0 || height <= 0 || stride < width ||
-	    INT32_MAX / stride <= height ||
+	    INT32_MAX / stride < height ||
 	    offset > pool->size - stride * height) {
 		wl_resource_post_error(resource,
 				       WL_SHM_ERROR_INVALID_STRIDE,
@@ -221,41 +264,43 @@ shm_pool_resize(struct wl_client *client, struct wl_resource *resource,
 		int32_t size)
 {
 	struct wl_shm_pool *pool = wl_resource_get_user_data(resource);
-    void *data;
-    struct wl_shm_pool_mapping *mapping;
+	struct wl_shm_pool_mapping *mapping;
+	void *data;
 
-
-    if (size < pool->size) {
+	if (size < pool->size) {
 		wl_resource_post_error(resource,
-				       WL_SHM_ERROR_INVALID_FD,
-				       "shrinking pool invalid");
+							   WL_SHM_ERROR_INVALID_FD,
+							   "shrinking pool invalid");
 		return;
 	}
 
 	pool->new_size = size;
 
-    if (pool->size == pool->new_size)
-        return;
 
-    data = mremap(pool->data, pool->external_refcount ? 0 : pool->size, pool->new_size, MREMAP_MAYMOVE);
+	if (pool->size == pool->new_size)
+		return;
 
-    // keep track of mappings, so we can clean them up once the pool ref drops to zero.
-    if(pool->external_refcount && data != pool->data) {
-        mapping = malloc(sizeof(struct wl_shm_pool_mapping));
-        mapping->data = pool->data;
-        mapping->size = pool->size;
-        wl_list_insert(&pool->mappings, &mapping->link);
-    }
+	data = shm_pool_grow_mapping(pool);
 
-    if (data == MAP_FAILED) {
-        wl_resource_post_error(pool->resource,
-                               WL_SHM_ERROR_INVALID_FD,
-                               "failed mremap");
-        return;
-    }
+	/*
+	 * keep track of previous mappings, we clean them up once the pool external_refcount drops to zero.
+	 */
+	if(pool->external_refcount && data != pool->data) {
+		mapping = malloc(sizeof(struct wl_shm_pool_mapping));
+		mapping->data = pool->data;
+		mapping->size = pool->size;
+		wl_list_insert(&pool->mappings, &mapping->link);
+	}
 
-    pool->data = data;
-    pool->size = pool->new_size;
+	if (data == MAP_FAILED) {
+		wl_resource_post_error(pool->resource,
+								WL_SHM_ERROR_INVALID_FD,
+								"failed mremap");
+		return;
+	}
+
+	pool->data = data;
+	pool->size = pool->new_size;
 }
 
 static const struct wl_shm_pool_interface shm_pool_interface = {
@@ -269,6 +314,10 @@ shm_create_pool(struct wl_client *client, struct wl_resource *resource,
 		uint32_t id, int fd, int32_t size)
 {
 	struct wl_shm_pool *pool;
+	struct stat statbuf;
+	int seals;
+	int prot;
+	int flags;
 
 	if (size <= 0) {
 		wl_resource_post_error(resource,
@@ -283,21 +332,36 @@ shm_create_pool(struct wl_client *client, struct wl_resource *resource,
 		goto err_close;
 	}
 
+#ifdef HAVE_MEMFD_CREATE
+	seals = fcntl(fd, F_GET_SEALS);
+	if (seals == -1)
+		seals = 0;
+
+	if ((seals & F_SEAL_SHRINK) && fstat(fd, &statbuf) >= 0)
+		pool->sigbus_is_impossible = statbuf.st_size >= size;
+	else
+		pool->sigbus_is_impossible = false;
+#else
+	pool->sigbus_is_impossible = false;
+#endif
+
 	pool->internal_refcount = 1;
 	pool->external_refcount = 0;
 	pool->size = size;
 	pool->new_size = size;
-    wl_list_init(&pool->mappings);
-	pool->data = mmap(NULL, size,
-			  PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	prot = PROT_READ | PROT_WRITE;
+	flags = MAP_SHARED;
+	pool->data = mmap(NULL, size, prot, flags, fd, 0);
 	if (pool->data == MAP_FAILED) {
-		wl_resource_post_error(resource,
-				       WL_SHM_ERROR_INVALID_FD,
-				       "failed mmap fd %d: %m", fd);
+		wl_resource_post_error(resource, WL_SHM_ERROR_INVALID_FD,
+				       "failed mmap fd %d: %s", fd,
+				       strerror(errno));
 		goto err_free;
 	}
-	close(fd);
-
+	/* We may need to keep the fd, prot and flags to emulate mremap(). */
+	pool->mmap_fd = fd;
+	pool->mmap_prot = prot;
+	pool->mmap_flags = flags;
 	pool->resource =
 		wl_resource_create(client, &wl_shm_pool_interface, 1, id);
 	if (!pool->resource) {
@@ -306,6 +370,7 @@ shm_create_pool(struct wl_client *client, struct wl_resource *resource,
 		free(pool);
 		return;
 	}
+	wl_list_init(&pool->mappings);
 
 	wl_resource_set_implementation(pool->resource,
 				       &shm_pool_interface,
@@ -396,12 +461,12 @@ wl_shm_buffer_get_stride(struct wl_shm_buffer *buffer)
 WL_EXPORT void *
 wl_shm_buffer_get_data(struct wl_shm_buffer *buffer)
 {
-	assert(buffer->pool);
-
-	if (!buffer->pool)
-		return NULL;
-
-    return buffer->pool->data + buffer->offset;
+	if (buffer->pool->external_refcount &&
+	    (buffer->pool->size != buffer->pool->new_size))
+		wl_log("Buffer address requested when its parent pool "
+		       "has an external reference and a deferred resize "
+		       "pending.\n");
+	return buffer->pool->data + buffer->offset;
 }
 
 WL_EXPORT uint32_t
@@ -502,10 +567,8 @@ sigbus_handler(int signum, siginfo_t *info, void *context)
 	sigbus_data->fallback_mapping_used = 1;
 
 	/* This should replace the previous mapping */
-	if (mmap(pool->data, pool->size,
-		 PROT_READ | PROT_WRITE,
-		 MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS,
-		 0, 0) == (void *) -1) {
+	if (mmap(pool->data, pool->size, PROT_READ | PROT_WRITE,
+		 MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, 0, 0) == MAP_FAILED) {
 		reraise_sigbus();
 		return;
 	}
@@ -576,6 +639,9 @@ wl_shm_buffer_begin_access(struct wl_shm_buffer *buffer)
 	struct wl_shm_pool *pool = buffer->pool;
 	struct wl_shm_sigbus_data *sigbus_data;
 
+	if (pool->sigbus_is_impossible)
+		return;
+
 	pthread_once(&wl_shm_sigbus_once, init_sigbus_data_key);
 
 	sigbus_data = pthread_getspecific(wl_shm_sigbus_data_key);
@@ -608,9 +674,13 @@ wl_shm_buffer_begin_access(struct wl_shm_buffer *buffer)
 WL_EXPORT void
 wl_shm_buffer_end_access(struct wl_shm_buffer *buffer)
 {
-	struct wl_shm_sigbus_data *sigbus_data =
-		pthread_getspecific(wl_shm_sigbus_data_key);
+	struct wl_shm_pool *pool = buffer->pool;
+	struct wl_shm_sigbus_data *sigbus_data;
 
+	if (pool->sigbus_is_impossible)
+		return;
+
+	sigbus_data = pthread_getspecific(wl_shm_sigbus_data_key);
 	assert(sigbus_data && sigbus_data->access_count >= 1);
 
 	if (--sigbus_data->access_count == 0) {

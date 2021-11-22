@@ -11,8 +11,10 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <signal.h>
-#include <wayland-private.h>
 #include <wait.h>
+#include "wayland-server/wayland-private.h"
+#include "wayland-server/wayland-server.h"
+#include "wayland-server/wayland-util.h"
 
 #include "string-helpers.h"
 
@@ -360,8 +362,8 @@ westfield_xserver_exited(struct westfield_xserver *wxs,
 
 static void
 xserver_cleanup(struct westfield_process *process, int status) {
-    struct westfield_xwayland *wxw =
-            container_of(process, struct westfield_xwayland, process);
+    struct westfield_xwayland *wxw;
+    wxw = wl_container_of(process, wxw, process);
 
     westfield_xserver_exited(wxw->xserver, status);
 }

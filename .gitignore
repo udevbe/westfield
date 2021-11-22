@@ -98,3 +98,5 @@ fabric.properties
 /server/node/endpoint/build/
 /server/node/endpoint/src/libwayland-server.so
 /server/node/endpoint/cmake-build-debug/
+/server/node/endpoint/native/src/wayland-upstream/
+/server/node/endpoint/wayland/

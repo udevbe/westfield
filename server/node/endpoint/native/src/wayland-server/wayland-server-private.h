@@ -1,5 +1,7 @@
 /*
- * Copyright © 2012 Collabora, Ltd.
+ * Copyright © 2008-2011 Kristian Høgsberg
+ * Copyright © 2011 Intel Corporation
+ * Copyright © 2013 Jason Ekstrand
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -23,54 +25,29 @@
  * SOFTWARE.
  */
 
-#ifndef WAYLAND_OS_H
-#define WAYLAND_OS_H
+#ifndef WAYLAND_SERVER_PRIVATE_H
+#define WAYLAND_SERVER_PRIVATE_H
 
-#include <sys/types.h>
-#include <sys/socket.h>
+#include "wayland-server-core.h"
 
-int
-wl_os_socket_cloexec(int domain, int type, int protocol);
+struct wl_priv_signal {
+	struct wl_list listener_list;
+	struct wl_list emit_list;
+};
 
-int
-wl_os_socket_peercred(int sockfd, uid_t *uid, gid_t *gid, pid_t *pid);
+void
+wl_priv_signal_init(struct wl_priv_signal *signal);
 
-int
-wl_os_dupfd_cloexec(int fd, int minfd);
+void
+wl_priv_signal_add(struct wl_priv_signal *signal, struct wl_listener *listener);
 
-ssize_t
-wl_os_recvmsg_cloexec(int sockfd, struct msghdr *msg, int flags);
+struct wl_listener *
+wl_priv_signal_get(struct wl_priv_signal *signal, wl_notify_func_t notify);
 
-int
-wl_os_epoll_create_cloexec(void);
+void
+wl_priv_signal_emit(struct wl_priv_signal *signal, void *data);
 
-int
-wl_os_accept_cloexec(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
-
-void *
-wl_os_mremap_maymove(int fd, void *old_data, ssize_t *old_size,
-		     ssize_t new_size, int prot, int flags, int keep_mapping);
-
-
-/*
- * The following are for wayland-os.c and the unit tests.
- * Do not use them elsewhere.
- */
-
-#ifdef __linux__
-
-#ifndef SOCK_CLOEXEC
-#define SOCK_CLOEXEC 02000000
-#endif
-
-#ifndef F_DUPFD_CLOEXEC
-#define F_DUPFD_CLOEXEC 1030
-#endif
-
-#ifndef MSG_CMSG_CLOEXEC
-#define MSG_CMSG_CLOEXEC 0x40000000
-#endif
-
-#endif /* __linux__ */
+void
+wl_priv_signal_final_emit(struct wl_priv_signal *signal, void *data);
 
 #endif

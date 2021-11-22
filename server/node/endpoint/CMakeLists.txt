@@ -4,6 +4,7 @@ project(westfield-native C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED TRUE)
 #set(CMAKE_BUILD_TYPE "Debug")
+set(CMAKE_BUILD_TYPE "Release")
 
 execute_process(COMMAND node -p "require('node-api-headers').include_dir"
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -25,6 +26,7 @@ add_library(wayland-server SHARED
         native/src/wayland-server/wayland-private.h
         native/src/wayland-server/wayland-server.h
         native/src/wayland-server/wayland-server.c
+        native/src/wayland-server/wayland-server-private.h
         native/src/wayland-server/wayland-server-core.h
         native/src/wayland-server/wayland-shm.c
         native/src/wayland-server/wayland-util.h
