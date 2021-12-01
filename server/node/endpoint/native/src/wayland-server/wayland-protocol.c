@@ -29,7 +29,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "../wayland-util.h"
+#include "wayland-util.h"
 
 extern const struct wl_interface wl_buffer_interface;
 extern const struct wl_interface wl_callback_interface;

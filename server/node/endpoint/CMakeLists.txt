@@ -16,8 +16,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
 find_package(LibFFI REQUIRED)
 
 add_library(wayland-server SHARED
-        native/src/wayland-server/protocol/wayland-server-protocol.h
-        native/src/wayland-server/protocol/wayland-protocol.c
+        native/src/wayland-server/wayland-server-protocol.h
+        native/src/wayland-server/wayland-protocol.c
         native/src/wayland-server/westfield-extra.h
         native/src/wayland-server/connection.c
         native/src/wayland-server/event-loop.c

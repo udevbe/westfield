@@ -1,6 +1,6 @@
 diff -urN src/wayland-upstream/connection.c src/wayland-server/connection.c
---- src/wayland-upstream/connection.c	2021-11-30 14:45:00.848863885 +0100
-+++ src/wayland-server/connection.c	2021-11-30 14:45:00.868863899 +0100
+--- src/wayland-upstream/connection.c	2021-11-30 14:49:40.105066857 +0100
++++ src/wayland-server/connection.c	2021-11-30 17:08:08.471284813 +0100
 @@ -285,7 +285,7 @@
  	return 0;
  }
@@ -47,21 +47,9 @@ diff -urN src/wayland-upstream/connection.c src/wayland-server/connection.c
 +	ring_buffer_copy(&connection->fds_in, fds_in, size);
 +	connection->fds_in.tail += size;
 +}
-diff -urN src/wayland-upstream/protocol/wayland-protocol.c src/wayland-server/protocol/wayland-protocol.c
---- src/wayland-upstream/protocol/wayland-protocol.c	2021-11-30 14:45:00.848863885 +0100
-+++ src/wayland-server/protocol/wayland-protocol.c	2021-11-30 14:45:00.868863899 +0100
-@@ -29,7 +29,7 @@
- 
- #include <stdlib.h>
- #include <stdint.h>
--#include "wayland-util.h"
-+#include "../wayland-util.h"
- 
- extern const struct wl_interface wl_buffer_interface;
- extern const struct wl_interface wl_callback_interface;
 diff -urN src/wayland-upstream/wayland-os.c src/wayland-server/wayland-os.c
---- src/wayland-upstream/wayland-os.c	2021-11-30 14:45:00.856863891 +0100
-+++ src/wayland-server/wayland-os.c	2021-11-30 14:45:00.868863899 +0100
+--- src/wayland-upstream/wayland-os.c	2021-11-30 14:49:40.109066859 +0100
++++ src/wayland-server/wayland-os.c	2021-11-30 17:08:08.475284819 +0100
 @@ -25,8 +25,6 @@
  
  #define _GNU_SOURCE
@@ -90,8 +78,8 @@ diff -urN src/wayland-upstream/wayland-os.c src/wayland-server/wayland-os.c
  		}
  	}
 diff -urN src/wayland-upstream/wayland-os.h src/wayland-server/wayland-os.h
---- src/wayland-upstream/wayland-os.h	2021-11-30 14:45:00.852863888 +0100
-+++ src/wayland-server/wayland-os.h	2021-11-30 14:45:00.868863899 +0100
+--- src/wayland-upstream/wayland-os.h	2021-11-30 14:49:40.105066857 +0100
++++ src/wayland-server/wayland-os.h	2021-11-30 17:08:08.475284819 +0100
 @@ -49,7 +49,7 @@
  
  void *
@@ -102,8 +90,8 @@ diff -urN src/wayland-upstream/wayland-os.h src/wayland-server/wayland-os.h
  
  /*
 diff -urN src/wayland-upstream/wayland-server.c src/wayland-server/wayland-server.c
---- src/wayland-upstream/wayland-server.c	2021-11-30 14:45:00.860863893 +0100
-+++ src/wayland-server/wayland-server.c	2021-11-30 14:45:00.868863899 +0100
+--- src/wayland-upstream/wayland-server.c	2021-11-30 14:49:40.113066862 +0100
++++ src/wayland-server/wayland-server.c	2021-11-30 17:08:08.479284824 +0100
 @@ -49,6 +49,7 @@
  #include "wayland-server-private.h"
  #include "wayland-server.h"
@@ -315,7 +303,7 @@ diff -urN src/wayland-upstream/wayland-server.c src/wayland-server/wayland-serve
 +}
 diff -urN src/wayland-upstream/wayland-server-private.h src/wayland-server/wayland-server-private.h
 --- src/wayland-upstream/wayland-server-private.h	1970-01-01 01:00:00.000000000 +0100
-+++ src/wayland-server/wayland-server-private.h	2021-11-30 14:45:00.868863899 +0100
++++ src/wayland-server/wayland-server-private.h	2021-11-30 17:08:08.475284819 +0100
 @@ -0,0 +1,53 @@
 +/*
 + * Copyright © 2008-2011 Kristian Høgsberg
@@ -371,8 +359,8 @@ diff -urN src/wayland-upstream/wayland-server-private.h src/wayland-server/wayla
 +
 +#endif
 diff -urN src/wayland-upstream/wayland-shm.c src/wayland-server/wayland-shm.c
---- src/wayland-upstream/wayland-shm.c	2021-11-30 14:45:00.860863893 +0100
-+++ src/wayland-server/wayland-shm.c	2021-11-30 14:45:00.868863899 +0100
+--- src/wayland-upstream/wayland-shm.c	2021-11-30 14:49:40.113066862 +0100
++++ src/wayland-server/wayland-shm.c	2021-11-30 17:08:08.479284824 +0100
 @@ -30,8 +30,6 @@
  
  #define _GNU_SOURCE
@@ -525,7 +513,7 @@ diff -urN src/wayland-upstream/wayland-shm.c src/wayland-server/wayland-shm.c
  				       &shm_pool_interface,
 diff -urN src/wayland-upstream/westfield-extra.h src/wayland-server/westfield-extra.h
 --- src/wayland-upstream/westfield-extra.h	1970-01-01 01:00:00.000000000 +0100
-+++ src/wayland-server/westfield-extra.h	2021-11-30 14:45:00.872863902 +0100
++++ src/wayland-server/westfield-extra.h	2021-11-30 17:07:44.411254071 +0100
 @@ -0,0 +1,82 @@
 +/*
 + * Copyright © 2018 Erik De Rijcke

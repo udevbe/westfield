@@ -13,8 +13,8 @@ clone_wayland_repo() {
 
 copy_wayland_server_sources() {
     mkdir -p native/src/wayland-upstream/protocol
-    cp wayland/build/src/wayland-protocol.c native/src/wayland-upstream/protocol/wayland-protocol.c
-    cp wayland/build/src/wayland-server-protocol.h native/src/wayland-upstream/protocol/wayland-server-protocol.h
+    cp wayland/build/src/wayland-protocol.c native/src/wayland-upstream/wayland-protocol.c
+    cp wayland/build/src/wayland-server-protocol.h native/src/wayland-upstream/wayland-server-protocol.h
     cp wayland/build/src/wayland-version.h native/src/wayland-upstream/wayland-version.h
 
     for i in connection.c wayland-os.h wayland-server-core.h wayland-util.h wayland-util.c event-loop.c wayland-os.c wayland-private.h wayland-server.h wayland-server.c wayland-shm.c
