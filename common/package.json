@@ -1,6 +1,6 @@
 {
   "name": "westfield-runtime-common",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Wayland HTML5 common client-server runtime",
   "module": "dist/index.js",
   "typings": "types/index.d.ts",
