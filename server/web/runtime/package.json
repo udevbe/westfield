@@ -48,6 +48,6 @@
     "westfield-scanner-server": "0.5.1"
   },
   "peerDependencies": {
-    "westfield-runtime-common": "0.5.0"
+    "westfield-runtime-common": "0.5.1"
   }
 }
