@@ -41,16 +41,14 @@ export class Client implements DisplayRequests {
     this.connection = new Connection()
     this.displayResource = new DisplayResource(this, 1, 0)
     this.displayResource.implementation = this
+
+    this.connection.onClose.then(()=>this.close())
   }
 
   close() {
-    if (this.connection.closed) {
-      return
+    if (!this.connection.closed) {
+      this.connection.close()
     }
-    this.connection.close()
-
-    // destroy resources in descending order
-    Object.values(this.connection.wlObjects).sort((a, b) => a.id - b.id).forEach((resource) => resource.destroy())
     this._destroyedResolver()
   }
 

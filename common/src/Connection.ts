@@ -495,6 +495,9 @@ export class Connection {
   onFlush?: (outMsg: SendMessage[]) => void
   private _outMessages: SendMessage[] = []
   private _inMessages: WlMessage[] = []
+  // @ts-ignore
+  private onCloseResolve: (value: (PromiseLike<void> | void)) => void
+  readonly onClose = new Promise<void>((resolve)=>this.onCloseResolve = resolve)
 
   marshallMsg(id: number, opcode: number, size: number, argsArray: MessageMarshallingContext<any, any, any>[]) {
     const wireMsg = {
@@ -547,33 +550,42 @@ export class Connection {
           const opcode = sizeOpcode & 0x0000FFFF
 
           if (wireMessages.size > wireMessages.buffer.byteLength) {
+            this.close()
             throw new Error('Request buffer too small')
           }
 
           const wlObject = this.wlObjects[id]
-          if (wlObject) {
-            wireMessages.bufferOffset += 2
-            wireMessages.consumed = 8
-            try {
-              const promiseOrVoid = wlObject[opcode](wireMessages)
-              if (promiseOrVoid instanceof Promise) {
-                await promiseOrVoid
-              }
-            } catch (e) {
-              console.error(`
+          if (wlObject === undefined) {
+            this.close()
+            throw new Error(`invalid object ${id}`)
+          }
+
+          wireMessages.bufferOffset += 2
+          wireMessages.consumed = 8
+
+          const action = wlObject[opcode]
+          if (action === undefined) {
+            this.close()
+            throw new Error(`invalid opcode ${opcode}`)
+          }
+
+          try {
+            const promiseOrVoid = action.call(wlObject,wireMessages)
+            if (promiseOrVoid instanceof Promise) {
+              await promiseOrVoid
+            }
+          } catch (e: any) {
+            console.error(`
 wlObject: ${wlObject.constructor.name}[${opcode}](..)
 name: ${e.name} message: ${e.message} text: ${e.text}
 error object stack:
 ${e.stack}
 `)
-              this.close()
-              throw e
-            }
-            if (this.closed) {
-              return
-            }
-          } else {
-            throw new Error(`invalid object ${id}`)
+            this.close()
+            throw e
+          }
+          if (this.closed) {
+            return
           }
         }
       }
@@ -585,7 +597,7 @@ ${e.stack}
   }
 
   /**
-   * This doesn't actually send the message, but queues it so it can be send on flush.
+   * This doesn't actually send the message, but queues it, so it can be sent on flush.
    */
   onSend(wireMsg: SendMessage) {
     if (this.closed) {
@@ -615,6 +627,7 @@ ${e.stack}
     // destroy resources in descending order
     Object.values(this.wlObjects).sort((a, b) => a.id - b.id).forEach((wlObject) => wlObject.destroy())
     this.closed = true
+    this.onCloseResolve()
   }
 
   registerWlObject(wlObject: WlObject) {
