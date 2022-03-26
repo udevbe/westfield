@@ -29,7 +29,7 @@ class Fixed {
    * @param {number}number
    * @return {Fixed}
    */
-  static parse (number) {
+  static parse(number) {
     return new Fixed((number * 256.0) >> 0)
   }
 
@@ -38,8 +38,8 @@ class Fixed {
    *
    * @returns {number}
    */
-  asInt () {
-    return ((this._raw / 256.0) >> 0)
+  asInt() {
+    return (this._raw / 256.0) >> 0
   }
 
   /**
@@ -47,7 +47,7 @@ class Fixed {
    *
    * @returns {number}
    */
-  asDouble () {
+  asDouble() {
     return this._raw / 256.0
   }
 
@@ -55,7 +55,7 @@ class Fixed {
    * use parseFixed instead
    * @param {number}raw
    */
-  constructor (raw) {
+  constructor(raw) {
     this._raw = raw
   }
 }

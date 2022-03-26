@@ -8,7 +8,7 @@ class WireMessageUtil {
    * @param {number}consumption
    * @private
    */
-  static _checkMessageSize (wireMsg, consumption) {
+  static _checkMessageSize(wireMsg, consumption) {
     if (wireMsg.consumed + consumption > wireMsg.size) {
       throw new Error(`Request too short. Message max. size: ${wireMsg.size}, have: ${wireMsg.consumed + consumption}`)
     } else {
@@ -21,7 +21,8 @@ class WireMessageUtil {
    * @param {{buffer: ArrayBuffer, fds: Array, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @returns {number}
    */
-  static u (wireMsg) { // unsigned integer {number}
+  static u(wireMsg) {
+    // unsigned integer {number}
     const argSize = 4
     this._checkMessageSize(wireMsg, argSize)
 
@@ -36,7 +37,8 @@ class WireMessageUtil {
    * @param {{buffer: ArrayBuffer, fds: Array, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @returns {number}
    */
-  static i (wireMsg) { // integer {number}
+  static i(wireMsg) {
+    // integer {number}
     const argSize = 4
     this._checkMessageSize(wireMsg, argSize)
 
@@ -50,7 +52,8 @@ class WireMessageUtil {
    * @param {{buffer: ArrayBuffer, fds: Array, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @returns {number}
    */
-  static f (wireMsg) { // float {number}
+  static f(wireMsg) {
+    // float {number}
     const argSize = 4
     this._checkMessageSize(wireMsg, argSize)
 
@@ -65,7 +68,7 @@ class WireMessageUtil {
    * @param {Boolean} optional
    * @returns {number}
    */
-  static o (wireMsg, optional) {
+  static o(wireMsg, optional) {
     const argSize = 4
     this._checkMessageSize(wireMsg, argSize)
 
@@ -79,7 +82,7 @@ class WireMessageUtil {
    * @param {{buffer: ArrayBuffer, fds: Array, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @returns {number}
    */
-  static n (wireMsg) {
+  static n(wireMsg) {
     const argSize = 4
     this._checkMessageSize(wireMsg, argSize)
 
@@ -94,7 +97,8 @@ class WireMessageUtil {
    * @param {Boolean} optional
    * @returns {String}
    */
-  static s (wireMsg, optional) { // {String}
+  static s(wireMsg, optional) {
+    // {String}
     const argSize = 4
     this._checkMessageSize(wireMsg, argSize)
 
@@ -103,7 +107,7 @@ class WireMessageUtil {
     if (optional && stringSize === 0) {
       return null
     } else {
-      const alignedSize = ((stringSize + 3) & ~3)
+      const alignedSize = (stringSize + 3) & ~3
       this._checkMessageSize(wireMsg, alignedSize)
       const byteArray = new Uint8Array(wireMsg.buffer, wireMsg.bufferOffset, stringSize - 1)
       wireMsg.bufferOffset += alignedSize
@@ -117,7 +121,7 @@ class WireMessageUtil {
    * @param {Boolean} optional
    * @returns {ArrayBuffer}
    */
-  static a (wireMsg, optional) {
+  static a(wireMsg, optional) {
     const argSize = 4
     this._checkMessageSize(wireMsg, argSize)
 
@@ -126,7 +130,7 @@ class WireMessageUtil {
     if (optional && arraySize === 0) {
       return null
     } else {
-      const alignedSize = ((arraySize + 3) & ~3)
+      const alignedSize = (arraySize + 3) & ~3
       this._checkMessageSize(wireMsg, alignedSize)
       const arg = wireMsg.buffer.slice(wireMsg.bufferOffset, wireMsg.bufferOffset + arraySize)
       wireMsg.bufferOffset += alignedSize
@@ -139,7 +143,7 @@ class WireMessageUtil {
    * @param {{buffer: ArrayBuffer, fds: Array, bufferOffset: number, consumed: number, size: number}} wireMsg
    * @returns {number}
    */
-  static h (wireMsg) {
+  static h(wireMsg) {
     if (wireMsg.fds.length) {
       return wireMsg.fds.shift()
     } else {
@@ -153,7 +157,7 @@ class WireMessageUtil {
    * @param {string} argsSignature
    * @returns {Array<*>}
    */
-  static unmarshallArgs (message, argsSignature) {
+  static unmarshallArgs(message, argsSignature) {
     const argsSigLength = argsSignature.length
     const args = []
     let optional = false

@@ -54,7 +54,7 @@ typedef int (*wl_connection_wire_message_t)(struct wl_client *client, int32_t *w
 void
 wl_client_set_wire_message_cb(struct wl_client *client, wl_connection_wire_message_t wire_message_cb);
 
-typedef void (*wl_connection_wire_message_end_t)(struct wl_client *client, int *fds_in, size_t fds_in_size);
+typedef void (*wl_connection_wire_message_end_t)(struct wl_client *client);
 
 void
 wl_client_set_wire_message_end_cb(struct wl_client *client, wl_connection_wire_message_end_t wire_message_end_cb);

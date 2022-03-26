@@ -29,12 +29,12 @@ export class WlObject {
   readonly id: number
   // @ts-ignore
   private _destroyResolver: () => void
-  private readonly _destroyPromise: Promise<void> = new Promise(resolve => this._destroyResolver = resolve)
+  private readonly _destroyPromise: Promise<void> = new Promise((resolve) => (this._destroyResolver = resolve))
   private _destroyListeners: ((wlObject: WlObject) => void)[] = []
 
   constructor(id: number) {
     this.id = id
-    this._destroyPromise.then(() => this._destroyListeners.forEach(destroyListener => destroyListener(this)))
+    this._destroyPromise.then(() => this._destroyListeners.forEach((destroyListener) => destroyListener(this)))
   }
 
   destroy() {
@@ -74,7 +74,7 @@ export class Fixed {
    *
    */
   asInt(): number {
-    return ((this._raw / 256.0) >> 0)
+    return (this._raw / 256.0) >> 0
   }
 
   /**
@@ -86,57 +86,35 @@ export class Fixed {
   }
 }
 
-export class WebFD {
-  readonly fd: number
-  readonly type: 'ImageBitmap' | 'ArrayBuffer' | 'MessagePort' | 'OffscreenCanvas'
-  readonly url: URL
-  private readonly _onGetTransferable: (webFd: WebFD) => Promise<Transferable>
-  private readonly _onClose: (webFd: WebFD) => void
-
-  constructor(
-    fd: number,
-    fdType: 'ImageBitmap' | 'ArrayBuffer' | 'MessagePort' | 'OffscreenCanvas',
-    fdURL: URL,
-    onGetTransferable: (webFd: WebFD) => Promise<Transferable>,
-    onClose: (webFd: WebFD) => void
-  ) {
-    this.fd = fd
-    this.type = fdType
-    this.url = fdURL
-    this._onGetTransferable = onGetTransferable
-    this._onClose = onClose
-  }
-
-  async getTransferable(): Promise<Transferable> {
-    return await this._onGetTransferable(this)
-  }
-
-  close() {
-    this._onClose(this)
-  }
+export interface WebFD {
+  readonly handle: unknown
+  readonly type: string | 'unknown'
+  readonly host: string
 }
 
-export interface MessageMarshallingContext<V extends number | WebFD | Fixed | WlObject | 0 | string | ArrayBufferView | undefined,
+export interface MessageMarshallingContext<
+  V extends number | WebFD | Fixed | WlObject | 0 | string | ArrayBufferView | undefined,
   T extends 'u' | 'h' | 'i' | 'f' | 'o' | 'n' | 's' | 'a',
-  S extends 0 | 4 | number> {
-  value: V,
-  readonly type: T,
-  readonly size: number,
-  readonly optional: boolean,
-  readonly _marshallArg: (wireMsg: { buffer: ArrayBuffer, fds: Array<WebFD>, bufferOffset: number }) => void
+  S extends 0 | 4 | number,
+> {
+  value: V
+  readonly type: T
+  readonly size: number
+  readonly optional: boolean
+  readonly _marshallArg: (wireMsg: { buffer: ArrayBuffer; fds: Array<WebFD>; bufferOffset: number }) => void
   readonly toString: () => string
 }
 
 export interface WlMessage {
-  buffer: Uint32Array,
-  fds: Array<WebFD>,
-  bufferOffset: number,
-  consumed: number,
+  buffer: Uint32Array
+  fds: Array<WebFD>
+  bufferOffset: number
+  consumed: number
   size: number
 }
 
 export interface SendMessage {
-  buffer: ArrayBuffer,
+  buffer: ArrayBuffer
   fds: Array<WebFD>
 }
 
@@ -146,28 +124,33 @@ export function uint(arg: number): MessageMarshallingContext<number, 'u', 4> {
     type: 'u',
     size: 4,
     optional: false,
-    _marshallArg: function(wireMsg) {
+    _marshallArg(wireMsg) {
       new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = arg
       wireMsg.bufferOffset += this.size
     },
-    toString: function() {
+    toString() {
       return `{type: ${this.type}, value: ${this.value}}`
-    }
+    },
   }
 }
 
-export function fileDescriptor(arg: WebFD): MessageMarshallingContext<WebFD, 'h', 0> {
+export function fileDescriptor(
+  arg: WebFD,
+  marshallArg: (wireMsg: { buffer: ArrayBuffer; fds: Array<WebFD>; bufferOffset: number }) => void = function (
+    wireMsg,
+  ) {
+    wireMsg.fds.push(arg)
+  },
+): MessageMarshallingContext<WebFD, 'h', 0> {
   return {
     value: arg,
     type: 'h',
     size: 0, // file descriptors are not added to the message size because they are somewhat considered meta data.
     optional: false,
-    _marshallArg: function(wireMsg) {
-      wireMsg.fds.push(arg)
-    },
-    toString: function() {
+    _marshallArg: marshallArg,
+    toString() {
       return `{type: ${this.type}, value: ${this.value}}`
-    }
+    },
   }
 }
 
@@ -177,13 +160,13 @@ export function int(arg: number): MessageMarshallingContext<number, 'i', 4> {
     type: 'i',
     size: 4,
     optional: false,
-    _marshallArg: function(wireMsg) {
+    _marshallArg(wireMsg) {
       new Int32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value
       wireMsg.bufferOffset += this.size
     },
-    toString: function() {
+    toString() {
       return `{type: ${this.type}, value: ${this.value}}`
-    }
+    },
   }
 }
 
@@ -193,13 +176,13 @@ export function fixed(arg: Fixed): MessageMarshallingContext<Fixed, 'f', 4> {
     type: 'f',
     size: 4,
     optional: false,
-    _marshallArg: function(wireMsg) {
+    _marshallArg(wireMsg) {
       new Int32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value._raw
       wireMsg.bufferOffset += this.size
     },
-    toString: function() {
+    toString() {
       return `{type: ${this.type}, value: ${this.value}}`
-    }
+    },
   }
 }
 
@@ -209,13 +192,13 @@ export function object(arg: WlObject): MessageMarshallingContext<WlObject, 'o', 
     type: 'o',
     size: 4,
     optional: false,
-    _marshallArg: function(wireMsg) {
+    _marshallArg(wireMsg) {
       new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value.id
       wireMsg.bufferOffset += this.size
     },
-    toString: function() {
+    toString() {
       return `{type: ${this.type}, value: ${this.value}}`
-    }
+    },
   }
 }
 
@@ -225,13 +208,13 @@ export function objectOptional(arg?: WlObject): MessageMarshallingContext<WlObje
     type: 'o',
     size: 4,
     optional: true,
-    _marshallArg: function(wireMsg) {
-      new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = (this.value === undefined ? 0 : this.value.id)
+    _marshallArg(wireMsg) {
+      new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value === undefined ? 0 : this.value.id
       wireMsg.bufferOffset += this.size
     },
-    toString: function() {
+    toString() {
       return `{type: ${this.type}, value: ${this.value}}`
-    }
+    },
   }
 }
 
@@ -241,13 +224,13 @@ export function newObject(): MessageMarshallingContext<0, 'n', 4> {
     type: 'n',
     size: 4,
     optional: false,
-    _marshallArg: function(wireMsg) {
+    _marshallArg(wireMsg) {
       new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value
       wireMsg.bufferOffset += this.size
     },
-    toString: function() {
+    toString() {
       return `{type: ${this.type}, value: ${this.value}}`
-    }
+    },
   }
 }
 
@@ -255,13 +238,15 @@ export function string(arg: string): MessageMarshallingContext<string, 's', numb
   return {
     value: `${arg}\0`,
     type: 's',
-    size: 4 + (function() {
-      // fancy logic to calculate size with padding to a multiple of 4 bytes (int).
-      // length+1 for null terminator
-      return (arg.length + 1 + 3) & ~3
-    })(),
+    size:
+      4 +
+      (function () {
+        // fancy logic to calculate size with padding to a multiple of 4 bytes (int).
+        // length+1 for null terminator
+        return (arg.length + 1 + 3) & ~3
+      })(),
     optional: false,
-    _marshallArg: function(wireMsg) {
+    _marshallArg(wireMsg) {
       new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value.length
 
       const strLen = this.value.length
@@ -271,9 +256,9 @@ export function string(arg: string): MessageMarshallingContext<string, 's', numb
       }
       wireMsg.bufferOffset += this.size
     },
-    toString: function() {
+    toString() {
       return `{type: ${this.type}, value: ${this.value}}`
-    }
+    },
   }
 }
 
@@ -281,17 +266,19 @@ export function stringOptional(arg?: string): MessageMarshallingContext<string |
   return {
     value: arg ? `${arg}\0` : undefined,
     type: 's',
-    size: 4 + (function() {
-      if (arg === undefined) {
-        return 0
-      } else {
-        // fancy logic to calculate size with padding to a multiple of 4 bytes (int).
-        // length+1 for null terminator
-        return (arg.length + 1 + 3) & ~3
-      }
-    })(),
+    size:
+      4 +
+      (function () {
+        if (arg === undefined) {
+          return 0
+        } else {
+          // fancy logic to calculate size with padding to a multiple of 4 bytes (int).
+          // length+1 for null terminator
+          return (arg.length + 1 + 3) & ~3
+        }
+      })(),
     optional: true,
-    _marshallArg: function(wireMsg) {
+    _marshallArg(wireMsg) {
       if (this.value === undefined) {
         new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = 0
       } else {
@@ -305,9 +292,9 @@ export function stringOptional(arg?: string): MessageMarshallingContext<string |
       }
       wireMsg.bufferOffset += this.size
     },
-    toString: function() {
+    toString() {
       return `{type: ${this.type}, value: ${this.value}}`
-    }
+    },
   }
 }
 
@@ -315,52 +302,62 @@ export function array(arg: ArrayBufferView): MessageMarshallingContext<ArrayBuff
   return {
     value: arg,
     type: 'a',
-    size: 4 + (function() {
-      // fancy logic to calculate size with padding to a multiple of 4 bytes (int).
-      return (arg.byteLength + 3) & ~3
-    })(),
+    size:
+      4 +
+      (function () {
+        // fancy logic to calculate size with padding to a multiple of 4 bytes (int).
+        return (arg.byteLength + 3) & ~3
+      })(),
     optional: false,
-    _marshallArg: function(wireMsg) {
+    _marshallArg(wireMsg) {
       new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value.byteLength
 
       const byteLength = this.value.byteLength
-      new Uint8Array(wireMsg.buffer, wireMsg.bufferOffset + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength))
+      new Uint8Array(wireMsg.buffer, wireMsg.bufferOffset + 4, byteLength).set(
+        new Uint8Array(this.value.buffer, 0, byteLength),
+      )
 
       wireMsg.bufferOffset += this.size
     },
-    toString: function() {
+    toString() {
       return `{type: ${this.type}, value: ${this.value}}`
-    }
+    },
   }
 }
 
-export function arrayOptional(arg?: ArrayBufferView): MessageMarshallingContext<ArrayBufferView | undefined, 'a', number> {
+export function arrayOptional(
+  arg?: ArrayBufferView,
+): MessageMarshallingContext<ArrayBufferView | undefined, 'a', number> {
   return {
     value: arg,
     type: 'a',
-    size: 4 + (function() {
-      if (arg === undefined) {
-        return 0
-      } else {
-        // fancy logic to calculate size with padding to a multiple of 4 bytes (int).
-        return (arg.byteLength + 3) & ~3
-      }
-    })(),
+    size:
+      4 +
+      (function () {
+        if (arg === undefined) {
+          return 0
+        } else {
+          // fancy logic to calculate size with padding to a multiple of 4 bytes (int).
+          return (arg.byteLength + 3) & ~3
+        }
+      })(),
     optional: true,
-    _marshallArg: function(wireMsg) {
+    _marshallArg(wireMsg) {
       if (this.value === undefined) {
         new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = 0
       } else {
         new Uint32Array(wireMsg.buffer, wireMsg.bufferOffset, 1)[0] = this.value.byteLength
 
         const byteLength = this.value.byteLength
-        new Uint8Array(wireMsg.buffer, wireMsg.bufferOffset + 4, byteLength).set(new Uint8Array(this.value.buffer, 0, byteLength))
+        new Uint8Array(wireMsg.buffer, wireMsg.bufferOffset + 4, byteLength).set(
+          new Uint8Array(this.value.buffer, 0, byteLength),
+        )
       }
       wireMsg.bufferOffset += this.size
     },
-    toString: function() {
+    toString() {
       return `{type: ${this.type}, value: ${this.value}}`
-    }
+    },
   }
 }
 
@@ -379,14 +376,22 @@ export function u(message: WlMessage): number {
 
 export function i(message: WlMessage): number {
   checkMessageSize(message, 4)
-  const arg = new Int32Array(message.buffer.buffer, message.buffer.byteOffset + (message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT), 1)[0]
+  const arg = new Int32Array(
+    message.buffer.buffer,
+    message.buffer.byteOffset + message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT,
+    1,
+  )[0]
   message.bufferOffset += 1
   return arg
 }
 
 export function f(message: WlMessage): Fixed {
   checkMessageSize(message, 4)
-  const arg = new Int32Array(message.buffer.buffer, message.buffer.byteOffset + (message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT), 1)[0]
+  const arg = new Int32Array(
+    message.buffer.buffer,
+    message.buffer.byteOffset + message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT,
+    1,
+  )[0]
   message.bufferOffset += 1
   return new Fixed(arg >> 0)
 }
@@ -425,30 +430,40 @@ export function n(message: WlMessage): number {
   return message.buffer[message.bufferOffset++]
 }
 
-export function sOptional(message: WlMessage): string | undefined { // {String}
+export function sOptional(message: WlMessage): string | undefined {
+  // {String}
   checkMessageSize(message, 4)
   const stringSize = message.buffer[message.bufferOffset++]
   if (stringSize === 0) {
     return undefined
   } else {
-    const alignedSize = ((stringSize + 3) & ~3)
+    const alignedSize = (stringSize + 3) & ~3
     checkMessageSize(message, alignedSize)
     // size -1 to eliminate null byte
-    const byteArray = new Uint8Array(message.buffer.buffer, message.buffer.byteOffset + (message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT), stringSize - 1)
-    message.bufferOffset += (alignedSize / 4)
+    const byteArray = new Uint8Array(
+      message.buffer.buffer,
+      message.buffer.byteOffset + message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT,
+      stringSize - 1,
+    )
+    message.bufferOffset += alignedSize / 4
     return textDecoder.decode(byteArray)
   }
 }
 
-export function s(message: WlMessage): string { // {String}
+export function s(message: WlMessage): string {
+  // {String}
   checkMessageSize(message, 4)
   const stringSize = message.buffer[message.bufferOffset++]
 
-  const alignedSize = ((stringSize + 3) & ~3)
+  const alignedSize = (stringSize + 3) & ~3
   checkMessageSize(message, alignedSize)
   // size -1 to eliminate null byte
-  const byteArray = new Uint8Array(message.buffer.buffer, message.buffer.byteOffset + (message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT), stringSize - 1)
-  message.bufferOffset += (alignedSize / 4)
+  const byteArray = new Uint8Array(
+    message.buffer.buffer,
+    message.buffer.byteOffset + message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT,
+    stringSize - 1,
+  )
+  message.bufferOffset += alignedSize / 4
   return textDecoder.decode(byteArray)
 }
 
@@ -458,9 +473,12 @@ export function aOptional(message: WlMessage, optional: boolean): ArrayBuffer | 
   if (arraySize === 0) {
     return undefined
   } else {
-    const alignedSize = ((arraySize + 3) & ~3)
+    const alignedSize = (arraySize + 3) & ~3
     checkMessageSize(message, alignedSize)
-    const arg = message.buffer.buffer.slice(message.buffer.byteOffset + (message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT), message.buffer.byteOffset + (message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT) + arraySize)
+    const arg = message.buffer.buffer.slice(
+      message.buffer.byteOffset + message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT,
+      message.buffer.byteOffset + message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT + arraySize,
+    )
     message.bufferOffset += alignedSize
     return arg
   }
@@ -470,16 +488,20 @@ export function a(message: WlMessage): ArrayBuffer {
   checkMessageSize(message, 4)
   const arraySize = message.buffer[message.bufferOffset++]
 
-  const alignedSize = ((arraySize + 3) & ~3)
+  const alignedSize = (arraySize + 3) & ~3
   checkMessageSize(message, alignedSize)
-  const arg = message.buffer.buffer.slice(message.buffer.byteOffset + (message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT), message.buffer.byteOffset + (message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT) + arraySize)
+  const arg = message.buffer.buffer.slice(
+    message.buffer.byteOffset + message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT,
+    message.buffer.byteOffset + message.bufferOffset * Uint32Array.BYTES_PER_ELEMENT + arraySize,
+  )
   message.bufferOffset += alignedSize
   return arg
 }
 
-export function h(message: WlMessage): WebFD { // file descriptor {number}
+export function h(message: WlMessage): WebFD {
+  // file descriptor {number}
   if (message.fds.length > 0) {
-    let webFd = message.fds.shift()
+    const webFd = message.fds.shift()
     if (webFd === undefined) {
       throw new Error('No more webfds found in wl message.')
     }
@@ -491,19 +513,19 @@ export function h(message: WlMessage): WebFD { // file descriptor {number}
 
 export class Connection {
   readonly wlObjects: { [key: number]: WlObject } = {}
-  closed: boolean = false
+  closed = false
   onFlush?: (outMsg: SendMessage[]) => void
   private _outMessages: SendMessage[] = []
   private _inMessages: WlMessage[] = []
   // @ts-ignore
-  private onCloseResolve: (value: (PromiseLike<void> | void)) => void
-  readonly onClose = new Promise<void>((resolve)=>this.onCloseResolve = resolve)
+  private onCloseResolve: (value: PromiseLike<void> | void) => void
+  readonly onClose = new Promise<void>((resolve) => (this.onCloseResolve = resolve))
 
   marshallMsg(id: number, opcode: number, size: number, argsArray: MessageMarshallingContext<any, any, any>[]) {
     const wireMsg = {
       buffer: new ArrayBuffer(size),
       fds: [],
-      bufferOffset: 0
+      bufferOffset: 0,
     }
 
     // write actual wire message
@@ -522,18 +544,21 @@ export class Connection {
   /**
    * Handle received wire messages.
    */
-  async message(incomingWireMessages: { buffer: Uint32Array, fds: Array<WebFD> }): Promise<void> {
+  async message(incomingWireMessages: { buffer: Uint32Array; fds: Array<WebFD> }): Promise<void> {
     if (this.closed) {
       return
     }
 
     // more than one message in queue means the message loop is in await, don't concurrently process the new
     // message, instead return early and let the resume-from-await pick up the newly queued message.
-    if (this._inMessages.push({
-      ...incomingWireMessages, bufferOffset: 0,
-      consumed: 0,
-      size: 0
-    }) > 1) {
+    if (
+      this._inMessages.push({
+        ...incomingWireMessages,
+        bufferOffset: 0,
+        consumed: 0,
+        size: 0,
+      }) > 1
+    ) {
       return
     }
 
@@ -547,7 +572,7 @@ export class Connection {
           const id = wireMessages.buffer[wireMessages.bufferOffset]
           const sizeOpcode = wireMessages.buffer[wireMessages.bufferOffset + 1]
           wireMessages.size = sizeOpcode >>> 16
-          const opcode = sizeOpcode & 0x0000FFFF
+          const opcode = sizeOpcode & 0x0000ffff
 
           if (wireMessages.size > wireMessages.buffer.byteLength) {
             this.close()
@@ -570,7 +595,7 @@ export class Connection {
           }
 
           try {
-            const promiseOrVoid = action.call(wlObject,wireMessages)
+            const promiseOrVoid = action.call(wlObject, wireMessages)
             if (promiseOrVoid instanceof Promise) {
               await promiseOrVoid
             }
@@ -591,7 +616,7 @@ ${e.stack}
       }
       this.flush()
 
-      this._inMessages = this._inMessages.filter(value => !messagesToProcess.includes(value))
+      this._inMessages = this._inMessages.filter((value) => !messagesToProcess.includes(value))
     }
     this.flush()
   }
@@ -625,7 +650,9 @@ ${e.stack}
     }
 
     // destroy resources in descending order
-    Object.values(this.wlObjects).sort((a, b) => a.id - b.id).forEach((wlObject) => wlObject.destroy())
+    Object.values(this.wlObjects)
+      .sort((a, b) => a.id - b.id)
+      .forEach((wlObject) => wlObject.destroy())
     this.closed = true
     this.onCloseResolve()
   }

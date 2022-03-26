@@ -33,7 +33,7 @@ class Endpoint {
    * @param {function(globalName: number):void}onGlobalDestroyed
    * @returns {Object} A started wayland display endpoint
    */
-  static createDisplay (onClientCreated, onGlobalCreated, onGlobalDestroyed) {
+  static createDisplay(onClientCreated, onGlobalCreated, onGlobalDestroyed) {
     return westfieldNative.createDisplay(onClientCreated, onGlobalCreated, onGlobalDestroyed)
   }
 
@@ -41,7 +41,7 @@ class Endpoint {
    * @param {Object}wlClient
    * @param {function(wlClient: Object):void}onClientDestroyed
    */
-  static setClientDestroyedCallback (wlClient, onClientDestroyed) {
+  static setClientDestroyedCallback(wlClient, onClientDestroyed) {
     westfieldNative.setClientDestroyedCallback(wlClient, onClientDestroyed)
   }
 
@@ -50,7 +50,7 @@ class Endpoint {
    * @param {Object}wlClient
    * @param {function(wlClient: Object, wireMessages:ArrayBuffer, objectId: number, opcode:number):number}onWireMessage
    */
-  static setWireMessageCallback (wlClient, onWireMessage) {
+  static setWireMessageCallback(wlClient, onWireMessage) {
     westfieldNative.setWireMessageCallback(wlClient, onWireMessage)
   }
 
@@ -59,14 +59,14 @@ class Endpoint {
    * @param {Object}wlClient
    * @param {function(wlClient: Object, fdsIn:ArrayBuffer):void}onWireMessageEnd
    */
-  static setWireMessageEndCallback (wlClient, onWireMessageEnd) {
+  static setWireMessageEndCallback(wlClient, onWireMessageEnd) {
     westfieldNative.setWireMessageEndCallback(wlClient, onWireMessageEnd)
   }
 
   /**
    * @param {Object} wlDisplay The previously started wayland display endpoint.
    */
-  static destroyDisplay (wlDisplay) {
+  static destroyDisplay(wlDisplay) {
     westfieldNative.destroyDisplay(wlDisplay)
   }
 
@@ -74,14 +74,14 @@ class Endpoint {
    * @param {Object}wlDisplay
    * @returns {string}
    */
-  static addSocketAuto (wlDisplay) {
+  static addSocketAuto(wlDisplay) {
     return westfieldNative.addSocketAuto(wlDisplay)
   }
 
   /**
    * @param {Object}wlClient A previously created wayland client.
    */
-  static destroyClient (wlClient) {
+  static destroyClient(wlClient) {
     westfieldNative.destroyClient(wlClient)
   }
 
@@ -90,21 +90,21 @@ class Endpoint {
    * @param {Uint32Array}wireMessages
    * @param {Uint32Array}fdsOut
    */
-  static sendEvents (wlClient, wireMessages, fdsOut) {
+  static sendEvents(wlClient, wireMessages, fdsOut) {
     westfieldNative.sendEvents(wlClient, wireMessages, fdsOut)
   }
 
   /**
    * @param {Object}wlDisplay
    */
-  static dispatchRequests (wlDisplay) {
+  static dispatchRequests(wlDisplay) {
     westfieldNative.dispatchRequests(wlDisplay)
   }
 
   /**
    * @param {Object}wlClient
    */
-  static flush (wlClient) {
+  static flush(wlClient) {
     westfieldNative.flush(wlClient)
   }
 
@@ -112,14 +112,14 @@ class Endpoint {
    * @param {Object}wlDisplay
    * @returns {number}
    */
-  static getFd (wlDisplay) {
+  static getFd(wlDisplay) {
     return westfieldNative.getFd(wlDisplay)
   }
 
   /**
    * @param {Object}wlDisplay
    */
-  static initShm (wlDisplay) {
+  static initShm(wlDisplay) {
     return westfieldNative.initShm(wlDisplay)
   }
 
@@ -127,14 +127,14 @@ class Endpoint {
    * @param {Object}wlClient
    * @param {function(wlRegistry:Object, registryId:number):void}onRegistryCreated
    */
-  static setRegistryCreatedCallback (wlClient, onRegistryCreated) {
+  static setRegistryCreatedCallback(wlClient, onRegistryCreated) {
     westfieldNative.setRegistryCreatedCallback(wlClient, onRegistryCreated)
   }
 
   /**
    * @param {Object}wlRegistry
    */
-  static emitGlobals (wlRegistry) {
+  static emitGlobals(wlRegistry) {
     westfieldNative.emitGlobals(wlRegistry)
   }
 
@@ -144,7 +144,7 @@ class Endpoint {
    * @param {Array<Object>}wlInterfaces
    * @return {Object}
    */
-  static createWlMessage (name, signature, wlInterfaces) {
+  static createWlMessage(name, signature, wlInterfaces) {
     return westfieldNative.createWlMessage(name, signature, wlInterfaces)
   }
 
@@ -156,14 +156,14 @@ class Endpoint {
    * @param {Array<Object>}wlMessageEvents
    * @return {Object}
    */
-  static initWlInterface (wlInterface, name, version, wlMessageRequests, wlMessageEvents) {
+  static initWlInterface(wlInterface, name, version, wlMessageRequests, wlMessageEvents) {
     westfieldNative.initWlInterface(wlInterface, name, version, wlMessageRequests, wlMessageEvents)
   }
 
   /**
    * @return {Object}
    */
-  static createWlInterface () {
+  static createWlInterface() {
     return westfieldNative.createWlInterface()
   }
 
@@ -174,7 +174,7 @@ class Endpoint {
    * @param {Object}wlInterface
    * @return {Object}
    */
-  static createWlResource (wlClient, id, version, wlInterface) {
+  static createWlResource(wlClient, id, version, wlInterface) {
     return westfieldNative.createWlResource(wlClient, id, version, wlInterface)
   }
 
@@ -182,7 +182,7 @@ class Endpoint {
    * @param {Object}wlClient
    * @param {number}wlResourceId
    */
-  static destroyWlResourceSilently (wlClient, wlResourceId) {
+  static destroyWlResourceSilently(wlClient, wlResourceId) {
     westfieldNative.destroyWlResourceSilently(wlClient, wlResourceId)
   }
 
@@ -192,14 +192,14 @@ class Endpoint {
    * @param {function():void}onXWaylandDestroyed
    * @return {Object|undefined}
    */
-  static setupXWayland (wlDisplay, onXWaylandStarting, onXWaylandDestroyed) {
+  static setupXWayland(wlDisplay, onXWaylandStarting, onXWaylandDestroyed) {
     return westfieldNative.setupXWayland(wlDisplay, onXWaylandStarting, onXWaylandDestroyed)
   }
 
   /**
    * @param {Object}westfieldXWayland
    */
-  static teardownXWayland (westfieldXWayland) {
+  static teardownXWayland(westfieldXWayland) {
     westfieldNative.teardownXWayland(westfieldXWayland)
   }
 
@@ -207,14 +207,14 @@ class Endpoint {
    * @param {Object}wlClient
    * @param {function(bufferId:number):void}onBufferCreated
    */
-  static setBufferCreatedCallback (wlClient, onBufferCreated) {
+  static setBufferCreatedCallback(wlClient, onBufferCreated) {
     westfieldNative.setBufferCreatedCallback(wlClient, onBufferCreated)
   }
 
   /**
    * @param {Buffer}contents
    */
-  static createMemoryMappedFile (contents) {
+  static createMemoryMappedFile(contents) {
     return westfieldNative.createMemoryMappedFile(contents)
   }
 
@@ -222,14 +222,14 @@ class Endpoint {
    * @param {Object}wlClient
    * @param {Uint32Array}ids array to be filled in
    */
-  static getServerObjectIdsBatch (wlClient, ids) {
+  static getServerObjectIdsBatch(wlClient, ids) {
     westfieldNative.getServerObjectIdsBatch(wlClient, ids)
   }
 
   /**
    * @param {Uint32Array}resultBuffer
    */
-  static makePipe (resultBuffer) {
+  static makePipe(resultBuffer) {
     westfieldNative.makePipe(resultBuffer)
   }
 
@@ -238,7 +238,7 @@ class Endpoint {
    * @param {object}objectB
    * @return {boolean}
    */
-  static equalValueExternal (objectA, objectB) {
+  static equalValueExternal(objectA, objectB) {
     return westfieldNative.equalValueExternal(objectA, objectB)
   }
 
@@ -246,7 +246,7 @@ class Endpoint {
    * @param {object}xWayland
    * @return {number}
    */
-  static getXWaylandDisplay (xWayland) {
+  static getXWaylandDisplay(xWayland) {
     return westfieldNative.getXWaylandDisplay(xWayland)
   }
 }

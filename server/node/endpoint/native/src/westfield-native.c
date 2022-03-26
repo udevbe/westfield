@@ -4,7 +4,6 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include "westfield-extra.h"
 #include "westfield-fdutils.h"
 #include "westfield-xwayland.h"
@@ -143,10 +142,20 @@ on_wire_message(struct wl_client *client, int32_t *wire_message,
 }
 
 static void
-on_wire_message_end(struct wl_client *client, int *fds_in, size_t fds_in_length) {
+on_wire_message_end(struct wl_client *client) {
+    int *fds_in;
+    size_t fds_in_size;
+    struct wl_connection *connection;
     struct client_destruction_listener *destruction_listener = (struct client_destruction_listener *) wl_client_get_destroy_listener(
             client, on_client_destroyed);
     if (destruction_listener->wire_message_end_cb_ref) {
+        connection = wl_client_get_connection(client);
+        fds_in_size = wl_connection_fds_in_size(connection);
+        fds_in = malloc(fds_in_size);
+        if (fds_in_size) {
+            wl_connection_copy_fds_in(connection, fds_in, fds_in_size);
+        }
+
         struct display_destruction_listener *display_destruction_listener;
         napi_value client_value, fds_value = NULL, global, cb_result, cb;
         napi_env env;
@@ -155,28 +164,9 @@ on_wire_message_end(struct wl_client *client, int *fds_in, size_t fds_in_length)
                 wl_client_get_display(client), on_display_destroyed);
         env = display_destruction_listener->env;
 
-        if (fds_in_length) {
-            struct stat buf;
-            int r;
-            int fd_type = 0;
-            // double the size, because we need an additional uint per fd to indicate it's type
-            int *fds_with_type = malloc(fds_in_length * 2 * sizeof(int));
-            for (int i = 0; i < fds_in_length; ++i) {
-                fds_with_type[i * 2] = fds_in[i];
-
-                r = fstat(fds_in[i], &buf);
-                if (!r) {
-                    if (S_TYPEISSHM(&buf)) {
-                        fd_type = 1;
-                    } else if (S_ISFIFO(buf.st_mode)) {
-                        fd_type = 2;
-                    }
-                }
-
-                fds_with_type[(i * 2) + 1] = fd_type;
-            }
+        if (fds_in_size) {
             NAPI_CALL(env,
-                      napi_create_external_arraybuffer(env, fds_with_type, fds_in_length * 2 * sizeof(int), finalize_cb,
+                      napi_create_external_arraybuffer(env, fds_in, fds_in_size, finalize_cb,
                                                        NULL,
                                                        &fds_value))
         } else {

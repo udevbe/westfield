@@ -8,25 +8,28 @@ import {
   u,
   uint,
   WlMessage,
-  WlObject
+  WlObject,
 } from 'westfield-runtime-common'
 
-
 const SERVER_OBJECT_ID_BASE = 0xff000000
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface ClientUserData {}
 
 /**
  * Represents a client connection.
  */
 export class Client implements DisplayRequests {
+  userData: ClientUserData = {}
   readonly id: string
   readonly connection: Connection
   readonly displayResource: DisplayResource
   recycledIds: number[] = []
   private _display: Display
-  private _syncEventSerial: number = 0
+  private _syncEventSerial = 0
   // @ts-ignore
-  private _destroyedResolver: (value?: (PromiseLike<void> | void)) => void
-  private _destroyPromise = new Promise<void>((resolve) => this._destroyedResolver = resolve)
+  private _destroyedResolver: (value?: PromiseLike<void> | void) => void
+  private _destroyPromise = new Promise<void>((resolve) => (this._destroyedResolver = resolve))
   private _resourceDestroyListeners: ((resource: Resource) => void)[] = []
   private _resourceCreatedListeners: ((resource: Resource) => void)[] = []
   /*
@@ -34,7 +37,6 @@ export class Client implements DisplayRequests {
    * in the range [0xff000000, 0xffffffff]. The 0 ID is reserved to represent a null or non-existent object
    */
   private _nextId: number = SERVER_OBJECT_ID_BASE
-
   constructor(display: Display, id: string) {
     this.id = id
     this._display = display
@@ -42,7 +44,7 @@ export class Client implements DisplayRequests {
     this.displayResource = new DisplayResource(this, 1, 0)
     this.displayResource.implementation = this
 
-    this.connection.onClose.then(()=>this.close())
+    this.connection.onClose.then(() => this.close())
   }
 
   close() {
@@ -71,7 +73,7 @@ export class Client implements DisplayRequests {
     } else {
       this.recycledIds.push(resource.id)
     }
-    this._resourceDestroyListeners.forEach(listener => listener(resource))
+    this._resourceDestroyListeners.forEach((listener) => listener(resource))
   }
 
   addResourceCreatedListener(listener: (resource: Resource) => void) {
@@ -100,7 +102,7 @@ export class Client implements DisplayRequests {
     // determine required wire message length
     let size = 4 + 2 + 2 // id+size+opcode
     const serverSideId = this.getNextId()
-    argsArray.forEach(arg => {
+    argsArray.forEach((arg) => {
       if (arg.type === 'n') {
         arg.value = serverSideId
       }
@@ -113,8 +115,8 @@ export class Client implements DisplayRequests {
 
   marshall(id: number, opcode: number, argsArray: MessageMarshallingContext<any, any, any>[]) {
     // determine required wire message length
-    let size = 4 + 2 + 2  // id+size+opcode
-    argsArray.forEach(arg => size += arg.size)
+    let size = 4 + 2 + 2 // id+size+opcode
+    argsArray.forEach((arg) => (size += arg.size))
     this.connection.marshallMsg(id, opcode, size, argsArray)
   }
 
@@ -161,8 +163,8 @@ export class Resource extends WlObject {
 
 function uuidv4(): string {
   // @ts-ignore
-  return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
-    (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+  return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) =>
+    (c ^ (window.crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16),
   )
 }
 
@@ -188,7 +190,7 @@ export class Display {
   }
 
   flushClients() {
-    Object.values(this.clients).forEach(client => client.connection.flush())
+    Object.values(this.clients).forEach((client) => client.connection.flush())
   }
 }
 
@@ -272,7 +274,7 @@ export class Global {
     interface_: string,
     version: number,
     name: number,
-    bindCallback: (client: Client, id: number, version: number) => void
+    bindCallback: (client: Client, id: number, version: number) => void,
   ) {
     this.registry = registry
     this.implementation = implementation
@@ -302,16 +304,23 @@ export class Global {
 export class Registry implements RegistryRequests {
   private _registryResources: RegistryResource[] = []
   private _globals: { [key: number]: Global } = {}
-  private _nextGlobalName: number = 0xffff0000
+  private _nextGlobalName = 0xffff0000
 
   /**
    * Register a global to make it available to clients
    */
-  createGlobal(implementation: any, interface_: string, version: number, bindCallback: (client: Client, id: number, version: number) => void): Global {
+  createGlobal(
+    implementation: any,
+    interface_: string,
+    version: number,
+    bindCallback: (client: Client, id: number, version: number) => void,
+  ): Global {
     const name = ++this._nextGlobalName
     const global = new Global(this, implementation, interface_, version, name, bindCallback)
     this._globals[name] = global
-    this._registryResources.forEach(registryResource => registryResource.global(global.name, global.interface_, global.version))
+    this._registryResources.forEach((registryResource) =>
+      registryResource.global(global.name, global.interface_, global.version),
+    )
     return global
   }
 
@@ -321,7 +330,7 @@ export class Registry implements RegistryRequests {
    */
   destroyGlobal(global: Global) {
     if (this._globals[global.name]) {
-      this._registryResources.forEach(registryResource => registryResource.globalRemove(global.name))
+      this._registryResources.forEach((registryResource) => registryResource.globalRemove(global.name))
       setTimeout(() => {
         delete this._globals[global.name]
       }, 5000)
@@ -329,7 +338,9 @@ export class Registry implements RegistryRequests {
   }
 
   publishGlobals(registryResource: RegistryResource) {
-    Object.entries(this._globals).forEach(([name, global]) => registryResource.global(Number.parseInt(name), global.interface_, global.version))
+    Object.entries(this._globals).forEach(([name, global]) =>
+      registryResource.global(Number.parseInt(name), global.interface_, global.version),
+    )
   }
 
   createRegistryResource(client: Client, id: number): RegistryResource {

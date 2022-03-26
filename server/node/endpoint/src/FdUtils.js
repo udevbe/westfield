@@ -31,7 +31,7 @@ class FdUtils {
    * @param {number}size
    * @return {number} a file descriptor
    */
-  static createMemoryMappedFile (size) {
+  static createMemoryMappedFile(size) {
     return westfieldNative.createMemoryMappedFile(size)
   }
 

@@ -6,10 +6,19 @@ set(CMAKE_C_STANDARD_REQUIRED TRUE)
 #set(CMAKE_BUILD_TYPE "Debug")
 set(CMAKE_BUILD_TYPE "Release")
 
-execute_process(COMMAND node -p "require('node-api-headers').include_dir"
+#execute_process(COMMAND node -p "require('node-api-headers').include_dir"
+#        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+#        RESULT_VARIABLE _resVar
+#        OUTPUT_VARIABLE NODE_API_DIR
+#        ERROR_VARIABLE bleh
+#        )
+execute_process(COMMAND /home/erik/.nvm/versions/node/v16.14.2/bin/node -p "require('node-api-headers').include_dir"
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        RESULT_VARIABLE _resVar
         OUTPUT_VARIABLE NODE_API_DIR
+        ERROR_VARIABLE bleh
         )
+
 string(REGEX REPLACE "[\r\n\"]" "" NODE_API_DIR ${NODE_API_DIR})
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")

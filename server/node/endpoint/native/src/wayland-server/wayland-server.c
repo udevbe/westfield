@@ -344,7 +344,6 @@ wl_client_connection_data(int fd, uint32_t mask, void *data)
 	uint32_t resource_flags;
 	int opcode, size, since;
 	int len;
-	size_t fds_in_size;
 	int32_t *buffer;
 
 	if (mask & WL_EVENT_HANGUP) {
@@ -473,17 +472,9 @@ wl_client_connection_data(int fd, uint32_t mask, void *data)
 	if (client->error) {
 		destroy_client_with_error(client,
 					  "error in client communication");
-	} else {
-		if (client->wire_message_end_cb) {
-			fds_in_size = wl_connection_fds_in_size(connection);
-			int fds_in[fds_in_size / sizeof(int)];
-			if (fds_in_size) {
-				wl_connection_copy_fds_in(connection, fds_in, fds_in_size);
-			}
-
-			client->wire_message_end_cb(client, fds_in, sizeof(fds_in) / sizeof(int));
-		}
-	}
+	} else if (client->wire_message_end_cb) {
+        client->wire_message_end_cb(client);
+    }
 
 	return 1;
 }
