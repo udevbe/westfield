@@ -1,6 +1,6 @@
 diff -urN src/wayland-upstream/connection.c src/wayland-server/connection.c
---- src/wayland-upstream/connection.c	2021-11-30 14:49:40.105066857 +0100
-+++ src/wayland-server/connection.c	2021-11-30 17:08:08.471284813 +0100
+--- src/wayland-upstream/connection.c	2022-04-06 21:48:54.614859405 +0200
++++ src/wayland-server/connection.c	2022-03-21 16:32:26.793496221 +0100
 @@ -285,7 +285,7 @@
  	return 0;
  }
@@ -48,8 +48,8 @@ diff -urN src/wayland-upstream/connection.c src/wayland-server/connection.c
 +	connection->fds_in.tail += size;
 +}
 diff -urN src/wayland-upstream/wayland-os.c src/wayland-server/wayland-os.c
---- src/wayland-upstream/wayland-os.c	2021-11-30 14:49:40.109066859 +0100
-+++ src/wayland-server/wayland-os.c	2021-11-30 17:08:08.475284819 +0100
+--- src/wayland-upstream/wayland-os.c	2022-04-06 21:48:54.622859417 +0200
++++ src/wayland-server/wayland-os.c	2022-03-21 16:32:26.793496221 +0100
 @@ -25,8 +25,6 @@
  
  #define _GNU_SOURCE
@@ -78,8 +78,8 @@ diff -urN src/wayland-upstream/wayland-os.c src/wayland-server/wayland-os.c
  		}
  	}
 diff -urN src/wayland-upstream/wayland-os.h src/wayland-server/wayland-os.h
---- src/wayland-upstream/wayland-os.h	2021-11-30 14:49:40.105066857 +0100
-+++ src/wayland-server/wayland-os.h	2021-11-30 17:08:08.475284819 +0100
+--- src/wayland-upstream/wayland-os.h	2022-04-06 21:48:54.618859411 +0200
++++ src/wayland-server/wayland-os.h	2022-03-21 16:32:26.793496221 +0100
 @@ -49,7 +49,7 @@
  
  void *
@@ -90,8 +90,8 @@ diff -urN src/wayland-upstream/wayland-os.h src/wayland-server/wayland-os.h
  
  /*
 diff -urN src/wayland-upstream/wayland-server.c src/wayland-server/wayland-server.c
---- src/wayland-upstream/wayland-server.c	2021-11-30 14:49:40.113066862 +0100
-+++ src/wayland-server/wayland-server.c	2021-11-30 17:08:08.479284824 +0100
+--- src/wayland-upstream/wayland-server.c	2022-04-06 21:48:54.626859424 +0200
++++ src/wayland-server/wayland-server.c	2022-03-21 19:36:40.330256709 +0100
 @@ -49,6 +49,7 @@
  #include "wayland-server-private.h"
  #include "wayland-server.h"
@@ -120,16 +120,15 @@ diff -urN src/wayland-upstream/wayland-server.c src/wayland-server/wayland-serve
  };
  
  struct wl_global {
-@@ -337,6 +344,8 @@
+@@ -337,6 +344,7 @@
  	uint32_t resource_flags;
  	int opcode, size, since;
  	int len;
-+	size_t fds_in_size;
 +	int32_t *buffer;
  
  	if (mask & WL_EVENT_HANGUP) {
  		wl_client_destroy(client);
-@@ -379,6 +388,18 @@
+@@ -379,6 +387,18 @@
  
  		resource = wl_map_lookup(&client->objects, p[0]);
  		resource_flags = wl_map_lookup_flags(&client->objects, p[0]);
@@ -148,24 +147,18 @@ diff -urN src/wayland-upstream/wayland-server.c src/wayland-server/wayland-serve
  		if (resource == NULL) {
  			wl_resource_post_error(client->display_resource,
  					       WL_DISPLAY_ERROR_INVALID_OBJECT,
-@@ -452,6 +473,16 @@
+@@ -452,7 +472,9 @@
  	if (client->error) {
  		destroy_client_with_error(client,
  					  "error in client communication");
-+	} else {
-+		if (client->wire_message_end_cb) {
-+			fds_in_size = wl_connection_fds_in_size(connection);
-+			int fds_in[fds_in_size / sizeof(int)];
-+			if (fds_in_size) {
-+				wl_connection_copy_fds_in(connection, fds_in, fds_in_size);
-+			}
-+
-+			client->wire_message_end_cb(client, fds_in, sizeof(fds_in) / sizeof(int));
-+		}
- 	}
+-	}
++	} else if (client->wire_message_end_cb) {
++        client->wire_message_end_cb(client);
++    }
  
  	return 1;
-@@ -997,6 +1028,7 @@
+ }
+@@ -997,6 +1019,7 @@
  	wl_list_insert(&display->registry_resource_list,
  		       &registry_resource->link);
  
@@ -173,7 +166,7 @@ diff -urN src/wayland-upstream/wayland-server.c src/wayland-server/wayland-serve
  	wl_list_for_each(global, &display->global_list, link)
  		if (wl_global_is_visible(client, global) && !global->removed)
  			wl_resource_post_event(registry_resource,
-@@ -1004,8 +1036,13 @@
+@@ -1004,8 +1027,13 @@
  					       global->name,
  					       global->interface->name,
  					       global->version);
@@ -187,7 +180,7 @@ diff -urN src/wayland-upstream/wayland-server.c src/wayland-server/wayland-serve
  static const struct wl_display_interface display_interface = {
  	display_sync,
  	display_get_registry
-@@ -1251,6 +1288,10 @@
+@@ -1251,6 +1279,10 @@
  	global->removed = false;
  	wl_list_insert(display->global_list.prev, &global->link);
  
@@ -198,7 +191,7 @@ diff -urN src/wayland-upstream/wayland-server.c src/wayland-server/wayland-serve
  	wl_list_for_each(resource, &display->registry_resource_list, link)
  		wl_resource_post_event(resource,
  				       WL_REGISTRY_GLOBAL,
-@@ -1293,6 +1334,10 @@
+@@ -1293,6 +1325,10 @@
  			 "global '%s@%"PRIu32"'", global->interface->name,
  			 global->name);
  
@@ -209,7 +202,7 @@ diff -urN src/wayland-upstream/wayland-server.c src/wayland-server/wayland-serve
  	wl_list_for_each(resource, &display->registry_resource_list, link)
  		wl_resource_post_event(resource, WL_REGISTRY_GLOBAL_REMOVE,
  				       global->name);
-@@ -1825,9 +1870,10 @@
+@@ -1825,9 +1861,10 @@
  	resource = malloc(sizeof *resource);
  	if (resource == NULL)
  		return NULL;
@@ -221,7 +214,7 @@ diff -urN src/wayland-upstream/wayland-server.c src/wayland-server/wayland-serve
  
  	resource->object.id = id;
  	resource->object.interface = interface;
-@@ -2327,3 +2373,79 @@
+@@ -2327,3 +2364,79 @@
   * code here, add it before the comment above that states:
   * Deprecated functions below.
   */
@@ -303,7 +296,7 @@ diff -urN src/wayland-upstream/wayland-server.c src/wayland-server/wayland-serve
 +}
 diff -urN src/wayland-upstream/wayland-server-private.h src/wayland-server/wayland-server-private.h
 --- src/wayland-upstream/wayland-server-private.h	1970-01-01 01:00:00.000000000 +0100
-+++ src/wayland-server/wayland-server-private.h	2021-11-30 17:08:08.475284819 +0100
++++ src/wayland-server/wayland-server-private.h	2022-03-21 16:32:26.793496221 +0100
 @@ -0,0 +1,53 @@
 +/*
 + * Copyright © 2008-2011 Kristian Høgsberg
@@ -359,8 +352,8 @@ diff -urN src/wayland-upstream/wayland-server-private.h src/wayland-server/wayla
 +
 +#endif
 diff -urN src/wayland-upstream/wayland-shm.c src/wayland-server/wayland-shm.c
---- src/wayland-upstream/wayland-shm.c	2021-11-30 14:49:40.113066862 +0100
-+++ src/wayland-server/wayland-shm.c	2021-11-30 17:08:08.479284824 +0100
+--- src/wayland-upstream/wayland-shm.c	2022-04-06 21:48:54.626859424 +0200
++++ src/wayland-server/wayland-shm.c	2022-03-21 16:32:26.797496208 +0100
 @@ -30,8 +30,6 @@
  
  #define _GNU_SOURCE
@@ -513,7 +506,7 @@ diff -urN src/wayland-upstream/wayland-shm.c src/wayland-server/wayland-shm.c
  				       &shm_pool_interface,
 diff -urN src/wayland-upstream/westfield-extra.h src/wayland-server/westfield-extra.h
 --- src/wayland-upstream/westfield-extra.h	1970-01-01 01:00:00.000000000 +0100
-+++ src/wayland-server/westfield-extra.h	2021-11-30 17:07:44.411254071 +0100
++++ src/wayland-server/westfield-extra.h	2022-03-21 19:36:14.118346551 +0100
 @@ -0,0 +1,82 @@
 +/*
 + * Copyright © 2018 Erik De Rijcke
@@ -571,7 +564,7 @@ diff -urN src/wayland-upstream/westfield-extra.h src/wayland-server/westfield-ex
 +void
 +wl_client_set_wire_message_cb(struct wl_client *client, wl_connection_wire_message_t wire_message_cb);
 +
-+typedef void (*wl_connection_wire_message_end_t)(struct wl_client *client, int *fds_in, size_t fds_in_size);
++typedef void (*wl_connection_wire_message_end_t)(struct wl_client *client);
 +
 +void
 +wl_client_set_wire_message_end_cb(struct wl_client *client, wl_connection_wire_message_end_t wire_message_end_cb);

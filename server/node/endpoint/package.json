@@ -1,6 +1,6 @@
 {
   "name": "westfield-endpoint",
-  "version": "0.5.5",
+  "version": "1.0.0-alpha.0",
   "main": "src/index.js",
   "description": "Wayland HTML5 runtime for Node.js",
   "repository": {
@@ -35,16 +35,16 @@
     "test": "mocha ./test/*.js --timeout 10000"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.16.0",
+    "@typescript-eslint/parser": "^5.16.0",
+    "cmake-js": "^6.2.1",
+    "epoll": "^4.0.1",
     "eslint": "^8.11.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.0.0",
-    "@typescript-eslint/eslint-plugin": "^5.16.0",
-    "@typescript-eslint/parser": "^5.16.0",
-    "prettier": "^2.6.0",
-    "cmake-js": "^6.2.1",
-    "epoll": "^4.0.1",
     "mocha": "^9.0.3",
     "node-api-headers": "^0.0.1",
+    "prettier": "^2.6.0",
     "sinon": "^11.1.2",
     "typescript": "^4.6.2"
   }

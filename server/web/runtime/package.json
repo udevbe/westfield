@@ -1,6 +1,6 @@
 {
   "name": "westfield-runtime-server",
-  "version": "0.5.1",
+  "version": "1.0.0-alpha.0",
   "description": "Wayland HTML5 runtime for Node.js",
   "module": "dist/index.js",
   "typings": "types/index.d.ts",
@@ -38,18 +38,18 @@
     "build": "tsc"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.16.0",
+    "@typescript-eslint/parser": "^5.16.0",
     "eslint": "^8.11.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.0.0",
-    "@typescript-eslint/eslint-plugin": "^5.16.0",
-    "@typescript-eslint/parser": "^5.16.0",
     "prettier": "^2.6.0",
     "rimraf": "^3.0.2",
     "typescript": "^4.6.2",
-    "westfield-runtime-common": "0.5.1",
+    "westfield-runtime-common": "1.0.0-alpha.0",
     "westfield-scanner-server": "^0.5.1"
   },
   "peerDependencies": {
-    "westfield-runtime-common": "0.5.1"
+    "westfield-runtime-common": "1.0.0-alpha.0"
   }
 }
