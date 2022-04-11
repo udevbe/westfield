@@ -24,7 +24,7 @@ SOFTWARE.
 
 'use strict'
 
-class EndpointProtocolArguments {
+export default class EndpointProtocolArguments {
   /**
    * @param {string}argName
    * @param {boolean}optional
@@ -129,5 +129,3 @@ class EndpointProtocolArguments {
     }
   }
 }
-
-module.exports = EndpointProtocolArguments

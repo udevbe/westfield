@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /*
 MIT License
 
@@ -21,13 +23,49 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+"use strict";
 
-'use strict'
+import meow from "meow";
+import ProtocolParser from "./EndpointProtocolParser.mjs";
 
-module.exports = {
-  Endpoint: require('./Endpoint'),
-  FdUtils: require('./FdUtils'),
-  WireMessageUtil: require('./WireMessageUtil'),
-  nativeGlobalNames: require('./NativeGlobalNames'),
-  MessageInterceptor: require('./MessageInterceptor')
+const cli = meow(
+  `Usage:
+        index.js FILE... [options]
+
+    Generates javascript server-side endpoint protocol files based on the given FILE argument.
+    The FILE argument is a relative or absolute path to a Westfield compatible Wayland XML.
+    The generated javascript protocol is generated in the output directory.
+
+    Options:
+        -o, --out          output directory
+        -h, --help         print usage information
+        -v, --version      show version info and exit
+        
+`,
+  {
+    importMeta: import.meta,
+    flags: {
+      out: {
+        alias: "o",
+        type: "string",
+      },
+      help: {
+        alias: "h",
+        type: "boolean",
+      },
+      version: {
+        alias: "v",
+        type: "boolean",
+      },
+    },
+  }
+);
+
+if (cli.input.length === 0 || cli.flags.help) {
+  cli.showHelp();
 }
+
+let outFile = cli.flags.out;
+cli.input.forEach((protocol) => {
+  new ProtocolParser(protocol).parse(outFile);
+});

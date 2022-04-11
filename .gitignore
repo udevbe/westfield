@@ -100,3 +100,7 @@ fabric.properties
 /server/node/endpoint/cmake-build-debug/
 /server/node/endpoint/native/src/wayland-upstream/
 /server/node/endpoint/wayland/
+/server/node/proxy/build/
+/server/node/proxy/native/src/wayland-upstream/
+/server/node/proxy/dist/
+/server/node/proxy/types/
