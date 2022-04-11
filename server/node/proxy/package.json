@@ -1,6 +1,6 @@
 {
   "name": "westfield-proxy",
-  "version": "1.0.0-alpha.0",
+  "version": "1.0.0-alpha.1",
   "type": "commonjs",
   "main": "dist/westfield-proxy-server.js",
   "typings": "types/westfield-proxy-server.d.ts",
@@ -11,7 +11,10 @@
   },
   "files": [
     "dist",
-    "types"
+    "types",
+    "CMakeLists.txt",
+    "native",
+    "cmake"
   ],
   "keywords": [
     "wayland",
