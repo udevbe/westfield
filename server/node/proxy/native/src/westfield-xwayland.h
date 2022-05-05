@@ -32,7 +32,7 @@ struct westfield_xserver;
 struct wl_dislay;
 struct wl_client;
 
-typedef void (*westfield_xserver_starting_func_t)(void* user_data, int wm_fd, struct wl_client* client);
+typedef void (*westfield_xserver_starting_func_t)(void* user_data, int wm_fd, struct wl_client* client, int display_fd);
 
 typedef void (*westfield_xserver_destroyed_func_t)(void *user_data);
 

@@ -930,9 +930,9 @@ makePipe(napi_env env, napi_callback_info info) {
 }
 
 static void
-westfield_xserver_starting(void *user_data, int wm_fd, struct wl_client *client) {
+westfield_xserver_starting(void *user_data, int wm_fd, struct wl_client *client, int display_fd) {
     struct weston_xwayland_callbacks *weston_xwayland_callbacks;
-    napi_value starting_js_cb, global, cb_result, wm_fd_value, client_value;
+    napi_value starting_js_cb, global, cb_result, wm_fd_value, client_value, display_fd_value;
     napi_env env;
 
     weston_xwayland_callbacks = user_data;
@@ -942,8 +942,9 @@ westfield_xserver_starting(void *user_data, int wm_fd, struct wl_client *client)
     NAPI_CALL(env, napi_get_global(env, &global))
     NAPI_CALL(env, napi_create_int32(env, wm_fd, &wm_fd_value))
     NAPI_CALL(env, napi_create_external(env, client, NULL, NULL, &client_value))
-    napi_value argv[2] = {wm_fd_value, client_value};
-    NAPI_CALL(env, napi_call_function(env, global, starting_js_cb, 2, argv, &cb_result))
+    NAPI_CALL(env, napi_create_int32(env, display_fd, &display_fd_value))
+    napi_value argv[3] = {wm_fd_value, client_value, display_fd_value};
+    NAPI_CALL(env, napi_call_function(env, global, starting_js_cb, 3, argv, &cb_result))
 }
 
 static void

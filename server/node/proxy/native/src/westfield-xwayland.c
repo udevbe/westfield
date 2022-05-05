@@ -48,6 +48,7 @@ struct westfield_xwayland {
     struct wl_display *wl_display;
     struct westfield_xserver *xserver;
     int wm_fd;
+    int display_fd;
     struct westfield_process process;
 };
 
@@ -203,7 +204,8 @@ spawn_xserver(void *user_data, const char *display, int unix_fd) {
     struct westfield_xwayland *wxw = user_data;
     pid_t pid;
     char s[12], unix_fd_str[12], wm_fd_str[12];
-    int sv[2], wm[2], fd;
+    char display_fd_str[12];
+    int sv[2], wm[2], fd, display_fd[2];
 
     if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sv) < 0) {
         printf("wl connection socketpair failed\n");
@@ -215,9 +217,18 @@ spawn_xserver(void *user_data, const char *display, int unix_fd) {
         return 1;
     }
 
+    if (pipe(display_fd) < 0) {
+        return 1;
+    }
+
+    if (fcntl(display_fd[0], F_SETFD, FD_CLOEXEC) != 0) {
+        return 1;
+    }
+
+    wxw->display_fd = display_fd[0];
     wxw->wm_fd = wm[0];
     struct wl_client *client = wl_client_create(wxw->wl_display, sv[0]);
-    wxw->xserver->starting_func(wxw->xserver->user_data, wxw->wm_fd, client);
+    wxw->xserver->starting_func(wxw->xserver->user_data, wxw->wm_fd, client, wxw->display_fd);
 
     pid = fork();
     switch (pid) {
@@ -242,22 +253,24 @@ spawn_xserver(void *user_data, const char *display, int unix_fd) {
                 goto fail;
             }
             snprintf(wm_fd_str, sizeof wm_fd_str, "%d", fd);
+            snprintf(display_fd_str, sizeof display_fd_str, "%d", display_fd[1]);
 
-            signal(SIGUSR1, SIG_IGN);
             if (execlp("Xwayland",
                        "Xwayland",
                        display,
                        "-ac",
                        "-rootless",
                        "-listen", unix_fd_str,
+                       "-displayfd", display_fd_str,
                        "-wm", wm_fd_str,
                        (char *) NULL) < 0)
                 printf("exec of '%s %s -ac -rootless "
-                       "-listen %s -wm %s "
+                       "-listen %s -displayfd %s -wm %s "
                        "' failed: %s\n",
                        "XWayland",
                        display,
                        unix_fd_str,
+                       display_fd_str,
                        wm_fd_str,
                        strerror(errno));
         fail:
@@ -266,6 +279,12 @@ spawn_xserver(void *user_data, const char *display, int unix_fd) {
         default:
             close(sv[1]);
             close(wm[1]);
+
+            /* During initialization the X server will round trip
+             * and block on the wayland compositor, so avoid making
+             * blocking requests (like xcb_connect_to_fd) until
+             * it's done with that. */
+            close(display_fd[1]);
             wxw->process.pid = pid;
             westfield_watch_process(&wxw->process);
             break;
