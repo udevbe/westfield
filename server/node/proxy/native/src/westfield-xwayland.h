@@ -24,32 +24,32 @@
  * SOFTWARE.
  */
 
-#ifndef WESTFIELD_NATIVE_WESTFIELD_XWAYLAND_H
-#define WESTFIELD_NATIVE_WESTFIELD_XWAYLAND_H
+#ifndef WESTFIELD_WESTFIELD_XWAYLAND_H
+#define WESTFIELD_WESTFIELD_XWAYLAND_H
+
+#include "wayland-server/wayland-server-core.h"
 
 struct westfield_xwayland;
 struct westfield_xserver;
-struct wl_dislay;
-struct wl_client;
 
 typedef void (*westfield_xserver_starting_func_t)(void* user_data, int wm_fd, struct wl_client* client, int display_fd);
 
 typedef void (*westfield_xserver_destroyed_func_t)(void *user_data);
 
 void
-teardown_xwayland(struct westfield_xwayland *);
+westfield_xwayland_teardown(struct westfield_xwayland *);
 
 struct westfield_xwayland *
-setup_xwayland(struct wl_dislay *wl_display,
-               void *user_data,
-               westfield_xserver_starting_func_t starting_func,
-               westfield_xserver_destroyed_func_t destroyed_func);
+westfield_xwayland_setup(struct wl_display *wl_display,
+                         void *user_data,
+                         westfield_xserver_starting_func_t starting_func,
+                         westfield_xserver_destroyed_func_t destroyed_func);
 
 void
-init_westfield_xwayland(void);
+westfield_xwayland_init(void);
 
 int
-xwayland_get_display(struct westfield_xwayland *westfield_xwayland);
+westfield_xwayland_get_display(struct westfield_xwayland *westfield_xwayland);
 
 
-#endif //WESTFIELD_NATIVE_WESTFIELD_XWAYLAND_H
+#endif //WESTFIELD_WESTFIELD_XWAYLAND_H

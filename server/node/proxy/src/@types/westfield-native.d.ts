@@ -33,6 +33,12 @@ declare namespace westfieldNative {
 
   function initShm(wlDisplay: unknown): void
 
+  /**
+   * Returns initialized EGL context
+   * @param wlDisplay
+   */
+  function initDrm(wlDisplay: unknown): unknown
+
   function setRegistryCreatedCallback(
     wlClient: unknown,
     onRegistryCreated: (wlRegistry: unknown, registryId: number) => void,

@@ -13,6 +13,7 @@ export const {
   flush,
   getFd,
   initShm,
+  initDrm,
   setRegistryCreatedCallback,
   emitGlobals,
   createWlMessage,

@@ -49,7 +49,7 @@
 #include "wayland-server-private.h"
 #include "wayland-server.h"
 #include "wayland-os.h"
-#include "westfield-extra.h"
+#include "westfield-wayland-server-extra.h"
 
 /* This is the size of the char array in struct sock_addr_un.
  * No Wayland socket can be created with a path longer than this,

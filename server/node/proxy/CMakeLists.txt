@@ -1,25 +1,20 @@
 cmake_minimum_required(VERSION 3.13)
 
-project(westfield-native C)
+project(westfield C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED TRUE)
 #set(CMAKE_BUILD_TYPE "Debug")
 set(CMAKE_BUILD_TYPE "Release")
 
-execute_process(COMMAND node -p "require('node-api-headers').include_dir"
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE NODE_API_DIR
-        )
-
-string(REGEX REPLACE "[\r\n\"]" "" NODE_API_DIR ${NODE_API_DIR})
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
 find_package(LibFFI REQUIRED)
+find_package(OpenGL REQUIRED)
+
 
 add_library(wayland-server SHARED
         native/src/wayland-server/wayland-server-protocol.h
         native/src/wayland-server/wayland-protocol.c
-        native/src/wayland-server/westfield-extra.h
+        native/src/wayland-server/westfield-wayland-server-extra.h
         native/src/wayland-server/connection.c
         native/src/wayland-server/event-loop.c
         native/src/wayland-server/wayland-os.h
@@ -37,24 +32,54 @@ set_target_properties(wayland-server
         PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ../dist
         )
+file(GLOB WESTFIELD_WAYLAND_SERVER_PUBLIC_HEADERS
+        "${CMAKE_SOURCE_DIR}/native/src/wayland-server/wayland-server-core.h"
+        "${CMAKE_SOURCE_DIR}/native/src/wayland-server/westfield-wayland-server-extra.h"
+        )
+file(MAKE_DIRECTORY ../dist/include)
+file(COPY ${WESTFIELD_WAYLAND_SERVER_PUBLIC_HEADERS} DESTINATION ../dist/include)
 
-add_library(${PROJECT_NAME} SHARED
-        native/src/string-helpers.h
-        native/src/westfield-native.c
+
+add_library(westfield SHARED
         native/src/westfield-fdutils.c
         native/src/westfield-fdutils.h
         native/src/westfield-xwayland.h
-        native/src/westfield-xwayland.c)
-
-target_include_directories(${PROJECT_NAME}
-        PRIVATE ${NODE_API_DIR}
+        native/src/westfield-xwayland.c
+        native/src/westfield-drm.c
+        native/src/westfield-drm.h native/src/westfield.h)
+target_include_directories(westfield
+        PRIVATE "${OPENGL_EGL_INCLUDE_DIRS}"
         PRIVATE "${CMAKE_SOURCE_DIR}/native/src/wayland-server"
         PRIVATE "${CMAKE_SOURCE_DIR}/native/src/wayland-server/protocol"
         )
-
-set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
-target_link_libraries(${PROJECT_NAME} wayland-server ${CMAKE_JS_LIB} ${LIBFFI_LIBRARIES})
-set_target_properties(${PROJECT_NAME}
+target_link_libraries(westfield
+        wayland-server ${CMAKE_JS_LIB} ${LIBFFI_LIBRARIES} OpenGL::EGL)
+set_target_properties(westfield
     PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ../dist
 )
+file(GLOB WESTFIELD_PUBLIC_HEADERS
+        "${CMAKE_SOURCE_DIR}/native/src/*.h"
+)
+file(MAKE_DIRECTORY ../dist/include)
+file(COPY ${WESTFIELD_PUBLIC_HEADERS} DESTINATION ../dist/include)
+
+
+add_library(westfield-addon SHARED
+        native/src/node-addon/westfield-addon.c)
+target_include_directories(westfield-addon
+        PRIVATE "${CMAKE_SOURCE_DIR}/node_modules/node-api-headers/include"
+        PRIVATE "${CMAKE_SOURCE_DIR}/native/src/wayland-server"
+        PRIVATE "${CMAKE_SOURCE_DIR}/native/src"
+        )
+set_target_properties(westfield-addon
+        PROPERTIES PREFIX "" SUFFIX ".node")
+target_link_libraries(westfield-addon
+            ${CMAKE_JS_LIB}
+            wayland-server
+            westfield
+        )
+set_target_properties(westfield-addon
+        PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ../dist
+        )

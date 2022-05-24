@@ -1,12 +1,12 @@
-#include <node_api.h>
+#include "node_api.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/types.h>
-#include "westfield-extra.h"
-#include "westfield-fdutils.h"
-#include "westfield-xwayland.h"
+#include "wayland-server-core.h"
+#include "westfield-wayland-server-extra.h"
+#include "westfield.h"
 
 #define DECLARE_NAPI_METHOD(name, func)                          \
   { name, 0, func, 0, 0, 0, napi_default, 0 }
@@ -618,7 +618,7 @@ createMemoryMappedFile(napi_env env, napi_callback_info info) {
     buffer_value = argv[0];
     NAPI_CALL(env, napi_get_buffer_info(env, buffer_value, &contents, &size))
 
-    fd = os_create_anonymous_file(size);
+    fd = westfield_os_create_anonymous_file(size);
     mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
     while (size > 0) {
@@ -655,6 +655,38 @@ initShm(napi_env env, napi_callback_info info) {
     wl_display_init_shm(display);
 
     NAPI_CALL(env, napi_get_undefined(env, &return_value))
+    return return_value;
+}
+
+static void
+finalize_westfield_drm(napi_env env,
+                      void* finalize_data,
+                      void* finalize_hint) {
+    westfield_drm_finalize(finalize_data);
+}
+
+// expected arguments in order:
+// - Object display
+// return:
+// - unknown westfield_drm object
+napi_value
+initDrm(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value argv[argc], display_value, return_value;
+    struct wl_display *display;
+    struct westfield_drm *westfield_drm;
+
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL))
+    display_value = argv[0];
+    NAPI_CALL(env, napi_get_value_external(env, display_value, (void **) &display))
+
+    struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
+            display, on_display_destroyed);
+    display_destruction_listener->env = env;
+
+    westfield_drm = westfield_drm_new(display);
+    NAPI_CALL(env, napi_create_external(env, westfield_drm, finalize_westfield_drm, NULL, &return_value))
+
     return return_value;
 }
 
@@ -988,10 +1020,10 @@ setupXWayland(napi_env env, napi_callback_info info) {
     weston_xwayland_callbacks->xwwayland_destroyed_cb_ref = destroyed_cb_ref;
 
     NAPI_CALL(env, napi_get_value_external(env, display_value, (void **) &display))
-    westfield_xwayland = setup_xwayland((struct wl_dislay *) display,
-                                        weston_xwayland_callbacks,
-                                        westfield_xserver_starting,
-                                        westfield_xserver_destroyed);
+    westfield_xwayland = westfield_xwayland_setup((struct wl_display *) display,
+                                                  weston_xwayland_callbacks,
+                                                  westfield_xserver_starting,
+                                                  westfield_xserver_destroyed);
 
     if (westfield_xwayland) {
         NAPI_CALL(env, napi_create_external(env, westfield_xwayland, NULL, NULL, &return_value))
@@ -1012,7 +1044,7 @@ teardownXWayland(napi_env env, napi_callback_info info) {
     westfield_xwayland_value = argv[0];
     NAPI_CALL(env, napi_get_value_external(env, westfield_xwayland_value, (void **) &westfield_xwayland));
 
-    teardown_xwayland(westfield_xwayland);
+    westfield_xwayland_teardown(westfield_xwayland);
 
     NAPI_CALL(env, napi_get_undefined(env, &return_value))
     return return_value;
@@ -1047,7 +1079,7 @@ getXWaylandDisplay(napi_env env, napi_callback_info info) {
     xwayland_value = argv[0];
 
     NAPI_CALL(env, napi_get_value_external(env, xwayland_value, (void **) &westfield_xwayland))
-    NAPI_CALL(env, napi_create_int32(env, xwayland_get_display(westfield_xwayland), &return_value))
+    NAPI_CALL(env, napi_create_int32(env, westfield_xwayland_get_display(westfield_xwayland), &return_value))
 
     return return_value;
 }
@@ -1066,6 +1098,7 @@ init(napi_env env, napi_value exports) {
             DECLARE_NAPI_METHOD("flush", flush),
             DECLARE_NAPI_METHOD("createMemoryMappedFile", createMemoryMappedFile),
             DECLARE_NAPI_METHOD("initShm", initShm),
+            DECLARE_NAPI_METHOD("initDrm", initDrm),
             DECLARE_NAPI_METHOD("setWireMessageCallback", setWireMessageCallback),
             DECLARE_NAPI_METHOD("setWireMessageEndCallback", setWireMessageEndCallback),
             DECLARE_NAPI_METHOD("setClientDestroyedCallback", setClientDestroyedCallback),
@@ -1089,7 +1122,7 @@ init(napi_env env, napi_value exports) {
 
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(napi_property_descriptor), desc))
 
-    init_westfield_xwayland();
+    westfield_xwayland_init();
 
     return exports;
 }

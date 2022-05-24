@@ -1,6 +1,7 @@
-//
-// Created by erik on 10/3/18.
-//
+#ifndef WESTFIELD_WESTFIELD_FDUTILS_H
+#define WESTFIELD_WESTFIELD_FDUTILS_H
 
 int
-os_create_anonymous_file(off_t size);
+westfield_os_create_anonymous_file(off_t size);
+
+#endif //WESTFIELD_WESTFIELD_FDUTILS_H
