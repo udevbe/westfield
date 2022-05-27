@@ -8,5 +8,6 @@
 #include "westfield-fdutils.h"
 #include "westfield-drm.h"
 #include "westfield-xwayland.h"
+#include "wayland-server/westfield-wayland-server.h"
 
 #endif //WESTFIELD_WESTFIELD_H

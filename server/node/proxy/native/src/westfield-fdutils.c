@@ -46,7 +46,7 @@ create_tmpfile_cloexec(char *tmpname) {
 }
 
 int
-westfield_os_create_anonymous_file(off_t size) {
+westfield_os_create_anonymous_file(size_t size) {
     static const char template[] = "/wayland-shared-XXXXXX";
     const char *path;
     char *name;

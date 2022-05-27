@@ -1,4 +1,4 @@
-declare namespace westfieldNative {
+declare namespace westfieldAddon {
   function createDisplay(
     onClientCreated: (wlClient: unknown) => void,
     onGlobalCreated: (globalName: number) => void,
@@ -83,4 +83,4 @@ declare namespace westfieldNative {
   function getXWaylandDisplay(xWayland: unknown): number
 }
 
-export = westfieldNative
+export = westfieldAddon

@@ -14,9 +14,6 @@ westfield_drm_finalize(struct westfield_drm *westfield_drm);
 void*
 westfield_drm_get_egl_display(struct westfield_drm *westfield_drm);
 
-void*
-westfield_drm_get_egl_context(struct westfield_drm *westfield_drm);
-
 unsigned int
 westfield_drm_wl_buffer_query_egl(struct westfield_drm *westfield_drm, struct wl_resource *buffer);
 
