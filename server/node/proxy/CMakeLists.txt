@@ -12,6 +12,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(LibFFI REQUIRED libffi IMPORTED_TARGET)
 pkg_check_modules(LIBUDEV REQUIRED libudev IMPORTED_TARGET)
 pkg_check_modules(GBM REQUIRED gbm IMPORTED_TARGET)
+pkg_check_modules(LIBDRM REQUIRED libdrm IMPORTED_TARGET)
 pkg_check_modules(EGL REQUIRED egl IMPORTED_TARGET)
 
 add_library(westfield-wayland-server SHARED
@@ -60,8 +61,10 @@ add_library(westfield SHARED
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-fdutils.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-xwayland.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-xwayland.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/linux-dmabuf-unstable-v1-protocol.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-drm.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-drm.h native/src/westfield.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-drm.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield.h
 )
 target_include_directories(westfield PRIVATE
         ${CMAKE_SOURCE_DIR}/native/src/wayland-server
@@ -69,6 +72,7 @@ target_include_directories(westfield PRIVATE
         ${LIBUDEV_INCLUDE_DIRS}
         ${GBM_INCLUDE_DIRS}
         ${EGL_INCLUDE_DIRS}
+        ${LIBDRM_INCLUDE_DIRS}
 )
 target_link_libraries(westfield PRIVATE
         westfield-wayland-server
@@ -76,6 +80,7 @@ target_link_libraries(westfield PRIVATE
         PkgConfig::LIBUDEV
         PkgConfig::GBM
         PkgConfig::EGL
+        PkgConfig::LIBDRM
         -Wl,--no-undefined
 )
 set_target_properties(westfield
