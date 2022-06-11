@@ -316,54 +316,54 @@ extern const struct wl_interface zwp_linux_dmabuf_feedback_v1_interface;
  * @struct zwp_linux_dmabuf_v1_interface
  */
 struct zwp_linux_dmabuf_v1_interface {
-	/**
-	 * unbind the factory
-	 *
-	 * Objects created through this interface, especially wl_buffers,
-	 * will remain valid.
-	 */
-	void (*destroy)(struct wl_client *client,
-			struct wl_resource *resource);
-	/**
-	 * create a temporary object for buffer parameters
-	 *
-	 * This temporary object is used to collect multiple dmabuf
-	 * handles into a single batch to create a wl_buffer. It can only
-	 * be used once and should be destroyed after a 'created' or
-	 * 'failed' event has been received.
-	 * @param params_id the new temporary
-	 */
-	void (*create_params)(struct wl_client *client,
-			      struct wl_resource *resource,
-			      uint32_t params_id);
-	/**
-	 * get default feedback
-	 *
-	 * This request creates a new wp_linux_dmabuf_feedback object not
-	 * bound to a particular surface. This object will deliver feedback
-	 * about dmabuf parameters to use if the client doesn't support
-	 * per-surface feedback (see get_surface_feedback).
-	 * @since 4
-	 */
-	void (*get_default_feedback)(struct wl_client *client,
-				     struct wl_resource *resource,
-				     uint32_t id);
-	/**
-	 * get feedback for a surface
-	 *
-	 * This request creates a new wp_linux_dmabuf_feedback object for
-	 * the specified wl_surface. This object will deliver feedback
-	 * about dmabuf parameters to use for buffers attached to this
-	 * surface.
-	 *
-	 * If the surface is destroyed before the wp_linux_dmabuf_feedback
-	 * object, the feedback object becomes inert.
-	 * @since 4
-	 */
-	void (*get_surface_feedback)(struct wl_client *client,
-				     struct wl_resource *resource,
-				     uint32_t id,
-				     struct wl_resource *surface);
+    /**
+     * unbind the factory
+     *
+     * Objects created through this interface, especially wl_buffers,
+     * will remain valid.
+     */
+    void (*destroy)(struct wl_client *client,
+                    struct wl_resource *resource);
+    /**
+     * create a temporary object for buffer parameters
+     *
+     * This temporary object is used to collect multiple dmabuf
+     * handles into a single batch to create a wl_buffer. It can only
+     * be used once and should be destroyed after a 'created' or
+     * 'failed' event has been received.
+     * @param params_id the new temporary
+     */
+    void (*create_params)(struct wl_client *client,
+                          struct wl_resource *resource,
+                          uint32_t params_id);
+    /**
+     * get default feedback
+     *
+     * This request creates a new wp_linux_dmabuf_feedback object not
+     * bound to a particular surface. This object will deliver feedback
+     * about dmabuf parameters to use if the client doesn't support
+     * per-surface feedback (see get_surface_feedback).
+     * @since 4
+     */
+    void (*get_default_feedback)(struct wl_client *client,
+                                 struct wl_resource *resource,
+                                 uint32_t id);
+    /**
+     * get feedback for a surface
+     *
+     * This request creates a new wp_linux_dmabuf_feedback object for
+     * the specified wl_surface. This object will deliver feedback
+     * about dmabuf parameters to use for buffers attached to this
+     * surface.
+     *
+     * If the surface is destroyed before the wp_linux_dmabuf_feedback
+     * object, the feedback object becomes inert.
+     * @since 4
+     */
+    void (*get_surface_feedback)(struct wl_client *client,
+                                 struct wl_resource *resource,
+                                 uint32_t id,
+                                 struct wl_resource *surface);
 };
 
 #define ZWP_LINUX_DMABUF_V1_FORMAT 0
@@ -404,7 +404,7 @@ struct zwp_linux_dmabuf_v1_interface {
 static inline void
 zwp_linux_dmabuf_v1_send_format(struct wl_resource *resource_, uint32_t format)
 {
-	wl_resource_post_event(resource_, ZWP_LINUX_DMABUF_V1_FORMAT, format);
+    wl_resource_post_event(resource_, ZWP_LINUX_DMABUF_V1_FORMAT, format);
 }
 
 /**
@@ -418,62 +418,62 @@ zwp_linux_dmabuf_v1_send_format(struct wl_resource *resource_, uint32_t format)
 static inline void
 zwp_linux_dmabuf_v1_send_modifier(struct wl_resource *resource_, uint32_t format, uint32_t modifier_hi, uint32_t modifier_lo)
 {
-	wl_resource_post_event(resource_, ZWP_LINUX_DMABUF_V1_MODIFIER, format, modifier_hi, modifier_lo);
+    wl_resource_post_event(resource_, ZWP_LINUX_DMABUF_V1_MODIFIER, format, modifier_hi, modifier_lo);
 }
 
 #ifndef ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_ENUM
 #define ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_ENUM
 enum zwp_linux_buffer_params_v1_error {
-	/**
-	 * the dmabuf_batch object has already been used to create a wl_buffer
-	 */
-	ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_ALREADY_USED = 0,
-	/**
-	 * plane index out of bounds
-	 */
-	ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_PLANE_IDX = 1,
-	/**
-	 * the plane index was already set
-	 */
-	ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_PLANE_SET = 2,
-	/**
-	 * missing or too many planes to create a buffer
-	 */
-	ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_INCOMPLETE = 3,
-	/**
-	 * format not supported
-	 */
-	ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_INVALID_FORMAT = 4,
-	/**
-	 * invalid width or height
-	 */
-	ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_INVALID_DIMENSIONS = 5,
-	/**
-	 * offset + stride * height goes out of dmabuf bounds
-	 */
-	ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_OUT_OF_BOUNDS = 6,
-	/**
-	 * invalid wl_buffer resulted from importing dmabufs via                the create_immed request on given buffer_params
-	 */
-	ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_INVALID_WL_BUFFER = 7,
+    /**
+     * the dmabuf_batch object has already been used to create a wl_buffer
+     */
+    ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_ALREADY_USED = 0,
+    /**
+     * plane index out of bounds
+     */
+    ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_PLANE_IDX = 1,
+    /**
+     * the plane index was already set
+     */
+    ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_PLANE_SET = 2,
+    /**
+     * missing or too many planes to create a buffer
+     */
+    ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_INCOMPLETE = 3,
+    /**
+     * format not supported
+     */
+    ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_INVALID_FORMAT = 4,
+    /**
+     * invalid width or height
+     */
+    ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_INVALID_DIMENSIONS = 5,
+    /**
+     * offset + stride * height goes out of dmabuf bounds
+     */
+    ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_OUT_OF_BOUNDS = 6,
+    /**
+     * invalid wl_buffer resulted from importing dmabufs via                the create_immed request on given buffer_params
+     */
+    ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_INVALID_WL_BUFFER = 7,
 };
 #endif /* ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_ENUM */
 
 #ifndef ZWP_LINUX_BUFFER_PARAMS_V1_FLAGS_ENUM
 #define ZWP_LINUX_BUFFER_PARAMS_V1_FLAGS_ENUM
 enum zwp_linux_buffer_params_v1_flags {
-	/**
-	 * contents are y-inverted
-	 */
-	ZWP_LINUX_BUFFER_PARAMS_V1_FLAGS_Y_INVERT = 1,
-	/**
-	 * content is interlaced
-	 */
-	ZWP_LINUX_BUFFER_PARAMS_V1_FLAGS_INTERLACED = 2,
-	/**
-	 * bottom field first
-	 */
-	ZWP_LINUX_BUFFER_PARAMS_V1_FLAGS_BOTTOM_FIRST = 4,
+    /**
+     * contents are y-inverted
+     */
+    ZWP_LINUX_BUFFER_PARAMS_V1_FLAGS_Y_INVERT = 1,
+    /**
+     * content is interlaced
+     */
+    ZWP_LINUX_BUFFER_PARAMS_V1_FLAGS_INTERLACED = 2,
+    /**
+     * bottom field first
+     */
+    ZWP_LINUX_BUFFER_PARAMS_V1_FLAGS_BOTTOM_FIRST = 4,
 };
 #endif /* ZWP_LINUX_BUFFER_PARAMS_V1_FLAGS_ENUM */
 
@@ -482,162 +482,162 @@ enum zwp_linux_buffer_params_v1_flags {
  * @struct zwp_linux_buffer_params_v1_interface
  */
 struct zwp_linux_buffer_params_v1_interface {
-	/**
-	 * delete this object, used or not
-	 *
-	 * Cleans up the temporary data sent to the server for
-	 * dmabuf-based wl_buffer creation.
-	 */
-	void (*destroy)(struct wl_client *client,
-			struct wl_resource *resource);
-	/**
-	 * add a dmabuf to the temporary set
-	 *
-	 * This request adds one dmabuf to the set in this
-	 * zwp_linux_buffer_params_v1.
-	 *
-	 * The 64-bit unsigned value combined from modifier_hi and
-	 * modifier_lo is the dmabuf layout modifier. DRM AddFB2 ioctl
-	 * calls this the fb modifier, which is defined in drm_mode.h of
-	 * Linux UAPI. This is an opaque token. Drivers use this token to
-	 * express tiling, compression, etc. driver-specific modifications
-	 * to the base format defined by the DRM fourcc code.
-	 *
-	 * Starting from version 4, the invalid_format protocol error is
-	 * sent if the format + modifier pair was not advertised as
-	 * supported.
-	 *
-	 * This request raises the PLANE_IDX error if plane_idx is too
-	 * large. The error PLANE_SET is raised if attempting to set a
-	 * plane that was already set.
-	 * @param fd dmabuf fd
-	 * @param plane_idx plane index
-	 * @param offset offset in bytes
-	 * @param stride stride in bytes
-	 * @param modifier_hi high 32 bits of layout modifier
-	 * @param modifier_lo low 32 bits of layout modifier
-	 */
-	void (*add)(struct wl_client *client,
-		    struct wl_resource *resource,
-		    int32_t fd,
-		    uint32_t plane_idx,
-		    uint32_t offset,
-		    uint32_t stride,
-		    uint32_t modifier_hi,
-		    uint32_t modifier_lo);
-	/**
-	 * create a wl_buffer from the given dmabufs
-	 *
-	 * This asks for creation of a wl_buffer from the added dmabuf
-	 * buffers. The wl_buffer is not created immediately but returned
-	 * via the 'created' event if the dmabuf sharing succeeds. The
-	 * sharing may fail at runtime for reasons a client cannot predict,
-	 * in which case the 'failed' event is triggered.
-	 *
-	 * The 'format' argument is a DRM_FORMAT code, as defined by the
-	 * libdrm's drm_fourcc.h. The Linux kernel's DRM sub-system is the
-	 * authoritative source on how the format codes should work.
-	 *
-	 * The 'flags' is a bitfield of the flags defined in enum "flags".
-	 * 'y_invert' means the that the image needs to be y-flipped.
-	 *
-	 * Flag 'interlaced' means that the frame in the buffer is not
-	 * progressive as usual, but interlaced. An interlaced buffer as
-	 * supported here must always contain both top and bottom fields.
-	 * The top field always begins on the first pixel row. The temporal
-	 * ordering between the two fields is top field first, unless
-	 * 'bottom_first' is specified. It is undefined whether
-	 * 'bottom_first' is ignored if 'interlaced' is not set.
-	 *
-	 * This protocol does not convey any information about field rate,
-	 * duration, or timing, other than the relative ordering between
-	 * the two fields in one buffer. A compositor may have to estimate
-	 * the intended field rate from the incoming buffer rate. It is
-	 * undefined whether the time of receiving wl_surface.commit with a
-	 * new buffer attached, applying the wl_surface state,
-	 * wl_surface.frame callback trigger, presentation, or any other
-	 * point in the compositor cycle is used to measure the frame or
-	 * field times. There is no support for detecting missed or late
-	 * frames/fields/buffers either, and there is no support whatsoever
-	 * for cooperating with interlaced compositor output.
-	 *
-	 * The composited image quality resulting from the use of
-	 * interlaced buffers is explicitly undefined. A compositor may use
-	 * elaborate hardware features or software to deinterlace and
-	 * create progressive output frames from a sequence of interlaced
-	 * input buffers, or it may produce substandard image quality.
-	 * However, compositors that cannot guarantee reasonable image
-	 * quality in all cases are recommended to just reject all
-	 * interlaced buffers.
-	 *
-	 * Any argument errors, including non-positive width or height,
-	 * mismatch between the number of planes and the format, bad
-	 * format, bad offset or stride, may be indicated by fatal protocol
-	 * errors: INCOMPLETE, INVALID_FORMAT, INVALID_DIMENSIONS,
-	 * OUT_OF_BOUNDS.
-	 *
-	 * Dmabuf import errors in the server that are not obvious client
-	 * bugs are returned via the 'failed' event as non-fatal. This
-	 * allows attempting dmabuf sharing and falling back in the client
-	 * if it fails.
-	 *
-	 * This request can be sent only once in the object's lifetime,
-	 * after which the only legal request is destroy. This object
-	 * should be destroyed after issuing a 'create' request. Attempting
-	 * to use this object after issuing 'create' raises ALREADY_USED
-	 * protocol error.
-	 *
-	 * It is not mandatory to issue 'create'. If a client wants to
-	 * cancel the buffer creation, it can just destroy this object.
-	 * @param width base plane width in pixels
-	 * @param height base plane height in pixels
-	 * @param format DRM_FORMAT code
-	 * @param flags see enum flags
-	 */
-	void (*create)(struct wl_client *client,
-		       struct wl_resource *resource,
-		       int32_t width,
-		       int32_t height,
-		       uint32_t format,
-		       uint32_t flags);
-	/**
-	 * immediately create a wl_buffer from the given                      dmabufs
-	 *
-	 * This asks for immediate creation of a wl_buffer by importing
-	 * the added dmabufs.
-	 *
-	 * In case of import success, no event is sent from the server, and
-	 * the wl_buffer is ready to be used by the client.
-	 *
-	 * Upon import failure, either of the following may happen, as seen
-	 * fit by the implementation: - the client is terminated with one
-	 * of the following fatal protocol errors: - INCOMPLETE,
-	 * INVALID_FORMAT, INVALID_DIMENSIONS, OUT_OF_BOUNDS, in case of
-	 * argument errors such as mismatch between the number of planes
-	 * and the format, bad format, non-positive width or height, or bad
-	 * offset or stride. - INVALID_WL_BUFFER, in case the cause for
-	 * failure is unknown or plaform specific. - the server creates an
-	 * invalid wl_buffer, marks it as failed and sends a 'failed' event
-	 * to the client. The result of using this invalid wl_buffer as an
-	 * argument in any request by the client is defined by the
-	 * compositor implementation.
-	 *
-	 * This takes the same arguments as a 'create' request, and obeys
-	 * the same restrictions.
-	 * @param buffer_id id for the newly created wl_buffer
-	 * @param width base plane width in pixels
-	 * @param height base plane height in pixels
-	 * @param format DRM_FORMAT code
-	 * @param flags see enum flags
-	 * @since 2
-	 */
-	void (*create_immed)(struct wl_client *client,
-			     struct wl_resource *resource,
-			     uint32_t buffer_id,
-			     int32_t width,
-			     int32_t height,
-			     uint32_t format,
-			     uint32_t flags);
+    /**
+     * delete this object, used or not
+     *
+     * Cleans up the temporary data sent to the server for
+     * dmabuf-based wl_buffer creation.
+     */
+    void (*destroy)(struct wl_client *client,
+                    struct wl_resource *resource);
+    /**
+     * add a dmabuf to the temporary set
+     *
+     * This request adds one dmabuf to the set in this
+     * zwp_linux_buffer_params_v1.
+     *
+     * The 64-bit unsigned value combined from modifier_hi and
+     * modifier_lo is the dmabuf layout modifier. DRM AddFB2 ioctl
+     * calls this the fb modifier, which is defined in drm_mode.h of
+     * Linux UAPI. This is an opaque token. Drivers use this token to
+     * express tiling, compression, etc. driver-specific modifications
+     * to the base format defined by the DRM fourcc code.
+     *
+     * Starting from version 4, the invalid_format protocol error is
+     * sent if the format + modifier pair was not advertised as
+     * supported.
+     *
+     * This request raises the PLANE_IDX error if plane_idx is too
+     * large. The error PLANE_SET is raised if attempting to set a
+     * plane that was already set.
+     * @param fd dmabuf fd
+     * @param plane_idx plane index
+     * @param offset offset in bytes
+     * @param stride stride in bytes
+     * @param modifier_hi high 32 bits of layout modifier
+     * @param modifier_lo low 32 bits of layout modifier
+     */
+    void (*add)(struct wl_client *client,
+                struct wl_resource *resource,
+                int32_t fd,
+                uint32_t plane_idx,
+                uint32_t offset,
+                uint32_t stride,
+                uint32_t modifier_hi,
+                uint32_t modifier_lo);
+    /**
+     * create a wl_buffer from the given dmabufs
+     *
+     * This asks for creation of a wl_buffer from the added dmabuf
+     * buffers. The wl_buffer is not created immediately but returned
+     * via the 'created' event if the dmabuf sharing succeeds. The
+     * sharing may fail at runtime for reasons a client cannot predict,
+     * in which case the 'failed' event is triggered.
+     *
+     * The 'format' argument is a DRM_FORMAT code, as defined by the
+     * libdrm's drm_fourcc.h. The Linux kernel's DRM sub-system is the
+     * authoritative source on how the format codes should work.
+     *
+     * The 'flags' is a bitfield of the flags defined in enum "flags".
+     * 'y_invert' means the that the image needs to be y-flipped.
+     *
+     * Flag 'interlaced' means that the frame in the buffer is not
+     * progressive as usual, but interlaced. An interlaced buffer as
+     * supported here must always contain both top and bottom fields.
+     * The top field always begins on the first pixel row. The temporal
+     * ordering between the two fields is top field first, unless
+     * 'bottom_first' is specified. It is undefined whether
+     * 'bottom_first' is ignored if 'interlaced' is not set.
+     *
+     * This protocol does not convey any information about field rate,
+     * duration, or timing, other than the relative ordering between
+     * the two fields in one buffer. A compositor may have to estimate
+     * the intended field rate from the incoming buffer rate. It is
+     * undefined whether the time of receiving wl_surface.commit with a
+     * new buffer attached, applying the wl_surface state,
+     * wl_surface.frame callback trigger, presentation, or any other
+     * point in the compositor cycle is used to measure the frame or
+     * field times. There is no support for detecting missed or late
+     * frames/fields/buffers either, and there is no support whatsoever
+     * for cooperating with interlaced compositor output.
+     *
+     * The composited image quality resulting from the use of
+     * interlaced buffers is explicitly undefined. A compositor may use
+     * elaborate hardware features or software to deinterlace and
+     * create progressive output frames from a sequence of interlaced
+     * input buffers, or it may produce substandard image quality.
+     * However, compositors that cannot guarantee reasonable image
+     * quality in all cases are recommended to just reject all
+     * interlaced buffers.
+     *
+     * Any argument errors, including non-positive width or height,
+     * mismatch between the number of planes and the format, bad
+     * format, bad offset or stride, may be indicated by fatal protocol
+     * errors: INCOMPLETE, INVALID_FORMAT, INVALID_DIMENSIONS,
+     * OUT_OF_BOUNDS.
+     *
+     * Dmabuf import errors in the server that are not obvious client
+     * bugs are returned via the 'failed' event as non-fatal. This
+     * allows attempting dmabuf sharing and falling back in the client
+     * if it fails.
+     *
+     * This request can be sent only once in the object's lifetime,
+     * after which the only legal request is destroy. This object
+     * should be destroyed after issuing a 'create' request. Attempting
+     * to use this object after issuing 'create' raises ALREADY_USED
+     * protocol error.
+     *
+     * It is not mandatory to issue 'create'. If a client wants to
+     * cancel the buffer creation, it can just destroy this object.
+     * @param width base plane width in pixels
+     * @param height base plane height in pixels
+     * @param format DRM_FORMAT code
+     * @param flags see enum flags
+     */
+    void (*create)(struct wl_client *client,
+                   struct wl_resource *resource,
+                   int32_t width,
+                   int32_t height,
+                   uint32_t format,
+                   uint32_t flags);
+    /**
+     * immediately create a wl_buffer from the given                      dmabufs
+     *
+     * This asks for immediate creation of a wl_buffer by importing
+     * the added dmabufs.
+     *
+     * In case of import success, no event is sent from the server, and
+     * the wl_buffer is ready to be used by the client.
+     *
+     * Upon import failure, either of the following may happen, as seen
+     * fit by the implementation: - the client is terminated with one
+     * of the following fatal protocol errors: - INCOMPLETE,
+     * INVALID_FORMAT, INVALID_DIMENSIONS, OUT_OF_BOUNDS, in case of
+     * argument errors such as mismatch between the number of planes
+     * and the format, bad format, non-positive width or height, or bad
+     * offset or stride. - INVALID_WL_BUFFER, in case the cause for
+     * failure is unknown or plaform specific. - the server creates an
+     * invalid wl_buffer, marks it as failed and sends a 'failed' event
+     * to the client. The result of using this invalid wl_buffer as an
+     * argument in any request by the client is defined by the
+     * compositor implementation.
+     *
+     * This takes the same arguments as a 'create' request, and obeys
+     * the same restrictions.
+     * @param buffer_id id for the newly created wl_buffer
+     * @param width base plane width in pixels
+     * @param height base plane height in pixels
+     * @param format DRM_FORMAT code
+     * @param flags see enum flags
+     * @since 2
+     */
+    void (*create_immed)(struct wl_client *client,
+                         struct wl_resource *resource,
+                         uint32_t buffer_id,
+                         int32_t width,
+                         int32_t height,
+                         uint32_t format,
+                         uint32_t flags);
 };
 
 #define ZWP_LINUX_BUFFER_PARAMS_V1_CREATED 0
@@ -678,7 +678,7 @@ struct zwp_linux_buffer_params_v1_interface {
 static inline void
 zwp_linux_buffer_params_v1_send_created(struct wl_resource *resource_, struct wl_resource *buffer)
 {
-	wl_resource_post_event(resource_, ZWP_LINUX_BUFFER_PARAMS_V1_CREATED, buffer);
+    wl_resource_post_event(resource_, ZWP_LINUX_BUFFER_PARAMS_V1_CREATED, buffer);
 }
 
 /**
@@ -689,16 +689,16 @@ zwp_linux_buffer_params_v1_send_created(struct wl_resource *resource_, struct wl
 static inline void
 zwp_linux_buffer_params_v1_send_failed(struct wl_resource *resource_)
 {
-	wl_resource_post_event(resource_, ZWP_LINUX_BUFFER_PARAMS_V1_FAILED);
+    wl_resource_post_event(resource_, ZWP_LINUX_BUFFER_PARAMS_V1_FAILED);
 }
 
 #ifndef ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_FLAGS_ENUM
 #define ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_FLAGS_ENUM
 enum zwp_linux_dmabuf_feedback_v1_tranche_flags {
-	/**
-	 * direct scan-out tranche
-	 */
-	ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_FLAGS_SCANOUT = 1,
+    /**
+     * direct scan-out tranche
+     */
+    ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_FLAGS_SCANOUT = 1,
 };
 #endif /* ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_FLAGS_ENUM */
 
@@ -707,14 +707,14 @@ enum zwp_linux_dmabuf_feedback_v1_tranche_flags {
  * @struct zwp_linux_dmabuf_feedback_v1_interface
  */
 struct zwp_linux_dmabuf_feedback_v1_interface {
-	/**
-	 * destroy the feedback object
-	 *
-	 * Using this request a client can tell the server that it is not
-	 * going to use the wp_linux_dmabuf_feedback object anymore.
-	 */
-	void (*destroy)(struct wl_client *client,
-			struct wl_resource *resource);
+    /**
+     * destroy the feedback object
+     *
+     * Using this request a client can tell the server that it is not
+     * going to use the wp_linux_dmabuf_feedback object anymore.
+     */
+    void (*destroy)(struct wl_client *client,
+                    struct wl_resource *resource);
 };
 
 #define ZWP_LINUX_DMABUF_FEEDBACK_V1_DONE 0
@@ -767,7 +767,7 @@ struct zwp_linux_dmabuf_feedback_v1_interface {
 static inline void
 zwp_linux_dmabuf_feedback_v1_send_done(struct wl_resource *resource_)
 {
-	wl_resource_post_event(resource_, ZWP_LINUX_DMABUF_FEEDBACK_V1_DONE);
+    wl_resource_post_event(resource_, ZWP_LINUX_DMABUF_FEEDBACK_V1_DONE);
 }
 
 /**
@@ -780,7 +780,7 @@ zwp_linux_dmabuf_feedback_v1_send_done(struct wl_resource *resource_)
 static inline void
 zwp_linux_dmabuf_feedback_v1_send_format_table(struct wl_resource *resource_, int32_t fd, uint32_t size)
 {
-	wl_resource_post_event(resource_, ZWP_LINUX_DMABUF_FEEDBACK_V1_FORMAT_TABLE, fd, size);
+    wl_resource_post_event(resource_, ZWP_LINUX_DMABUF_FEEDBACK_V1_FORMAT_TABLE, fd, size);
 }
 
 /**
@@ -792,7 +792,7 @@ zwp_linux_dmabuf_feedback_v1_send_format_table(struct wl_resource *resource_, in
 static inline void
 zwp_linux_dmabuf_feedback_v1_send_main_device(struct wl_resource *resource_, struct wl_array *device)
 {
-	wl_resource_post_event(resource_, ZWP_LINUX_DMABUF_FEEDBACK_V1_MAIN_DEVICE, device);
+    wl_resource_post_event(resource_, ZWP_LINUX_DMABUF_FEEDBACK_V1_MAIN_DEVICE, device);
 }
 
 /**
@@ -803,7 +803,7 @@ zwp_linux_dmabuf_feedback_v1_send_main_device(struct wl_resource *resource_, str
 static inline void
 zwp_linux_dmabuf_feedback_v1_send_tranche_done(struct wl_resource *resource_)
 {
-	wl_resource_post_event(resource_, ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_DONE);
+    wl_resource_post_event(resource_, ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_DONE);
 }
 
 /**
@@ -815,7 +815,7 @@ zwp_linux_dmabuf_feedback_v1_send_tranche_done(struct wl_resource *resource_)
 static inline void
 zwp_linux_dmabuf_feedback_v1_send_tranche_target_device(struct wl_resource *resource_, struct wl_array *device)
 {
-	wl_resource_post_event(resource_, ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_TARGET_DEVICE, device);
+    wl_resource_post_event(resource_, ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_TARGET_DEVICE, device);
 }
 
 /**
@@ -827,7 +827,7 @@ zwp_linux_dmabuf_feedback_v1_send_tranche_target_device(struct wl_resource *reso
 static inline void
 zwp_linux_dmabuf_feedback_v1_send_tranche_formats(struct wl_resource *resource_, struct wl_array *indices)
 {
-	wl_resource_post_event(resource_, ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_FORMATS, indices);
+    wl_resource_post_event(resource_, ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_FORMATS, indices);
 }
 
 /**
@@ -839,7 +839,7 @@ zwp_linux_dmabuf_feedback_v1_send_tranche_formats(struct wl_resource *resource_,
 static inline void
 zwp_linux_dmabuf_feedback_v1_send_tranche_flags(struct wl_resource *resource_, uint32_t flags)
 {
-	wl_resource_post_event(resource_, ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_FLAGS, flags);
+    wl_resource_post_event(resource_, ZWP_LINUX_DMABUF_FEEDBACK_V1_TRANCHE_FLAGS, flags);
 }
 
 #ifdef  __cplusplus

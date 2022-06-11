@@ -10,50 +10,7 @@
 #include <unistd.h>
 #include <xf86drm.h>
 #include <stdlib.h>
-#include <errno.h>
 #include "westfield-drm.h"
-
-#define log_errno(std, fmt, ...) \
-	fprintf(std, fmt ": %s\n", ##__VA_ARGS__, strerror(errno))
-
-/** A single DRM format, with a set of modifiers attached. */
-struct drm_format {
-    // The actual DRM format, from `drm_fourcc.h`
-    uint32_t format;
-    // The number of modifiers
-    size_t len;
-    // The capacity of the array; do not use.
-    size_t capacity;
-    // The actual modifiers
-    uint64_t modifiers[];
-};
-
-/**
- * A set of DRM formats and modifiers.
- *
- * This is used to describe the supported format + modifier combinations. For
- * instance, backends will report the set they can display, and renderers will
- * report the set they can render to. For a more general overview of formats
- * and modifiers, see:
- * https://lore.kernel.org/dri-devel/20210905122742.86029-1-daniels@collabora.com/
- *
- * For compatibility with legacy drivers which don't support explicit
- * modifiers, the special modifier DRM_FORMAT_MOD_INVALID is used to indicate
- * that implicit modifiers are supported. Legacy drivers can also support the
- * DRM_FORMAT_MOD_LINEAR modifier, which forces the buffer to have a linear
- * layout.
- *
- * Users must not assume that implicit modifiers are supported unless INVALID
- * is listed in the modifier list.
- */
-struct drm_format_set {
-    // The number of formats
-    size_t len;
-    // The capacity of the array;
-    size_t capacity;
-    // A pointer to an array of `struct drm_format *` of length `len`.
-    struct drm_format **formats;
-};
 
 struct westfield_drm {
     int drm_fd;
@@ -349,16 +306,6 @@ format_set_get_ref(struct drm_format_set *set, uint32_t format) {
 }
 
 static bool
-drm_format_has(const struct drm_format *fmt, uint64_t modifier) {
-    for (size_t i = 0; i < fmt->len; ++i) {
-        if (fmt->modifiers[i] == modifier) {
-            return true;
-        }
-    }
-    return false;
-}
-
-static bool
 drm_format_add(struct drm_format **fmt_ptr, uint64_t modifier) {
     struct drm_format *fmt = *fmt_ptr;
 
@@ -431,6 +378,21 @@ drm_format_set_add(struct drm_format_set *set, uint32_t format, uint64_t modifie
 
     set->formats[set->len++] = fmt;
     return true;
+}
+
+const struct drm_format *drm_format_set_get(const struct drm_format_set *set, uint32_t format) {
+    struct drm_format **ptr =
+            format_set_get_ref((struct drm_format_set *)set, format);
+    return ptr ? *ptr : NULL;
+}
+
+static bool
+drm_format_set_has(const struct drm_format_set *set, uint32_t format, uint64_t modifier) {
+    const struct drm_format *fmt = drm_format_set_get(set, format);
+    if (!fmt) {
+        return false;
+    }
+    return drm_format_has(fmt, modifier);
 }
 
 static int 
@@ -655,7 +617,7 @@ egl_init_display(struct westfield_drm *westfield_drm, EGLDisplay *display) {
                 fprintf(stdout, "Using software rendering\n");
             } else {
                 fprintf(stderr, "Software rendering detected, please use "
-                                   "the WLR_RENDERER_ALLOW_SOFTWARE environment variable "
+                                   "the RENDERER_ALLOW_SOFTWARE environment variable "
                                    "to proceed\n");
                 return false;
             }
@@ -738,18 +700,19 @@ static bool egl_init(struct westfield_drm *westfield_drm, EGLenum platform,
     assert(atti <= sizeof(attribs)/sizeof(attribs[0]));
 
     // hack hack remove below once we can use gstreamer 1.22 and replace this eglconfig with EGL_NO_CONFIG_KHR
-    const int size = 1;
-    int matching;
-    const EGLint attrib_required[] = {
-            EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
-            EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-            EGL_RED_SIZE, 8,
-            EGL_GREEN_SIZE, 8,
-            EGL_BLUE_SIZE, 8,
-            EGL_ALPHA_SIZE, 8,
-            EGL_NONE};
-    eglChooseConfig(westfield_drm->egl.egl_display, attrib_required, &westfield_drm->egl.config, size, &matching);
+//    const int size = 1;
+//    int matching;
+//    const EGLint attrib_required[] = {
+//            EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
+//            EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+//            EGL_RED_SIZE, 8,
+//            EGL_GREEN_SIZE, 8,
+//            EGL_BLUE_SIZE, 8,
+//            EGL_ALPHA_SIZE, 8,
+//            EGL_NONE};
+//    eglChooseConfig(westfield_drm->egl.egl_display, attrib_required, &westfield_drm->egl.config, size, &matching);
     // end of hack hack
+    westfield_drm->egl.config = EGL_NO_CONFIG_KHR;
 
     westfield_drm->egl.context = eglCreateContext(westfield_drm->egl.egl_display, westfield_drm->egl.config,
                                     EGL_NO_CONTEXT, attribs);
@@ -902,4 +865,106 @@ westfield_drm_get_egl_device(struct westfield_drm *westfield_drm) {
 EGLConfig
 westfield_drm_get_egl_config(struct westfield_drm *westfield_drm) {
     return westfield_drm->egl.config;
+}
+
+EGLImageKHR
+westfield_drm_create_egl_image_from_dmabuf(struct westfield_drm *westfield_drm, struct dmabuf_attributes *attributes, bool *external_only) {
+    if (!westfield_drm->egl.exts.KHR_image_base || !westfield_drm->egl.exts.EXT_image_dma_buf_import) {
+        fprintf(stderr, "dmabuf import extension not present");
+        return NULL;
+    }
+
+    if (attributes->modifier != DRM_FORMAT_MOD_INVALID &&
+        attributes->modifier != DRM_FORMAT_MOD_LINEAR &&
+        !westfield_drm->egl.has_modifiers) {
+        fprintf(stderr, "EGL implementation doesn't support modifiers");
+        return NULL;
+    }
+
+    unsigned int atti = 0;
+    EGLint attribs[50];
+    attribs[atti++] = EGL_WIDTH;
+    attribs[atti++] = attributes->width;
+    attribs[atti++] = EGL_HEIGHT;
+    attribs[atti++] = attributes->height;
+    attribs[atti++] = EGL_LINUX_DRM_FOURCC_EXT;
+    attribs[atti++] = attributes->format;
+
+    struct {
+        EGLint fd;
+        EGLint offset;
+        EGLint pitch;
+        EGLint mod_lo;
+        EGLint mod_hi;
+    } attr_names[WESTFIELD_DMABUF_MAX_PLANES] = {
+            {
+                    EGL_DMA_BUF_PLANE0_FD_EXT,
+                    EGL_DMA_BUF_PLANE0_OFFSET_EXT,
+                    EGL_DMA_BUF_PLANE0_PITCH_EXT,
+                    EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT,
+                    EGL_DMA_BUF_PLANE0_MODIFIER_HI_EXT
+            }, {
+                    EGL_DMA_BUF_PLANE1_FD_EXT,
+                    EGL_DMA_BUF_PLANE1_OFFSET_EXT,
+                    EGL_DMA_BUF_PLANE1_PITCH_EXT,
+                    EGL_DMA_BUF_PLANE1_MODIFIER_LO_EXT,
+                    EGL_DMA_BUF_PLANE1_MODIFIER_HI_EXT
+            }, {
+                    EGL_DMA_BUF_PLANE2_FD_EXT,
+                    EGL_DMA_BUF_PLANE2_OFFSET_EXT,
+                    EGL_DMA_BUF_PLANE2_PITCH_EXT,
+                    EGL_DMA_BUF_PLANE2_MODIFIER_LO_EXT,
+                    EGL_DMA_BUF_PLANE2_MODIFIER_HI_EXT
+            }, {
+                    EGL_DMA_BUF_PLANE3_FD_EXT,
+                    EGL_DMA_BUF_PLANE3_OFFSET_EXT,
+                    EGL_DMA_BUF_PLANE3_PITCH_EXT,
+                    EGL_DMA_BUF_PLANE3_MODIFIER_LO_EXT,
+                    EGL_DMA_BUF_PLANE3_MODIFIER_HI_EXT
+            }
+    };
+
+    for (int i = 0; i < attributes->n_planes; i++) {
+        attribs[atti++] = attr_names[i].fd;
+        attribs[atti++] = attributes->fd[i];
+        attribs[atti++] = attr_names[i].offset;
+        attribs[atti++] = attributes->offset[i];
+        attribs[atti++] = attr_names[i].pitch;
+        attribs[atti++] = attributes->stride[i];
+        if (westfield_drm->egl.has_modifiers &&
+            attributes->modifier != DRM_FORMAT_MOD_INVALID) {
+            attribs[atti++] = attr_names[i].mod_lo;
+            attribs[atti++] = attributes->modifier & 0xFFFFFFFF;
+            attribs[atti++] = attr_names[i].mod_hi;
+            attribs[atti++] = attributes->modifier >> 32;
+        }
+    }
+
+    // Our clients don't expect our usage to trash the buffer contents
+    attribs[atti++] = EGL_IMAGE_PRESERVED_KHR;
+    attribs[atti++] = EGL_TRUE;
+
+    attribs[atti++] = EGL_NONE;
+    assert(atti < sizeof(attribs)/sizeof(attribs[0]));
+
+    EGLImageKHR image = westfield_drm->egl.procs.eglCreateImageKHR(westfield_drm->egl.egl_display, EGL_NO_CONTEXT,
+                                                     EGL_LINUX_DMA_BUF_EXT, NULL, attribs);
+    if (image == EGL_NO_IMAGE_KHR) {
+        fprintf(stderr, "eglCreateImageKHR failed");
+        return EGL_NO_IMAGE_KHR;
+    }
+
+    *external_only = !drm_format_set_has(&westfield_drm->egl.dmabuf_render_formats,
+                                             attributes->format, attributes->modifier);
+    return image;
+}
+
+int
+westfield_drm_get_device_fd(struct westfield_drm *westfield_drm) {
+    return westfield_drm->drm_fd;
+}
+
+const struct drm_format_set*
+westfield_drm_get_dmabuf_texture_formats(struct westfield_drm *westfield_drm) {
+    return &westfield_drm->egl.dmabuf_texture_formats;
 }

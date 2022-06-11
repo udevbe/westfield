@@ -15,7 +15,7 @@ pkg_check_modules(GBM REQUIRED gbm IMPORTED_TARGET)
 pkg_check_modules(LIBDRM REQUIRED libdrm IMPORTED_TARGET)
 pkg_check_modules(EGL REQUIRED egl IMPORTED_TARGET)
 
-add_library(westfield-wayland-server SHARED
+add_library(wayland-server SHARED
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wayland-server/wayland-server-protocol.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wayland-server/wayland-protocol.c
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wayland-server/westfield-wayland-server-extra.h
@@ -33,16 +33,17 @@ add_library(westfield-wayland-server SHARED
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wayland-server/wayland-util.c
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wayland-server/westfield-wayland-server.h
 )
-target_include_directories(westfield-wayland-server PRIVATE
+target_include_directories(wayland-server PRIVATE
         ${LibFFI_INCLUDE_DIRS}
 )
-target_link_libraries(westfield-wayland-server PRIVATE
+target_link_libraries(wayland-server PRIVATE
         PkgConfig::LibFFI
         -Wl,--no-undefined
 )
-set_target_properties(westfield-wayland-server
+set_target_properties(wayland-server
         PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/dist
+        SOVERSION 0
 )
 file(GLOB WESTFIELD_WAYLAND_SERVER_PUBLIC_HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wayland-server/wayland-server.h
@@ -61,12 +62,22 @@ add_library(westfield SHARED
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-fdutils.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-xwayland.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-xwayland.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/linux-dmabuf-unstable-v1-protocol.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-drm.c
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-drm.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield.h
-)
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-surface.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-surface.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/addon.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/addon.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-linux-dmabuf-v1.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-linux-dmabuf-v1.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-buffer.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-buffer.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-dmabuf.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/linux-dmabuf-unstable-v1-protocol.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/linux-dmabuf-unstable-v1-protocol.c)
 target_include_directories(westfield PRIVATE
+        ${CMAKE_SOURCE_DIR}/native/src
         ${CMAKE_SOURCE_DIR}/native/src/wayland-server
         ${CMAKE_SOURCE_DIR}/native/src/wayland-server/protocol
         ${LIBUDEV_INCLUDE_DIRS}
@@ -75,7 +86,7 @@ target_include_directories(westfield PRIVATE
         ${LIBDRM_INCLUDE_DIRS}
 )
 target_link_libraries(westfield PRIVATE
-        westfield-wayland-server
+        wayland-server
         ${CMAKE_JS_LIB}
         PkgConfig::LIBUDEV
         PkgConfig::GBM
@@ -107,7 +118,7 @@ set_target_properties(westfield-addon
 )
 target_link_libraries(westfield-addon PRIVATE
             ${CMAKE_JS_LIB}
-            westfield-wayland-server
+            wayland-server
             westfield
 )
 set_target_properties(westfield-addon

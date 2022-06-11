@@ -7,6 +7,7 @@
 #include "wayland-server-core.h"
 #include "westfield-wayland-server-extra.h"
 #include "westfield.h"
+#include "westfield-linux-dmabuf-v1.h"
 
 #define DECLARE_NAPI_METHOD(name, func)                          \
   { name, 0, func, 0, 0, 0, napi_default, 0 }
@@ -674,7 +675,7 @@ initDrm(napi_env env, napi_callback_info info) {
     size_t argc = 1;
     napi_value argv[argc], display_value, return_value;
     struct wl_display *display;
-    struct westfield_drm *westfield_drm;
+    struct westfield_drm *westfield_drm = NULL;
 
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL))
     display_value = argv[0];
@@ -684,7 +685,15 @@ initDrm(napi_env env, napi_callback_info info) {
             display, on_display_destroyed);
     display_destruction_listener->env = env;
 
+    // init egl backend
     westfield_drm = westfield_drm_new(display);
+    // init wayland egl related buffer protocols
+    if(westfield_drm) {
+        // TODO do something with the global object?
+        westfield_linux_dmabuf_v1_create(display, westfield_drm);
+        // TODO wl_drm
+    }
+
     NAPI_CALL(env, napi_create_external(env, westfield_drm, finalize_westfield_drm, NULL, &return_value))
 
     return return_value;
