@@ -7,9 +7,7 @@
 #include <EGL/eglext.h>
 #include "wayland-server-core.h"
 #include "westfield-dmabuf.h"
-
-#define log_errno(std, fmt, ...) \
-	fprintf(std, fmt ": %s\n", ##__VA_ARGS__, strerror(errno))
+#include "westfield-util.h"
 
 /** A single DRM format, with a set of modifiers attached. */
 struct drm_format {

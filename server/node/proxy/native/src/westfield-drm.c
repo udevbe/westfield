@@ -11,6 +11,7 @@
 #include <xf86drm.h>
 #include <stdlib.h>
 #include "westfield-drm.h"
+#include "westfield-util.h"
 
 struct westfield_drm {
     int drm_fd;
@@ -71,7 +72,7 @@ boot_gpu_devpath() {
         udev_enumerate_unref(enu);
         enu = udev_enumerate_new(udev);
         udev_enumerate_add_match_parent(enu, dev);
-        udev_enumerate_add_match_sysname(enu, "card[0-9]");
+        udev_enumerate_add_match_sysname(enu, "renderD128");
         udev_enumerate_scan_devices(enu);
         udev_device_unref(dev);
         udev_list_entry_foreach(cur, udev_enumerate_get_list_entry(enu)) {
@@ -93,7 +94,7 @@ static int
 load_egl_proc(void *proc_ptr, const char *name) {
     void *proc = (void *)eglGetProcAddress(name);
     if (proc == NULL) {
-        fprintf(stderr, "eglGetProcAddress(%s) failed\n", name);
+        wfl_log(stderr, "eglGetProcAddress(%s) failed", name);
         return -1;
     }
     *(void **)proc_ptr = proc;
@@ -161,7 +162,7 @@ egl_error_str(EGLint error) {
 static void
 egl_log(EGLenum error, const char *command, EGLint msg_type,
                     EGLLabelKHR thread, EGLLabelKHR obj, const char *msg) {
-    fprintf(stderr,
+    wfl_log(stderr,
              "[EGL] command: %s, error: %s (0x%x), message: %s",
              command, egl_error_str(error), error, msg);
 }
@@ -171,17 +172,17 @@ egl_create(struct westfield_drm *westfield_drm) {
     const char *client_exts_str = eglQueryString(EGL_NO_DISPLAY, EGL_EXTENSIONS);
     if (client_exts_str == NULL) {
         if (eglGetError() == EGL_BAD_DISPLAY) {
-            fprintf(stderr, "EGL_EXT_client_extensions not supported\n");
+            wfl_log(stderr, "EGL_EXT_client_extensions not supported");
         } else {
-            fprintf(stderr, "Failed to query EGL client extensions\n");
+            wfl_log(stderr, "Failed to query EGL client extensions");
         }
         return -1;
     }
 
-    fprintf(stdout, "Supported EGL client extensions: %s\n", client_exts_str);
+    wfl_log(stdout, "Supported EGL client extensions: %s", client_exts_str);
 
     if (!check_egl_ext(client_exts_str, "EGL_EXT_platform_base")) {
-        fprintf(stderr, "EGL_EXT_platform_base not supported\n");
+        wfl_log(stderr, "EGL_EXT_platform_base not supported");
         return -1;
     }
 
@@ -223,7 +224,7 @@ egl_create(struct westfield_drm *westfield_drm) {
     }
 
     if (eglBindAPI(EGL_OPENGL_ES_API) == EGL_FALSE) {
-        fprintf(stderr, "Failed to bind to the OpenGL ES API\n");
+        wfl_log(stderr, "Failed to bind to the OpenGL ES API");
         return -1;
     }
 
@@ -245,31 +246,31 @@ static bool device_has_name(const drmDevice *device, const char *name) {
 static EGLDeviceEXT get_egl_device_from_drm_fd(struct westfield_drm *westfield_drm,
                                                int drm_fd) {
     if (westfield_drm->egl.procs.eglQueryDevicesEXT == NULL) {
-        fprintf(stdout, "EGL_EXT_device_enumeration not supported\n");
+        wfl_log(stdout, "EGL_EXT_device_enumeration not supported");
         return EGL_NO_DEVICE_EXT;
     }
 
     EGLint nb_devices = 0;
     if (!westfield_drm->egl.procs.eglQueryDevicesEXT(0, NULL, &nb_devices)) {
-        fprintf(stderr, "Failed to query EGL devices\n");
+        wfl_log(stderr, "Failed to query EGL devices");
         return EGL_NO_DEVICE_EXT;
     }
 
     EGLDeviceEXT *devices = calloc(nb_devices, sizeof(EGLDeviceEXT));
     if (devices == NULL) {
-        fprintf(stderr, "Failed to allocate EGL device list\n");
+        wfl_log(stderr, "Failed to allocate EGL device list");
         return EGL_NO_DEVICE_EXT;
     }
 
     if (!westfield_drm->egl.procs.eglQueryDevicesEXT(nb_devices, devices, &nb_devices)) {
-        fprintf(stderr, "Failed to query EGL devices\n");
+        wfl_log(stderr, "Failed to query EGL devices");
         return EGL_NO_DEVICE_EXT;
     }
 
     drmDevice *device = NULL;
     int ret = drmGetDevice(drm_fd, &device);
     if (ret < 0) {
-        fprintf(stderr, "Failed to get DRM device: %s\n", strerror(-ret));
+        wfl_log(stderr, "Failed to get DRM device: %s\n", strerror(-ret));
         return EGL_NO_DEVICE_EXT;
     }
 
@@ -282,7 +283,7 @@ static EGLDeviceEXT get_egl_device_from_drm_fd(struct westfield_drm *westfield_d
         }
 
         if (device_has_name(device, egl_device_name)) {
-            fprintf(stdout, "Using EGL device %s\n", egl_device_name);
+            wfl_log(stdout, "Using EGL device %s\n", egl_device_name);
             egl_device = devices[i];
             break;
         }
@@ -318,7 +319,7 @@ drm_format_add(struct drm_format **fmt_ptr, uint64_t modifier) {
 
         fmt = realloc(fmt, sizeof(*fmt) + sizeof(fmt->modifiers[0]) * capacity);
         if (!fmt) {
-            log_errno(stderr, "Allocation failed");
+            wfl_log_errno(stderr, "Allocation failed");
             return false;
         }
 
@@ -336,7 +337,7 @@ drm_format_create(uint32_t format) {
     struct drm_format *fmt =
             calloc(1, sizeof(*fmt) + sizeof(fmt->modifiers[0]) * capacity);
     if (!fmt) {
-        log_errno(stderr, "Allocation failed");
+        wfl_log_errno(stderr, "Allocation failed");
         return NULL;
     }
     fmt->format = format;
@@ -367,7 +368,7 @@ drm_format_set_add(struct drm_format_set *set, uint32_t format, uint64_t modifie
         struct drm_format **tmp = realloc(set->formats,
                                               sizeof(*fmt) + sizeof(fmt->modifiers[0]) * new);
         if (!tmp) {
-            log_errno(stderr, "Allocation failed");
+            wfl_log_errno(stderr, "Allocation failed");
             free(fmt);
             return false;
         }
@@ -402,7 +403,7 @@ get_egl_dmabuf_modifiers(struct westfield_drm *westfield_drm, int format,
     *external_only = NULL;
 
     if (!westfield_drm->egl.exts.EXT_image_dma_buf_import) {
-        fprintf(stdout, "DMA-BUF extension not present\n");
+        wfl_log(stdout, "DMA-BUF extension not present");
         return -1;
     }
     if (!westfield_drm->egl.exts.EXT_image_dma_buf_import_modifiers) {
@@ -412,7 +413,7 @@ get_egl_dmabuf_modifiers(struct westfield_drm *westfield_drm, int format,
     EGLint num;
     if (!westfield_drm->egl.procs.eglQueryDmaBufModifiersEXT(westfield_drm->egl.egl_display, format, 0,
                                                NULL, NULL, &num)) {
-        fprintf(stderr, "Failed to query dmabuf number of modifiers\n");
+        wfl_log(stderr, "Failed to query dmabuf number of modifiers");
         return -1;
     }
     if (num == 0) {
@@ -421,12 +422,12 @@ get_egl_dmabuf_modifiers(struct westfield_drm *westfield_drm, int format,
 
     *modifiers = calloc(num, sizeof(uint64_t));
     if (*modifiers == NULL) {
-        log_errno(stderr, "Allocation failed");
+        wfl_log_errno(stderr, "Allocation failed");
         return -1;
     }
     *external_only = calloc(num, sizeof(EGLBoolean));
     if (*external_only == NULL) {
-        log_errno(stderr, "Allocation failed");
+        wfl_log_errno(stderr, "Allocation failed");
         free(*modifiers);
         *modifiers = NULL;
         return -1;
@@ -434,7 +435,7 @@ get_egl_dmabuf_modifiers(struct westfield_drm *westfield_drm, int format,
 
     if (!westfield_drm->egl.procs.eglQueryDmaBufModifiersEXT(westfield_drm->egl.egl_display, format, num,
                                                *modifiers, *external_only, &num)) {
-        fprintf(stderr, "Failed to query dmabuf modifiers\n");
+        wfl_log(stderr, "Failed to query dmabuf modifiers");
         free(*modifiers);
         free(*external_only);
         return -1;
@@ -445,7 +446,7 @@ get_egl_dmabuf_modifiers(struct westfield_drm *westfield_drm, int format,
 static int
 get_egl_dmabuf_formats(struct westfield_drm *westfield_drm, int **formats) {
     if (!westfield_drm->egl.exts.EXT_image_dma_buf_import) {
-        fprintf(stdout, "DMA-BUF import extension not present\n");
+        wfl_log(stdout, "DMA-BUF import extension not present");
         return -1;
     }
 
@@ -464,7 +465,7 @@ get_egl_dmabuf_formats(struct westfield_drm *westfield_drm, int **formats) {
 
         *formats = calloc(num, sizeof(int));
         if (!*formats) {
-            log_errno(stderr, "Allocation failed");
+            wfl_log_errno(stderr, "Allocation failed");
             return -1;
         }
 
@@ -474,18 +475,18 @@ get_egl_dmabuf_formats(struct westfield_drm *westfield_drm, int **formats) {
 
     EGLint num;
     if (!westfield_drm->egl.procs.eglQueryDmaBufFormatsEXT(westfield_drm->egl.egl_display, 0, NULL, &num)) {
-        fprintf(stderr, "Failed to query number of dmabuf formats\n");
+        wfl_log(stderr, "Failed to query number of dmabuf formats");
         return -1;
     }
 
     *formats = calloc(num, sizeof(int));
     if (*formats == NULL) {
-        fprintf(stderr, "Allocation failed: %s\n", strerror(errno));
+        wfl_log(stderr, "Allocation failed: %s\n", strerror(errno));
         return -1;
     }
 
     if (!westfield_drm->egl.procs.eglQueryDmaBufFormatsEXT(westfield_drm->egl.egl_display, num, *formats, &num)) {
-        fprintf(stderr, "Failed to query dmabuf format\n");
+        wfl_log(stderr, "Failed to query dmabuf format");
         free(*formats);
         return -1;
     }
@@ -550,8 +551,8 @@ init_dmabuf_formats(struct westfield_drm *westfield_drm) {
         snprintf(&str_formats[i*5], (formats_len - i) * 5 + 1, "%.4s ",
                  (char*)&formats[i]);
     }
-    fprintf(stdout, "Supported DMA-BUF formats: %s\n", str_formats);
-    fprintf(stdout, "EGL DMA-BUF format modifiers %s\n",
+    wfl_log(stdout, "Supported DMA-BUF formats: %s\n", str_formats);
+    wfl_log(stdout, "EGL DMA-BUF format modifiers %s\n",
             has_modifiers ? "supported" : "unsupported");
     free(str_formats);
 
@@ -567,13 +568,13 @@ egl_init_display(struct westfield_drm *westfield_drm, EGLDisplay *display) {
 
     EGLint major, minor;
     if (eglInitialize(westfield_drm->egl.egl_display, &major, &minor) == EGL_FALSE) {
-        fprintf(stderr, "Failed to initialize EGL\n");
+        wfl_log(stderr, "Failed to initialize EGL");
         return false;
     }
 
     const char *display_exts_str = eglQueryString(westfield_drm->egl.egl_display, EGL_EXTENSIONS);
     if (display_exts_str == NULL) {
-        fprintf(stderr, "Failed to query EGL display extensions\n");
+        wfl_log(stderr, "Failed to query EGL display extensions");
         return false;
     }
 
@@ -599,7 +600,7 @@ egl_init_display(struct westfield_drm *westfield_drm, EGLDisplay *display) {
         EGLAttrib device_attrib;
         if (!westfield_drm->egl.procs.eglQueryDisplayAttribEXT(westfield_drm->egl.egl_display,
                                                  EGL_DEVICE_EXT, &device_attrib)) {
-            fprintf(stderr, "eglQueryDisplayAttribEXT(EGL_DEVICE_EXT) failed\n");
+            wfl_log(stderr, "eglQueryDisplayAttribEXT(EGL_DEVICE_EXT) failed");
             return false;
         }
         westfield_drm->egl.device = (EGLDeviceEXT)device_attrib;
@@ -607,18 +608,18 @@ egl_init_display(struct westfield_drm *westfield_drm, EGLDisplay *display) {
         device_exts_str =
                 westfield_drm->egl.procs.eglQueryDeviceStringEXT(westfield_drm->egl.device, EGL_EXTENSIONS);
         if (device_exts_str == NULL) {
-            fprintf(stderr, "eglQueryDeviceStringEXT(EGL_EXTENSIONS) failed\n");
+            wfl_log(stderr, "eglQueryDeviceStringEXT(EGL_EXTENSIONS) failed");
             return false;
         }
 
         if (check_egl_ext(device_exts_str, "EGL_MESA_device_software")) {
             const char *allow_software = getenv("RENDERER_ALLOW_SOFTWARE");
             if (allow_software != NULL && strcmp(allow_software, "1") == 0) {
-                fprintf(stdout, "Using software rendering\n");
+                wfl_log(stdout, "Using software rendering");
             } else {
-                fprintf(stderr, "Software rendering detected, please use "
+                wfl_log(stderr, "Software rendering detected, please use "
                                    "the RENDERER_ALLOW_SOFTWARE environment variable "
-                                   "to proceed\n");
+                                   "to proceed");
                 return false;
             }
         }
@@ -638,27 +639,27 @@ egl_init_display(struct westfield_drm *westfield_drm, EGLDisplay *display) {
 
     if (!check_egl_ext(display_exts_str, "EGL_KHR_no_config_context") &&
         !check_egl_ext(display_exts_str, "EGL_MESA_configless_context")) {
-        fprintf(stderr, "EGL_KHR_no_config_context or "
-                           "EGL_MESA_configless_context not supported\n");
+        wfl_log(stderr, "EGL_KHR_no_config_context or "
+                           "EGL_MESA_configless_context not supported");
         return false;
     }
 
     if (!check_egl_ext(display_exts_str, "EGL_KHR_surfaceless_context")) {
-        fprintf(stderr, "EGL_KHR_surfaceless_context not supported\n");
+        wfl_log(stderr, "EGL_KHR_surfaceless_context not supported");
         return false;
     }
 
     westfield_drm->egl.exts.IMG_context_priority =
             check_egl_ext(display_exts_str, "EGL_IMG_context_priority");
 
-    fprintf(stdout, "Using EGL %d.%d\n", (int)major, (int)minor);
-    fprintf(stdout, "Supported EGL display extensions: %s\n", display_exts_str);
+    wfl_log(stdout, "Using EGL %d.%d\n", (int)major, (int)minor);
+    wfl_log(stdout, "Supported EGL display extensions: %s\n", display_exts_str);
     if (device_exts_str != NULL) {
-        fprintf(stdout, "Supported EGL device extensions: %s\n", device_exts_str);
+        wfl_log(stdout, "Supported EGL device extensions: %s\n", device_exts_str);
     }
-    fprintf(stdout, "EGL vendor: %s\n", eglQueryString(westfield_drm->egl.egl_display, EGL_VENDOR));
+    wfl_log(stdout, "EGL vendor: %s\n", eglQueryString(westfield_drm->egl.egl_display, EGL_VENDOR));
     if (driver_name != NULL) {
-        fprintf(stdout, "EGL driver name: %s\n", driver_name);
+        wfl_log(stdout, "EGL driver name: %s\n", driver_name);
     }
 
     init_dmabuf_formats(westfield_drm);
@@ -671,7 +672,7 @@ static bool egl_init(struct westfield_drm *westfield_drm, EGLenum platform,
     EGLDisplay display = westfield_drm->egl.procs.eglGetPlatformDisplayEXT(platform,
                                                              remote_display, NULL);
     if (display == EGL_NO_DISPLAY) {
-        fprintf(stderr, "Failed to create EGL display\n");
+        wfl_log(stderr, "Failed to create EGL display");
         return false;
     }
 
@@ -717,7 +718,7 @@ static bool egl_init(struct westfield_drm *westfield_drm, EGLenum platform,
     westfield_drm->egl.context = eglCreateContext(westfield_drm->egl.egl_display, westfield_drm->egl.config,
                                     EGL_NO_CONTEXT, attribs);
     if (westfield_drm->egl.context == EGL_NO_CONTEXT) {
-        fprintf(stderr, "Failed to create EGL context\n");
+        wfl_log(stderr, "Failed to create EGL context");
         return false;
     }
 
@@ -726,9 +727,9 @@ static bool egl_init(struct westfield_drm *westfield_drm, EGLenum platform,
         eglQueryContext(westfield_drm->egl.egl_display, westfield_drm->egl.context,
                         EGL_CONTEXT_PRIORITY_LEVEL_IMG, &priority);
         if (priority != EGL_CONTEXT_PRIORITY_HIGH_IMG) {
-            fprintf(stdout, "Failed to obtain a high priority context\n");
+            wfl_log(stdout, "Failed to obtain a high priority context");
         } else {
-            fprintf(stdout, "Obtained high priority context\n");
+            wfl_log(stdout, "Obtained high priority context");
         }
     }
 
@@ -743,16 +744,16 @@ open_render_node(int drm_fd) {
         // primary node
         render_name = drmGetPrimaryDeviceNameFromFd(drm_fd);
         if (render_name == NULL) {
-            fprintf(stderr, "drmGetPrimaryDeviceNameFromFd failed\n");
+            wfl_log(stderr, "drmGetPrimaryDeviceNameFromFd failed");
             return -1;
         }
-        fprintf(stdout, "DRM device '%s' has no render node, "
+        wfl_log(stdout, "DRM device '%s' has no render node, "
                            "falling back to primary node\n", render_name);
     }
 
     int render_fd = open(render_name, O_RDWR | O_CLOEXEC);
     if (render_fd < 0) {
-        fprintf(stderr, "Failed to open DRM node '%s'\n", render_name);
+        wfl_log(stderr, "Failed to open DRM node '%s'\n", render_name);
     }
     free(render_name);
     return render_fd;
@@ -761,7 +762,7 @@ open_render_node(int drm_fd) {
 static int 
 westfield_drm_egl_create_with_drm_fd(struct westfield_drm *westfield_drm, int drm_fd) {
     if (egl_create(westfield_drm)) {
-        fprintf(stderr, "Failed to create EGL context\n");
+        wfl_log(stderr, "Failed to create EGL context");
         return -1;
     }
 
@@ -773,43 +774,43 @@ westfield_drm_egl_create_with_drm_fd(struct westfield_drm *westfield_drm, int dr
         EGLDeviceEXT egl_device = get_egl_device_from_drm_fd(westfield_drm, drm_fd);
         if (egl_device != EGL_NO_DEVICE_EXT) {
             if (egl_init(westfield_drm, EGL_PLATFORM_DEVICE_EXT, egl_device)) {
-                fprintf(stdout, "Using EGL_PLATFORM_DEVICE_EXT\n");
+                wfl_log(stdout, "Using EGL_PLATFORM_DEVICE_EXT");
                 return 0;
             }
             goto error;
         }
         /* Falls back on GBM in case the device was not found */
     } else {
-        fprintf(stdout, "EXT_platform_device not supported\n");
+        wfl_log(stdout, "EXT_platform_device not supported");
     }
 
     if (westfield_drm->egl.exts.KHR_platform_gbm) {
         int gbm_fd = open_render_node(drm_fd);
         if (gbm_fd < 0) {
-            fprintf(stderr, "Failed to open DRM render node\n");
+            wfl_log(stderr, "Failed to open DRM render node");
             goto error;
         }
 
         westfield_drm->egl.gbm_device = gbm_create_device(gbm_fd);
         if (!westfield_drm->egl.gbm_device) {
             close(gbm_fd);
-            fprintf(stderr, "Failed to create GBM device\n");
+            wfl_log(stderr, "Failed to create GBM device");
             goto error;
         }
 
         if (egl_init(westfield_drm, EGL_PLATFORM_GBM_KHR, westfield_drm->egl.gbm_device)) {
-            fprintf(stdout, "Using EGL_PLATFORM_GBM_KHR\n");
+            wfl_log(stdout, "Using EGL_PLATFORM_GBM_KHR");
             return 0;
         }
 
         gbm_device_destroy(westfield_drm->egl.gbm_device);
         close(gbm_fd);
     } else {
-        fprintf(stdout, "KHR_platform_gbm not supported\n");
+        wfl_log(stdout, "KHR_platform_gbm not supported");
     }
 
     error:
-    fprintf(stderr, "Failed to initialize EGL context\n");
+    wfl_log(stderr, "Failed to initialize EGL context");
     if (westfield_drm->egl.egl_display) {
         eglMakeCurrent(westfield_drm->egl.egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE,
                        EGL_NO_CONTEXT);
@@ -824,10 +825,12 @@ westfield_drm_new(struct wl_display *wl_display) {
     struct westfield_drm *westfield_drm = calloc(sizeof (struct westfield_drm), 1);
 
     char *devpath = boot_gpu_devpath();
+    wfl_log(stdout, "using device path %s", devpath);
     int32_t fd = open(devpath, O_RDWR|O_CLOEXEC|O_NOCTTY|O_NONBLOCK);
     assert (fd > 0);
     free(devpath);
-    
+    westfield_drm->drm_fd = fd;
+
     if(westfield_drm_egl_create_with_drm_fd(westfield_drm, fd)) {
         close(fd);
         goto err;
@@ -870,14 +873,14 @@ westfield_drm_get_egl_config(struct westfield_drm *westfield_drm) {
 EGLImageKHR
 westfield_drm_create_egl_image_from_dmabuf(struct westfield_drm *westfield_drm, struct dmabuf_attributes *attributes, bool *external_only) {
     if (!westfield_drm->egl.exts.KHR_image_base || !westfield_drm->egl.exts.EXT_image_dma_buf_import) {
-        fprintf(stderr, "dmabuf import extension not present");
+        wfl_log(stderr, "dmabuf import extension not present");
         return NULL;
     }
 
     if (attributes->modifier != DRM_FORMAT_MOD_INVALID &&
         attributes->modifier != DRM_FORMAT_MOD_LINEAR &&
         !westfield_drm->egl.has_modifiers) {
-        fprintf(stderr, "EGL implementation doesn't support modifiers");
+        wfl_log(stderr, "EGL implementation doesn't support modifiers");
         return NULL;
     }
 
@@ -950,7 +953,7 @@ westfield_drm_create_egl_image_from_dmabuf(struct westfield_drm *westfield_drm, 
     EGLImageKHR image = westfield_drm->egl.procs.eglCreateImageKHR(westfield_drm->egl.egl_display, EGL_NO_CONTEXT,
                                                      EGL_LINUX_DMA_BUF_EXT, NULL, attribs);
     if (image == EGL_NO_IMAGE_KHR) {
-        fprintf(stderr, "eglCreateImageKHR failed");
+        wfl_log(stderr, "eglCreateImageKHR failed");
         return EGL_NO_IMAGE_KHR;
     }
 

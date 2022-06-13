@@ -75,7 +75,9 @@ add_library(westfield SHARED
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-buffer.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-dmabuf.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/linux-dmabuf-unstable-v1-protocol.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/linux-dmabuf-unstable-v1-protocol.c)
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/linux-dmabuf-unstable-v1-protocol.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-util.h
+        )
 target_include_directories(westfield PRIVATE
         ${CMAKE_SOURCE_DIR}/native/src
         ${CMAKE_SOURCE_DIR}/native/src/wayland-server

@@ -7,11 +7,15 @@
 #include <drm/drm_fourcc.h>
 #include <fcntl.h>
 #include <time.h>
+#include <sys/sysmacros.h>
+#include <libudev.h>
+#include <xf86drm.h>
 #include "linux-dmabuf-unstable-v1-protocol.h"
 #include "westfield-surface.h"
 #include "westfield-drm.h"
 #include "westfield-linux-dmabuf-v1.h"
 #include "addon.h"
+#include "westfield-util.h"
 
 #define LINUX_DMABUF_VERSION 4
 
@@ -189,7 +193,7 @@ params_add(struct wl_client *client,
     if (!params) {
         wl_resource_post_error(params_resource,
                                ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_ALREADY_USED,
-                               "params was already used to create a wl_buffer\n");
+                               "params was already used to create a wl_buffer");
         close(fd);
         return;
     }
@@ -316,7 +320,7 @@ params_create_common(struct wl_resource *params_resource,
     if (!params) {
         wl_resource_post_error(params_resource,
                                ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_ALREADY_USED,
-                               "params was already used to create a wl_buffer\n");
+                               "params was already used to create a wl_buffer");
         return;
     }
 
@@ -330,14 +334,14 @@ params_create_common(struct wl_resource *params_resource,
     if (!attribs.n_planes) {
         wl_resource_post_error(params_resource,
                                ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_INCOMPLETE,
-                               "no dmabuf has been added to the params\n");
+                               "no dmabuf has been added to the params");
         goto err_out;
     }
 
     if (attribs.fd[0] == -1) {
         wl_resource_post_error(params_resource,
                                ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_INCOMPLETE,
-                               "no dmabuf has been added for plane 0\n");
+                               "no dmabuf has been added for plane 0");
         goto err_out;
     }
 
@@ -345,7 +349,7 @@ params_create_common(struct wl_resource *params_resource,
         (attribs.fd[2] == -1 || attribs.fd[1] == -1)) {
         wl_resource_post_error(params_resource,
                                ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_INCOMPLETE,
-                               "gap in dmabuf planes\n");
+                               "gap in dmabuf planes");
         goto err_out;
     }
 
@@ -361,7 +365,7 @@ params_create_common(struct wl_resource *params_resource,
     }
 
     if (flags != 0) {
-        fprintf(stderr, "dmabuf flags aren't supported\n");
+        fprintf(stderr, "dmabuf flags aren't supported");
         goto err_failed;
     }
 
@@ -474,7 +478,7 @@ params_create_common(struct wl_resource *params_resource,
          */
         wl_resource_post_error(params_resource,
                                ZWP_LINUX_BUFFER_PARAMS_V1_ERROR_INVALID_WL_BUFFER,
-                               "importing the supplied dmabufs failed\n");
+                               "importing the supplied dmabufs failed");
     }
     err_out:
     dmabuf_attributes_finish(&attribs);
@@ -619,14 +623,14 @@ feedback_compile(const struct westfield_linux_dmabuf_feedback_v1 *feedback) {
             table_len * sizeof(struct westfield_linux_dmabuf_feedback_v1_table_entry);
     int rw_fd, ro_fd;
     if (!allocate_shm_file_pair(table_size, &rw_fd, &ro_fd)) {
-        fprintf(stderr, "Failed to allocate shm file for format table\n");
+        fprintf(stderr, "Failed to allocate shm file for format table");
         return NULL;
     }
 
     struct westfield_linux_dmabuf_feedback_v1_table_entry *table =
             mmap(NULL, table_size, PROT_READ | PROT_WRITE, MAP_SHARED, rw_fd, 0);
     if (table == MAP_FAILED) {
-        log_errno(stderr, "mmap failed\n");
+        wfl_log_errno(stderr, "mmap failed");
         close(rw_fd);
         close(ro_fd);
         return NULL;
@@ -675,7 +679,7 @@ feedback_compile(const struct westfield_linux_dmabuf_feedback_v1 *feedback) {
 
         wl_array_init(&compiled_tranche->indices);
         if (!wl_array_add(&compiled_tranche->indices, table_len * sizeof(uint16_t))) {
-            fprintf(stderr, "Failed to allocate tranche indices array\n");
+            fprintf(stderr, "Failed to allocate tranche indices array");
             goto error_compiled;
         }
 
@@ -709,7 +713,7 @@ feedback_compile(const struct westfield_linux_dmabuf_feedback_v1 *feedback) {
     wl_array_init(&fallback_compiled_tranche->indices);
     if (!wl_array_add(&fallback_compiled_tranche->indices,
                       table_len * sizeof(uint16_t))) {
-        fprintf(stderr, "Failed to allocate fallback tranche indices array\n");
+        fprintf(stderr, "Failed to allocate fallback tranche indices array");
         goto error_compiled;
     }
 
@@ -748,20 +752,21 @@ feedback_tranche_init_with_renderer(
 
     int drm_fd = westfield_drm_get_device_fd(renderer);
     if (drm_fd < 0) {
-        fprintf(stderr, "Failed to get DRM FD from renderer\n");
+        wfl_log(stderr, "Failed to get DRM FD from renderer");
         return false;
     }
 
     struct stat stat;
     if (fstat(drm_fd, &stat) != 0) {
-        log_errno(stderr, "fstat failed\n");
+        wfl_log_errno(stderr, "fstat failed");
         return false;
     }
+    wfl_log(stdout, "using target device: %u:%u", major(stat.st_rdev), minor(stat.st_rdev));
     tranche->target_device = stat.st_rdev;
 
     tranche->formats = westfield_drm_get_dmabuf_texture_formats(renderer);
     if (tranche->formats == NULL) {
-        fprintf(stderr, "Failed to get renderer DMA-BUF texture formats\n");
+        wfl_log(stderr, "Failed to get renderer DMA-BUF texture formats");
         return false;
     }
 
@@ -784,6 +789,70 @@ compile_default_feedback(struct westfield_drm *renderer) {
     return feedback_compile(&feedback);
 }
 
+static char *
+get_most_appropriate_node(const char *drm_node)
+{
+    drmDevice **devices;
+    drmDevice *match = NULL;
+    char *appropriate_node = NULL;
+    int num_devices;
+    int i, j;
+
+    num_devices = drmGetDevices2(0, NULL, 0);
+    assert(num_devices > 0 && "error: no drm devices available");
+
+    devices = calloc(num_devices, sizeof(*devices));
+    assert(devices && "error: failed to allocate memory for drm devices");
+
+    num_devices = drmGetDevices2(0, devices, num_devices);
+    assert(num_devices > 0 && "error: no drm devices available");
+
+    for (i = 0; i < num_devices && match == NULL; i++) {
+        for (j = 0; j < DRM_NODE_MAX && match == NULL; j++) {
+            if (!(devices[i]->available_nodes & (1 << j)))
+                continue;
+            if (strcmp(devices[i]->nodes[j], drm_node) == 0)
+                match = devices[i];
+        }
+    }
+    assert(match != NULL && "error: could not find device on the list");
+    assert(match->available_nodes & (1 << DRM_NODE_PRIMARY));
+
+
+    if (match->available_nodes & (1 << DRM_NODE_RENDER))
+        appropriate_node = strdup(match->nodes[DRM_NODE_RENDER]);
+    else
+        appropriate_node = strdup(match->nodes[DRM_NODE_PRIMARY]);
+    assert(appropriate_node && "error: could not get drm node");
+
+    for (i = 0; i < num_devices; i++)
+        drmFreeDevice(&devices[i]);
+    free(devices);
+
+    return appropriate_node;
+}
+
+static char *
+get_drm_node(dev_t device)
+{
+    struct udev *udev;
+    struct udev_device *udev_dev;
+    const char *drm_node;
+
+    udev = udev_new();
+    assert(udev && "error: failed to create udev context object");
+
+    udev_dev = udev_device_new_from_devnum(udev, 'c', device);
+    assert(udev_dev && "error: failed to create udev device");
+
+    drm_node = udev_device_get_devnode(udev_dev);
+    assert(drm_node && "error: failed to retrieve drm node");
+
+    udev_unref(udev);
+
+    return get_most_appropriate_node(drm_node);
+}
+
 static void
 feedback_tranche_send(
         const struct westfield_linux_dmabuf_feedback_v1_compiled_tranche *tranche,
@@ -792,6 +861,9 @@ feedback_tranche_send(
             .size = sizeof(tranche->target_device),
             .data = (void *)&tranche->target_device,
     };
+
+    wfl_log(stdout, "sending target device: %u:%u", major(tranche->target_device), minor(tranche->target_device));
+
     zwp_linux_dmabuf_feedback_v1_send_tranche_target_device(resource, &dev_array);
     zwp_linux_dmabuf_feedback_v1_send_tranche_flags(resource, tranche->flags);
     zwp_linux_dmabuf_feedback_v1_send_tranche_formats(resource,
@@ -801,6 +873,10 @@ feedback_tranche_send(
 
 static void
 feedback_send(const struct westfield_linux_dmabuf_feedback_v1_compiled *feedback, struct wl_resource *resource) {
+    char *drm_node = get_drm_node(feedback->main_device);
+    assert(drm_node && "error: failed to retrieve drm node");
+    wfl_log(stderr, "feedback: main device %s", drm_node);
+
     struct wl_array dev_array = {
             .size = sizeof(feedback->main_device),
             .data = (void *)&feedback->main_device,
@@ -907,6 +983,11 @@ linux_dmabuf_get_surface_feedback(struct wl_client *client,
                                   struct wl_resource *surface_resource) {
     struct westfield_linux_dmabuf_v1 *linux_dmabuf = linux_dmabuf_from_resource(resource);
     struct westfield_surface *westfield_surface = wl_resource_get_user_data(surface_resource);
+    if(westfield_surface == NULL) {
+        westfield_surface = calloc(1, sizeof (struct westfield_surface));
+        addon_set_init(&westfield_surface->addons);
+        wl_resource_set_user_data(surface_resource, westfield_surface);
+    }
 
     struct westfield_linux_dmabuf_v1_surface *surface =
             surface_get_or_create(linux_dmabuf, westfield_surface);
@@ -1005,7 +1086,7 @@ westfield_linux_dmabuf_v1_create(struct wl_display *display, struct westfield_dr
     struct westfield_linux_dmabuf_v1 *linux_dmabuf =
             calloc(1, sizeof(struct westfield_linux_dmabuf_v1));
     if (linux_dmabuf == NULL) {
-        fprintf(stderr, "could not create simple dmabuf manager\n");
+        wfl_log(stderr, "could not create simple dmabuf manager");
         return NULL;
     }
     linux_dmabuf->renderer = renderer;
@@ -1017,14 +1098,14 @@ westfield_linux_dmabuf_v1_create(struct wl_display *display, struct westfield_dr
             wl_global_create(display, &zwp_linux_dmabuf_v1_interface,
                              LINUX_DMABUF_VERSION, linux_dmabuf, linux_dmabuf_bind);
     if (!linux_dmabuf->global) {
-        fprintf(stderr, "could not create linux dmabuf v1 wl global\n");
+        wfl_log(stderr, "could not create linux dmabuf v1 wl global");
         free(linux_dmabuf);
         return NULL;
     }
 
     linux_dmabuf->default_feedback = compile_default_feedback(renderer);
     if (linux_dmabuf->default_feedback == NULL) {
-        fprintf(stderr, "Failed to init default linux-dmabuf feedback\n");
+        wfl_log(stderr, "Failed to init default linux-dmabuf feedback");
         wl_global_destroy(linux_dmabuf->global);
         free(linux_dmabuf);
         return NULL;
