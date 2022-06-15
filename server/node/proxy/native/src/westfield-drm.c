@@ -521,23 +521,23 @@ init_dmabuf_formats(struct westfield_drm *westfield_drm) {
         drm_format_set_add(&westfield_drm->egl.dmabuf_render_formats, fmt,
                                DRM_FORMAT_MOD_INVALID);
 
-        if (modifiers_len == 0) {
+        // TODO enabled other modifiers once gstreamer has explicit modifiers support
+//        if (modifiers_len == 0) {
             // Assume the linear layout is supported if the driver doesn't
             // explicitly say otherwise
             drm_format_set_add(&westfield_drm->egl.dmabuf_texture_formats, fmt,
                                    DRM_FORMAT_MOD_LINEAR);
             drm_format_set_add(&westfield_drm->egl.dmabuf_render_formats, fmt,
                                    DRM_FORMAT_MOD_LINEAR);
-        }
-
-        for (int j = 0; j < modifiers_len; j++) {
-            drm_format_set_add(&westfield_drm->egl.dmabuf_texture_formats, fmt,
-                                   modifiers[j]);
-            if (!external_only[j]) {
-                drm_format_set_add(&westfield_drm->egl.dmabuf_render_formats, fmt,
-                                       modifiers[j]);
-            }
-        }
+//        }
+//        for (int j = 0; j < modifiers_len; j++) {
+//            drm_format_set_add(&westfield_drm->egl.dmabuf_texture_formats, fmt,
+//                                   modifiers[j]);
+//            if (!external_only[j]) {
+//                drm_format_set_add(&westfield_drm->egl.dmabuf_render_formats, fmt,
+//                                       modifiers[j]);
+//            }
+//        }
 
         free(modifiers);
         free(external_only);
@@ -701,19 +701,19 @@ static bool egl_init(struct westfield_drm *westfield_drm, EGLenum platform,
     assert(atti <= sizeof(attribs)/sizeof(attribs[0]));
 
     // hack hack remove below once we can use gstreamer 1.22 and replace this eglconfig with EGL_NO_CONFIG_KHR
-//    const int size = 1;
-//    int matching;
-//    const EGLint attrib_required[] = {
-//            EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
-//            EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-//            EGL_RED_SIZE, 8,
-//            EGL_GREEN_SIZE, 8,
-//            EGL_BLUE_SIZE, 8,
-//            EGL_ALPHA_SIZE, 8,
-//            EGL_NONE};
-//    eglChooseConfig(westfield_drm->egl.egl_display, attrib_required, &westfield_drm->egl.config, size, &matching);
+    const int size = 1;
+    int matching;
+    const EGLint attrib_required[] = {
+            EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
+            EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+            EGL_RED_SIZE, 8,
+            EGL_GREEN_SIZE, 8,
+            EGL_BLUE_SIZE, 8,
+            EGL_ALPHA_SIZE, 8,
+            EGL_NONE};
+    eglChooseConfig(westfield_drm->egl.egl_display, attrib_required, &westfield_drm->egl.config, size, &matching);
     // end of hack hack
-    westfield_drm->egl.config = EGL_NO_CONFIG_KHR;
+//    westfield_drm->egl.config = EGL_NO_CONFIG_KHR;
 
     westfield_drm->egl.context = eglCreateContext(westfield_drm->egl.egl_display, westfield_drm->egl.config,
                                     EGL_NO_CONTEXT, attribs);
