@@ -48,7 +48,7 @@ struct drm_format_set {
     struct drm_format **formats;
 };
 
-static bool
+static inline bool
 drm_format_has(const struct drm_format *fmt, uint64_t modifier) {
     for (size_t i = 0; i < fmt->len; ++i) {
         if (fmt->modifiers[i] == modifier) {
@@ -77,9 +77,6 @@ westfield_drm_get_egl_device(struct westfield_drm *westfield_drm);
 
 EGLConfig
 westfield_drm_get_egl_config(struct westfield_drm *westfield_drm);
-
-EGLImageKHR
-westfield_drm_create_egl_image_from_dmabuf(struct westfield_drm *westfield_drm, struct dmabuf_attributes *attributes, bool *external_only);
 
 int
 westfield_drm_get_device_fd(struct westfield_drm *westfield_drm);

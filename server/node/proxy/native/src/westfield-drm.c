@@ -155,8 +155,9 @@ egl_error_str(EGLint error) {
             return "EGL_BAD_NATIVE_WINDOW";
         case EGL_CONTEXT_LOST:
             return "EGL_CONTEXT_LOST";
+        default:
+            return "unknown error";
     }
-    return "unknown error";
 }
 
 static void
@@ -460,7 +461,7 @@ get_egl_dmabuf_formats(struct westfield_drm *westfield_drm, int **formats) {
                 DRM_FORMAT_ARGB8888,
                 DRM_FORMAT_XRGB8888,
         };
-        static unsigned num = sizeof(fallback_formats) /
+        static const int num = sizeof(fallback_formats) /
                               sizeof(fallback_formats[0]);
 
         *formats = calloc(num, sizeof(int));
@@ -496,14 +497,14 @@ get_egl_dmabuf_formats(struct westfield_drm *westfield_drm, int **formats) {
 static void
 init_dmabuf_formats(struct westfield_drm *westfield_drm) {
     int *formats;
-    int formats_len = get_egl_dmabuf_formats(westfield_drm, &formats);
+    const int formats_len = get_egl_dmabuf_formats(westfield_drm, &formats);
     if (formats_len < 0) {
         return;
     }
 
     bool has_modifiers = false;
     for (int i = 0; i < formats_len; i++) {
-        uint32_t fmt = formats[i];
+        const int fmt = formats[i];
 
         uint64_t *modifiers;
         EGLBoolean *external_only;
@@ -868,98 +869,6 @@ westfield_drm_get_egl_device(struct westfield_drm *westfield_drm) {
 EGLConfig
 westfield_drm_get_egl_config(struct westfield_drm *westfield_drm) {
     return westfield_drm->egl.config;
-}
-
-EGLImageKHR
-westfield_drm_create_egl_image_from_dmabuf(struct westfield_drm *westfield_drm, struct dmabuf_attributes *attributes, bool *external_only) {
-    if (!westfield_drm->egl.exts.KHR_image_base || !westfield_drm->egl.exts.EXT_image_dma_buf_import) {
-        wfl_log(stderr, "dmabuf import extension not present");
-        return NULL;
-    }
-
-    if (attributes->modifier != DRM_FORMAT_MOD_INVALID &&
-        attributes->modifier != DRM_FORMAT_MOD_LINEAR &&
-        !westfield_drm->egl.has_modifiers) {
-        wfl_log(stderr, "EGL implementation doesn't support modifiers");
-        return NULL;
-    }
-
-    unsigned int atti = 0;
-    EGLint attribs[50];
-    attribs[atti++] = EGL_WIDTH;
-    attribs[atti++] = attributes->width;
-    attribs[atti++] = EGL_HEIGHT;
-    attribs[atti++] = attributes->height;
-    attribs[atti++] = EGL_LINUX_DRM_FOURCC_EXT;
-    attribs[atti++] = attributes->format;
-
-    struct {
-        EGLint fd;
-        EGLint offset;
-        EGLint pitch;
-        EGLint mod_lo;
-        EGLint mod_hi;
-    } attr_names[WESTFIELD_DMABUF_MAX_PLANES] = {
-            {
-                    EGL_DMA_BUF_PLANE0_FD_EXT,
-                    EGL_DMA_BUF_PLANE0_OFFSET_EXT,
-                    EGL_DMA_BUF_PLANE0_PITCH_EXT,
-                    EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT,
-                    EGL_DMA_BUF_PLANE0_MODIFIER_HI_EXT
-            }, {
-                    EGL_DMA_BUF_PLANE1_FD_EXT,
-                    EGL_DMA_BUF_PLANE1_OFFSET_EXT,
-                    EGL_DMA_BUF_PLANE1_PITCH_EXT,
-                    EGL_DMA_BUF_PLANE1_MODIFIER_LO_EXT,
-                    EGL_DMA_BUF_PLANE1_MODIFIER_HI_EXT
-            }, {
-                    EGL_DMA_BUF_PLANE2_FD_EXT,
-                    EGL_DMA_BUF_PLANE2_OFFSET_EXT,
-                    EGL_DMA_BUF_PLANE2_PITCH_EXT,
-                    EGL_DMA_BUF_PLANE2_MODIFIER_LO_EXT,
-                    EGL_DMA_BUF_PLANE2_MODIFIER_HI_EXT
-            }, {
-                    EGL_DMA_BUF_PLANE3_FD_EXT,
-                    EGL_DMA_BUF_PLANE3_OFFSET_EXT,
-                    EGL_DMA_BUF_PLANE3_PITCH_EXT,
-                    EGL_DMA_BUF_PLANE3_MODIFIER_LO_EXT,
-                    EGL_DMA_BUF_PLANE3_MODIFIER_HI_EXT
-            }
-    };
-
-    for (int i = 0; i < attributes->n_planes; i++) {
-        attribs[atti++] = attr_names[i].fd;
-        attribs[atti++] = attributes->fd[i];
-        attribs[atti++] = attr_names[i].offset;
-        attribs[atti++] = attributes->offset[i];
-        attribs[atti++] = attr_names[i].pitch;
-        attribs[atti++] = attributes->stride[i];
-        if (westfield_drm->egl.has_modifiers &&
-            attributes->modifier != DRM_FORMAT_MOD_INVALID) {
-            attribs[atti++] = attr_names[i].mod_lo;
-            attribs[atti++] = attributes->modifier & 0xFFFFFFFF;
-            attribs[atti++] = attr_names[i].mod_hi;
-            attribs[atti++] = attributes->modifier >> 32;
-        }
-    }
-
-    // Our clients don't expect our usage to trash the buffer contents
-    attribs[atti++] = EGL_IMAGE_PRESERVED_KHR;
-    attribs[atti++] = EGL_TRUE;
-
-    attribs[atti++] = EGL_NONE;
-    assert(atti < sizeof(attribs)/sizeof(attribs[0]));
-
-    EGLImageKHR image = westfield_drm->egl.procs.eglCreateImageKHR(westfield_drm->egl.egl_display, EGL_NO_CONTEXT,
-                                                     EGL_LINUX_DMA_BUF_EXT, NULL, attribs);
-    if (image == EGL_NO_IMAGE_KHR) {
-        wfl_log(stderr, "eglCreateImageKHR failed");
-        return EGL_NO_IMAGE_KHR;
-    }
-
-    *external_only = !drm_format_set_has(&westfield_drm->egl.dmabuf_render_formats,
-                                             attributes->format, attributes->modifier);
-    return image;
 }
 
 int

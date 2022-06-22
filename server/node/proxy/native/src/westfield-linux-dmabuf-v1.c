@@ -243,17 +243,6 @@ buffer_handle_resource_destroy(struct wl_resource *buffer_resource) {
     westfield_buffer_drop(&buffer->base);
 }
 
-static bool
-check_import_dmabuf(struct westfield_linux_dmabuf_v1 *linux_dmabuf, struct dmabuf_attributes *attribs) {
-    bool external_only;
-    EGLImageKHR egl_image = westfield_drm_create_egl_image_from_dmabuf(linux_dmabuf->renderer, attribs, &external_only);
-    if (egl_image == EGL_NO_IMAGE_KHR) {
-        return false;
-    }
-
-    return true;
-}
-
 static void buffer_handle_destroy(struct wl_client *client,
                                   struct wl_resource *resource) {
     wl_resource_destroy(resource);
@@ -427,11 +416,6 @@ params_create_common(struct wl_resource *params_resource,
                                    "invalid buffer stride or height for plane %d", i);
             goto err_out;
         }
-    }
-
-    /* Check if dmabuf is usable */
-    if (!check_import_dmabuf(linux_dmabuf, &attribs)) {
-        goto err_failed;
     }
 
     struct westfield_dmabuf_v1_buffer *buffer = calloc(1, sizeof(*buffer));
