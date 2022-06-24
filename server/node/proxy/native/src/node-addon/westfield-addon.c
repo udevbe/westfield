@@ -686,7 +686,7 @@ initDrm(napi_env env, napi_callback_info info) {
     display_destruction_listener->env = env;
 
     // init egl backend
-    westfield_drm = westfield_drm_new(display);
+    westfield_drm = westfield_drm_new();
     // init wayland egl related buffer protocols
     if(westfield_drm) {
         // TODO do something with the global object?

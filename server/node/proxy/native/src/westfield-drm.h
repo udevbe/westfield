@@ -61,7 +61,7 @@ drm_format_has(const struct drm_format *fmt, uint64_t modifier) {
 struct westfield_drm;
 
 struct westfield_drm*
-westfield_drm_new(struct wl_display *wl_display);
+westfield_drm_new();
 
 void
 westfield_drm_finalize(struct westfield_drm *westfield_drm);

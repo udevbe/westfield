@@ -90,7 +90,7 @@ boot_gpu_devpath() {
     return devpath;
 }
 
-static int
+static inline int
 load_egl_proc(void *proc_ptr, const char *name) {
     void *proc = (void *)eglGetProcAddress(name);
     if (proc == NULL) {
@@ -101,7 +101,7 @@ load_egl_proc(void *proc_ptr, const char *name) {
     return 0;
 }
 
-static bool
+static inline bool
 check_egl_ext(const char *exts, const char *ext) {
     size_t extlen = strlen(ext);
     const char *end = exts + strlen(exts);
@@ -120,7 +120,7 @@ check_egl_ext(const char *exts, const char *ext) {
     return false;
 }
 
-static const char *
+static inline const char *
 egl_error_str(EGLint error) {
     switch (error) {
         case EGL_SUCCESS:
@@ -160,7 +160,7 @@ egl_error_str(EGLint error) {
     }
 }
 
-static void
+static inline void
 egl_log(EGLenum error, const char *command, EGLint msg_type,
                     EGLLabelKHR thread, EGLLabelKHR obj, const char *msg) {
     wfl_log(stderr,
@@ -168,7 +168,7 @@ egl_log(EGLenum error, const char *command, EGLint msg_type,
              command, egl_error_str(error), error, msg);
 }
 
-static int
+static inline int
 egl_create(struct westfield_drm *westfield_drm) {
     const char *client_exts_str = eglQueryString(EGL_NO_DISPLAY, EGL_EXTENSIONS);
     if (client_exts_str == NULL) {
@@ -232,7 +232,8 @@ egl_create(struct westfield_drm *westfield_drm) {
     return 0;
 }
 
-static bool device_has_name(const drmDevice *device, const char *name) {
+static inline bool
+device_has_name(const drmDevice *device, const char *name) {
     for (size_t i = 0; i < DRM_NODE_MAX; i++) {
         if (!(device->available_nodes & (1 << i))) {
             continue;
@@ -244,7 +245,8 @@ static bool device_has_name(const drmDevice *device, const char *name) {
     return false;
 }
 
-static EGLDeviceEXT get_egl_device_from_drm_fd(struct westfield_drm *westfield_drm,
+static inline EGLDeviceEXT
+get_egl_device_from_drm_fd(struct westfield_drm *westfield_drm,
                                                int drm_fd) {
     if (westfield_drm->egl.procs.eglQueryDevicesEXT == NULL) {
         wfl_log(stdout, "EGL_EXT_device_enumeration not supported");
@@ -296,7 +298,7 @@ static EGLDeviceEXT get_egl_device_from_drm_fd(struct westfield_drm *westfield_d
     return egl_device;
 }
 
-static struct drm_format **
+static inline struct drm_format **
 format_set_get_ref(struct drm_format_set *set, uint32_t format) {
     for (size_t i = 0; i < set->len; ++i) {
         if (set->formats[i]->format == format) {
@@ -307,7 +309,7 @@ format_set_get_ref(struct drm_format_set *set, uint32_t format) {
     return NULL;
 }
 
-static bool
+static inline bool
 drm_format_add(struct drm_format **fmt_ptr, uint64_t modifier) {
     struct drm_format *fmt = *fmt_ptr;
 
@@ -332,7 +334,7 @@ drm_format_add(struct drm_format **fmt_ptr, uint64_t modifier) {
     return true;
 }
 
-static struct drm_format *
+static inline struct drm_format *
 drm_format_create(uint32_t format) {
     size_t capacity = 4;
     struct drm_format *fmt =
@@ -346,7 +348,7 @@ drm_format_create(uint32_t format) {
     return fmt;
 }
 
-static bool
+static inline bool
 drm_format_set_add(struct drm_format_set *set, uint32_t format, uint64_t modifier) {
     assert(format != DRM_FORMAT_INVALID);
 
@@ -382,22 +384,7 @@ drm_format_set_add(struct drm_format_set *set, uint32_t format, uint64_t modifie
     return true;
 }
 
-const struct drm_format *drm_format_set_get(const struct drm_format_set *set, uint32_t format) {
-    struct drm_format **ptr =
-            format_set_get_ref((struct drm_format_set *)set, format);
-    return ptr ? *ptr : NULL;
-}
-
-static bool
-drm_format_set_has(const struct drm_format_set *set, uint32_t format, uint64_t modifier) {
-    const struct drm_format *fmt = drm_format_set_get(set, format);
-    if (!fmt) {
-        return false;
-    }
-    return drm_format_has(fmt, modifier);
-}
-
-static int 
+static inline int
 get_egl_dmabuf_modifiers(struct westfield_drm *westfield_drm, int format,
                                     uint64_t **modifiers, EGLBoolean **external_only) {
     *modifiers = NULL;
@@ -444,7 +431,7 @@ get_egl_dmabuf_modifiers(struct westfield_drm *westfield_drm, int format,
     return num;
 }
 
-static int
+static inline int
 get_egl_dmabuf_formats(struct westfield_drm *westfield_drm, int **formats) {
     if (!westfield_drm->egl.exts.EXT_image_dma_buf_import) {
         wfl_log(stdout, "DMA-BUF import extension not present");
@@ -494,7 +481,7 @@ get_egl_dmabuf_formats(struct westfield_drm *westfield_drm, int **formats) {
     return num;
 }
 
-static void
+static inline void
 init_dmabuf_formats(struct westfield_drm *westfield_drm) {
     int *formats;
     const int formats_len = get_egl_dmabuf_formats(westfield_drm, &formats);
@@ -563,7 +550,7 @@ init_dmabuf_formats(struct westfield_drm *westfield_drm) {
     free(formats);
 }
 
-static bool
+static inline bool
 egl_init_display(struct westfield_drm *westfield_drm, EGLDisplay *display) {
     westfield_drm->egl.egl_display = display;
 
@@ -668,7 +655,8 @@ egl_init_display(struct westfield_drm *westfield_drm, EGLDisplay *display) {
     return true;
 }
 
-static bool egl_init(struct westfield_drm *westfield_drm, EGLenum platform,
+static inline bool
+egl_init(struct westfield_drm *westfield_drm, EGLenum platform,
                      void *remote_display) {
     EGLDisplay display = westfield_drm->egl.procs.eglGetPlatformDisplayEXT(platform,
                                                              remote_display, NULL);
@@ -737,7 +725,7 @@ static bool egl_init(struct westfield_drm *westfield_drm, EGLenum platform,
     return true;
 }
 
-static int
+static inline int
 open_render_node(int drm_fd) {
     char *render_name = drmGetRenderDeviceNameFromFd(drm_fd);
     if (render_name == NULL) {
@@ -760,7 +748,7 @@ open_render_node(int drm_fd) {
     return render_fd;
 }
 
-static int 
+static inline int
 westfield_drm_egl_create_with_drm_fd(struct westfield_drm *westfield_drm, int drm_fd) {
     if (egl_create(westfield_drm)) {
         wfl_log(stderr, "Failed to create EGL context");
@@ -822,7 +810,7 @@ westfield_drm_egl_create_with_drm_fd(struct westfield_drm *westfield_drm, int dr
 }
 
 struct westfield_drm *
-westfield_drm_new(struct wl_display *wl_display) {
+westfield_drm_new() {
     struct westfield_drm *westfield_drm = calloc(sizeof (struct westfield_drm), 1);
 
     char *devpath = boot_gpu_devpath();
