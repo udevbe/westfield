@@ -38,4 +38,9 @@ struct dmabuf_attributes {
     int fd[WESTFIELD_DMABUF_MAX_PLANES];
 };
 
+/**
+ * Closes all file descriptors in the DMA-BUF attributes.
+ */
+void dmabuf_attributes_finish(struct dmabuf_attributes *attribs);
+
 #endif //WESTFIELD_WESTFIELD_DMABUF_H

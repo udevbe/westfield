@@ -4,8 +4,8 @@ project(westfield C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED TRUE)
 
-#set(CMAKE_BUILD_TYPE "Debug")
-set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_BUILD_TYPE "Debug")
+#set(CMAKE_BUILD_TYPE "Release")
 
 #find_package(OpenGL REQUIRED)
 find_package(PkgConfig REQUIRED)
@@ -62,8 +62,8 @@ add_library(westfield SHARED
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-fdutils.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-xwayland.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-xwayland.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-drm.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-drm.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-egl.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-egl.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-surface.c
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-surface.h
@@ -74,9 +74,14 @@ add_library(westfield SHARED
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-buffer.c
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-buffer.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-dmabuf.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-dmabuf.c
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/linux-dmabuf-unstable-v1-protocol.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/linux-dmabuf-unstable-v1-protocol.c
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-util.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-drm.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-drm.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/drm-protocol.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/drm-protocol.h
         )
 target_include_directories(westfield PRIVATE
         ${CMAKE_SOURCE_DIR}/native/src

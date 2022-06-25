@@ -12,7 +12,7 @@
 #include <xf86drm.h>
 #include "linux-dmabuf-unstable-v1-protocol.h"
 #include "westfield-surface.h"
-#include "westfield-drm.h"
+#include "westfield-egl.h"
 #include "westfield-linux-dmabuf-v1.h"
 #include "addon.h"
 #include "westfield-util.h"
@@ -114,7 +114,7 @@ struct westfield_linux_dmabuf_feedback_v1_table_entry {
 /* the protocol interface */
 struct westfield_linux_dmabuf_v1 {
     struct wl_global *global;
-    struct westfield_drm *renderer;
+    struct westfield_egl *renderer;
 
     struct {
         struct wl_signal destroy;
@@ -129,14 +129,6 @@ struct westfield_linux_dmabuf_v1 {
 //    struct wl_listener display_destroy;
 //    struct wl_listener renderer_destroy;
 };
-
-void dmabuf_attributes_finish(struct dmabuf_attributes *attribs) {
-    for (int i = 0; i < attribs->n_planes; ++i) {
-        close(attribs->fd[i]);
-        attribs->fd[i] = -1;
-    }
-    attribs->n_planes = 0;
-}
 
 struct westfield_linux_buffer_params_v1 {
     struct wl_resource *resource;
@@ -731,10 +723,10 @@ compiled_feedback_destroy(struct westfield_linux_dmabuf_feedback_v1_compiled *fe
 static bool
 feedback_tranche_init_with_renderer(
         struct westfield_linux_dmabuf_feedback_v1_tranche *tranche,
-        struct westfield_drm *renderer) {
+        struct westfield_egl *renderer) {
     memset(tranche, 0, sizeof(*tranche));
 
-    int drm_fd = westfield_drm_get_device_fd(renderer);
+    int drm_fd = westfield_egl_get_device_fd(renderer);
     if (drm_fd < 0) {
         wfl_log(stderr, "Failed to get DRM FD from renderer");
         return false;
@@ -748,7 +740,7 @@ feedback_tranche_init_with_renderer(
     wfl_log(stdout, "using target device: %u:%u", major(stat.st_rdev), minor(stat.st_rdev));
     tranche->target_device = stat.st_rdev;
 
-    tranche->formats = westfield_drm_get_dmabuf_texture_formats(renderer);
+    tranche->formats = westfield_egl_get_dmabuf_texture_formats(renderer);
     if (tranche->formats == NULL) {
         wfl_log(stderr, "Failed to get renderer DMA-BUF texture formats");
         return false;
@@ -758,7 +750,7 @@ feedback_tranche_init_with_renderer(
 }
 
 static struct westfield_linux_dmabuf_feedback_v1_compiled *
-compile_default_feedback(struct westfield_drm *renderer) {
+compile_default_feedback(struct westfield_egl *renderer) {
     struct westfield_linux_dmabuf_feedback_v1_tranche tranche = {0};
     if (!feedback_tranche_init_with_renderer(&tranche, renderer)) {
         return NULL;
@@ -1036,7 +1028,7 @@ linux_dmabuf_send_modifiers(struct wl_resource *resource, const struct drm_forma
 static void
 linux_dmabuf_send_formats(struct westfield_linux_dmabuf_v1 *linux_dmabuf, struct wl_resource *resource) {
     const struct drm_format_set *formats =
-            westfield_drm_get_dmabuf_texture_formats(linux_dmabuf->renderer);
+            westfield_egl_get_dmabuf_texture_formats(linux_dmabuf->renderer);
     if (formats == NULL) {
         return;
     }
@@ -1066,7 +1058,7 @@ linux_dmabuf_bind(struct wl_client *client, void *data,
 }
 
 struct westfield_linux_dmabuf_v1 *
-westfield_linux_dmabuf_v1_create(struct wl_display *display, struct westfield_drm *renderer) {
+westfield_linux_dmabuf_v1_create(struct wl_display *display, struct westfield_egl *renderer) {
     struct westfield_linux_dmabuf_v1 *linux_dmabuf =
             calloc(1, sizeof(struct westfield_linux_dmabuf_v1));
     if (linux_dmabuf == NULL) {

@@ -6,7 +6,7 @@
 #define WESTFIELD_WESTFIELD_H
 
 #include "westfield-fdutils.h"
-#include "westfield-drm.h"
+#include "westfield-egl.h"
 #include "westfield-xwayland.h"
 #include "wayland-server/westfield-wayland-server.h"
 
