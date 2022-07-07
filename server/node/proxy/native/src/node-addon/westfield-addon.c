@@ -656,6 +656,14 @@ initShm(napi_env env, napi_callback_info info) {
     display_destruction_listener->env = env;
     wl_display_init_shm(display);
 
+    // FIXME don't hardcode shm formats here
+    wl_display_add_shm_format(display, WL_SHM_FORMAT_ARGB8888);
+    wl_display_add_shm_format(display, WL_SHM_FORMAT_XRGB8888);
+    wl_display_add_shm_format(display, WL_SHM_FORMAT_YUV420);
+    wl_display_add_shm_format(display, WL_SHM_FORMAT_NV12);
+    wl_display_add_shm_format(display, WL_SHM_FORMAT_YUV444);
+    wl_display_add_shm_format(display, WL_SHM_FORMAT_NV21);
+
     NAPI_CALL(env, napi_get_undefined(env, &return_value))
     return return_value;
 }

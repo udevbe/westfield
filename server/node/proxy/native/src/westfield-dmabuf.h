@@ -39,8 +39,11 @@ struct dmabuf_attributes {
 };
 
 /**
- * Closes all file descriptors in the DMA-BUF attributes.
+ * Marks all file descriptors in the DMA-BUF attributes as invalid.
  */
 void dmabuf_attributes_finish(struct dmabuf_attributes *attribs);
+
+bool
+dmabuf_attributes_copy(struct dmabuf_attributes *dst,  const struct dmabuf_attributes *src);
 
 #endif //WESTFIELD_WESTFIELD_DMABUF_H
