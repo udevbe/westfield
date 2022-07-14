@@ -61,10 +61,10 @@ drm_format_has(const struct drm_format *fmt, uint64_t modifier) {
 struct westfield_egl;
 
 struct westfield_egl*
-westfield_egl_new();
+westfield_egl_new(char* device_path);
 
 void
-westfield_drm_finalize(struct westfield_egl *westfield_egl);
+westfield_egl_finalize(struct westfield_egl *westfield_egl);
 
 EGLDisplay
 westfield_egl_get_display(struct westfield_egl *westfield_egl);
@@ -83,5 +83,9 @@ westfield_egl_get_device_fd(struct westfield_egl *westfield_egl);
 
 const struct drm_format_set*
 westfield_egl_get_dmabuf_texture_formats(struct westfield_egl *westfield_egl);
+
+EGLImageKHR
+westfield_egl_create_image_from_dmabuf(struct westfield_egl *westfield_egl,
+                                       const struct dmabuf_attributes *attributes, bool *external_only);
 
 #endif //WESTFIELD_WESTFIELD_EGL_H

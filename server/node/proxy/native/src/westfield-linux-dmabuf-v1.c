@@ -1001,13 +1001,27 @@ static const struct zwp_linux_dmabuf_v1_interface linux_dmabuf_impl = {
 
 static void
 linux_dmabuf_send_modifiers(struct wl_resource *resource, const struct drm_format *fmt) {
-// We only send LINEAR as it's the only modifier that gstreamer supports
-// TODO remove this code and use wlroots original modifier code to send all supported formats once gstreamer can deal with it.
-    if (drm_format_has(fmt, DRM_FORMAT_MOD_LINEAR)) {
-        uint64_t mod = DRM_FORMAT_MOD_LINEAR;
+    if (wl_resource_get_version(resource) < ZWP_LINUX_DMABUF_V1_MODIFIER_SINCE_VERSION) {
+        if (drm_format_has(fmt, DRM_FORMAT_MOD_INVALID)) {
+            zwp_linux_dmabuf_v1_send_format(resource, fmt->format);
+        }
+        return;
+    }
+
+    // In case only INVALID and LINEAR are advertised, send INVALID only due to XWayland:
+    // https://gitlab.freedesktop.org/xorg/xserver/-/issues/1166
+    if (fmt->len == 2 && drm_format_has(fmt, DRM_FORMAT_MOD_INVALID)
+        && drm_format_has(fmt, DRM_FORMAT_MOD_LINEAR)) {
+        uint64_t mod = DRM_FORMAT_MOD_INVALID;
         zwp_linux_dmabuf_v1_send_modifier(resource, fmt->format,
                                           mod >> 32, mod & 0xFFFFFFFF);
         return;
+    }
+
+    for (size_t i = 0; i < fmt->len; i++) {
+        uint64_t mod = fmt->modifiers[i];
+        zwp_linux_dmabuf_v1_send_modifier(resource, fmt->format,
+                                          mod >> 32, mod & 0xFFFFFFFF);
     }
 }
 

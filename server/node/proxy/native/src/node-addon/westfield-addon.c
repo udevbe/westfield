@@ -672,30 +672,35 @@ static void
 finalize_westfield_drm(napi_env env,
                       void* finalize_data,
                       void* finalize_hint) {
-    westfield_drm_finalize(finalize_data);
+    westfield_egl_finalize(finalize_data);
 }
 
 // expected arguments in order:
 // - Object display
+// - string device_path
 // return:
 // - unknown westfield_drm object
 napi_value
 initDrm(napi_env env, napi_callback_info info) {
-    size_t argc = 1;
-    napi_value argv[argc], display_value, return_value;
+    size_t argc = 2;
+    napi_value argv[argc], display_value, device_path_value, return_value;
     struct wl_display *display;
     struct westfield_egl *westfield_egl = NULL;
+    char device_path[128]= {0};
+    size_t device_path_length;
 
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL))
     display_value = argv[0];
+    device_path_value = argv[1];
     NAPI_CALL(env, napi_get_value_external(env, display_value, (void **) &display))
+    NAPI_CALL(env, napi_get_value_string_utf8(env, device_path_value, device_path, sizeof(device_path), &device_path_length))
 
     struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
             display, on_display_destroyed);
     display_destruction_listener->env = env;
 
     // init egl backend
-    westfield_egl = westfield_egl_new();
+    westfield_egl = westfield_egl_new(device_path);
     // init wayland egl related buffer protocols
     if(westfield_egl) {
         // TODO do something with the global objects?
