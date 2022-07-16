@@ -88,4 +88,7 @@ EGLImageKHR
 westfield_egl_create_image_from_dmabuf(struct westfield_egl *westfield_egl,
                                        const struct dmabuf_attributes *attributes, bool *external_only);
 
+void
+westfield_egl_destroy_image(struct westfield_egl *westfield_egl, EGLImageKHR egl_image);
+
 #endif //WESTFIELD_WESTFIELD_EGL_H
