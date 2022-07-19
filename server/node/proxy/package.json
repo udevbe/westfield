@@ -1,6 +1,6 @@
 {
   "name": "westfield-proxy",
-  "version": "1.0.0-alpha.4",
+  "version": "1.0.0-alpha.7",
   "type": "commonjs",
   "main": "dist/westfield-proxy-server.js",
   "typings": "types/westfield-proxy-server.d.ts",
