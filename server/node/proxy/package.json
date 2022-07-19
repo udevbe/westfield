@@ -1,6 +1,6 @@
 {
   "name": "westfield-proxy",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.4",
   "type": "commonjs",
   "main": "dist/westfield-proxy-server.js",
   "typings": "types/westfield-proxy-server.d.ts",
@@ -10,7 +10,8 @@
     "url": "git+https://github.com/udevbe/westfield.git"
   },
   "files": [
-    "dist",
+    "dist/include",
+    "dist/westfield-proxy-server.js",
     "types",
     "CMakeLists.txt",
     "native",
@@ -34,7 +35,8 @@
   "contributors": [],
   "scripts": {
     "postinstall": "cmake-js",
-    "build": "rimraf dist types && tsc",
+    "build": "cmake-js && tsc",
+    "clean": "rimraf build/ dist/ types/",
     "test": "jest"
   },
   "devDependencies": {
@@ -49,7 +51,6 @@
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.0.0",
     "jest": "^27.5.1",
-    "node-api-headers": "^0.0.1",
     "prettier": "^2.6.0",
     "rimraf": "^3.0.2",
     "ts-jest": "^27.1.4",
