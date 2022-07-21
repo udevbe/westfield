@@ -1,4 +1,4 @@
-#include "node_api.h"
+#include "include/node_api.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -706,6 +706,8 @@ initDrm(napi_env env, napi_callback_info info) {
         // TODO do something with the global objects?
         westfield_linux_dmabuf_v1_create(display, westfield_egl);
         westfield_drm_create(display, westfield_egl);
+    } else {
+        fprintf(stderr, "Can't initialize EGL, wl_dmabuf and wl_drm disabled.");
     }
 
     NAPI_CALL(env, napi_create_external(env, westfield_egl, finalize_westfield_drm, NULL, &return_value))

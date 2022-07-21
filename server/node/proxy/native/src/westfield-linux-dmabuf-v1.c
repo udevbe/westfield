@@ -4,7 +4,7 @@
 #include <sys/mman.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <drm/drm_fourcc.h>
+#include <libdrm/drm_fourcc.h>
 #include <fcntl.h>
 #include <time.h>
 #include <sys/sysmacros.h>

@@ -3,10 +3,12 @@ cmake_minimum_required(VERSION 3.13)
 project(westfield C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-set(CMAKE_BUILD_TYPE "Debug")
-#set(CMAKE_BUILD_TYPE "Release")
+#set(CMAKE_BUILD_TYPE "Debug")
+set(CMAKE_BUILD_TYPE "Release")
 
+find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LibFFI REQUIRED libffi IMPORTED_TARGET)
 pkg_check_modules(LIBUDEV REQUIRED libudev IMPORTED_TARGET)
@@ -37,6 +39,7 @@ target_include_directories(wayland-server PRIVATE
 )
 target_link_libraries(wayland-server PRIVATE
         PkgConfig::LibFFI
+        Threads::Threads
         -Wl,--no-undefined
 )
 set_target_properties(wayland-server
@@ -98,10 +101,12 @@ target_link_libraries(westfield PRIVATE
         PkgConfig::GBM
         PkgConfig::EGL
         PkgConfig::LIBDRM
+        Threads::Threads
+        rt
         -Wl,--no-undefined
 )
 set_target_properties(westfield
-    PROPERTIES
+        PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/dist
 )
 file(GLOB WESTFIELD_PUBLIC_HEADERS
@@ -115,7 +120,6 @@ add_library(westfield-addon SHARED
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/node-addon/westfield-addon.c
 )
 target_include_directories(westfield-addon PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/node_modules/node-api-headers/include
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wayland-server
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src
 )
@@ -126,6 +130,8 @@ target_link_libraries(westfield-addon PRIVATE
             ${CMAKE_JS_LIB}
             wayland-server
             westfield
+            Threads::Threads
+            rt
 )
 set_target_properties(westfield-addon
         PROPERTIES

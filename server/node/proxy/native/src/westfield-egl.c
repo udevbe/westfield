@@ -1,6 +1,6 @@
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-#include <drm/drm_fourcc.h>
+#include <libdrm/drm_fourcc.h>
 #include <assert.h>
 #include <fcntl.h>
 #include <gbm.h>
@@ -9,7 +9,6 @@
 #include <unistd.h>
 #include <xf86drm.h>
 #include <stdlib.h>
-#include <xf86drmMode.h>
 #include "westfield-egl.h"
 #include "westfield-util.h"
 
@@ -215,6 +214,56 @@ device_has_name(const drmDevice *device, const char *name) {
     return false;
 }
 
+static inline char *
+get_render_name(const char *name) {
+    uint32_t flags = 0;
+    int devices_len = drmGetDevices2(flags, NULL, 0);
+    if (devices_len < 0) {
+        wfl_log(stderr, "drmGetDevices2 failed: %s", strerror(-devices_len));
+        return NULL;
+    }
+    drmDevice **devices = calloc(devices_len, sizeof(drmDevice *));
+    if (devices == NULL) {
+        wfl_log_errno(stderr, "Allocation failed");
+        return NULL;
+    }
+    devices_len = drmGetDevices2(flags, devices, devices_len);
+    if (devices_len < 0) {
+        free(devices);
+        wfl_log(stderr, "drmGetDevices2 failed: %s", strerror(-devices_len));
+        return NULL;
+    }
+
+    const drmDevice *match = NULL;
+    for (int i = 0; i < devices_len; i++) {
+        if (device_has_name(devices[i], name)) {
+            match = devices[i];
+            break;
+        }
+    }
+
+    char *render_name = NULL;
+    if (match == NULL) {
+        wfl_log(stderr, "Cannot find DRM device %s", name);
+    } else if (!(match->available_nodes & (1 << DRM_NODE_RENDER))) {
+        // Likely a split display/render setup. Pick the primary node and hope
+        // Mesa will open the right render node under-the-hood.
+        wfl_log(stdout, "DRM device %s has no render node, "
+                           "falling back to primary node", name);
+        assert(match->available_nodes & (1 << DRM_NODE_PRIMARY));
+        render_name = strdup(match->nodes[DRM_NODE_PRIMARY]);
+    } else {
+        render_name = strdup(match->nodes[DRM_NODE_RENDER]);
+    }
+
+    for (int i = 0; i < devices_len; i++) {
+        drmFreeDevice(&devices[i]);
+    }
+    free(devices);
+
+    return render_name;
+}
+
 static inline EGLDeviceEXT
 get_egl_device_from_drm_fd(struct westfield_egl *westfield_egl,
                            int drm_fd) {
@@ -247,12 +296,31 @@ get_egl_device_from_drm_fd(struct westfield_egl *westfield_egl,
         return EGL_NO_DEVICE_EXT;
     }
 
-    EGLDeviceEXT egl_device = NULL;
+    EGLDeviceEXT egl_device = EGL_NO_DEVICE_EXT;
     for (int i = 0; i < nb_devices; i++) {
-        const char *egl_device_name = westfield_egl->egl.procs.eglQueryDeviceStringEXT(
+        const char *egl_device_name = NULL;
+#ifdef EGL_EXT_device_drm_render_node
+        egl_device_name = westfield_egl->egl.procs.eglQueryDeviceStringEXT(
                 devices[i], EGL_DRM_RENDER_NODE_FILE_EXT);
         if (egl_device_name == NULL) {
             continue;
+        }
+#endif
+        if(egl_device_name == NULL) {
+            const char *primary_name = westfield_egl->egl.procs.eglQueryDeviceStringEXT(devices[i],
+                                                                          EGL_DRM_DEVICE_FILE_EXT);
+            if (primary_name == NULL) {
+                wfl_log(stderr,
+                        "eglQueryDeviceStringEXT(EGL_DRM_DEVICE_FILE_EXT) failed");
+                continue;
+            }
+
+            egl_device_name = get_render_name(primary_name);
+            if (egl_device_name == NULL) {
+                wfl_log(stderr, "Can't find render node name for device %s",
+                        primary_name);
+                continue;
+            }
         }
 
         if (device_has_name(device, egl_device_name)) {

@@ -2743,11 +2743,6 @@ natural-compare@^1.4.0:
   resolved "https://registry.yarnpkg.com/natural-compare/-/natural-compare-1.4.0.tgz#4abebfeed7541f2c27acfb29bdbbd15c8d5ba4f7"
   integrity sha1-Sr6/7tdUHywnrPspvbvRXI1bpPc=
 
-node-api-headers@^0.0.1:
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/node-api-headers/-/node-api-headers-0.0.1.tgz#e49821048943e50d5b93bc12ada0dd072d2b0769"
-  integrity sha512-eRxckUSXMRQRV69h+ksfleQzR3BdRwkJuc/Y65KFFwhibC5G1y6wgytYW2WWTB/oG1bt+pf2RwjZDYC0xKqgqQ==
-
 node-int64@^0.4.0:
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/node-int64/-/node-int64-0.4.0.tgz#87a9065cdb355d3182d8f94ce11188b825c68a3b"
