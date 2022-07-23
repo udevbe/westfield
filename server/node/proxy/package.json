@@ -1,6 +1,6 @@
 {
   "name": "westfield-proxy",
-  "version": "1.0.0-alpha.11",
+  "version": "1.0.0-alpha.12",
   "type": "commonjs",
   "main": "dist/westfield-proxy-server.js",
   "typings": "types/westfield-proxy-server.d.ts",
@@ -14,8 +14,7 @@
     "dist/westfield-proxy-server.js",
     "types",
     "CMakeLists.txt",
-    "native",
-    "cmake"
+    "native"
   ],
   "keywords": [
     "wayland",
@@ -26,6 +25,9 @@
     "javascript",
     "ipc"
   ],
+  "engines": {
+    "node": ">=16"
+  },
   "author": "Erik De Rijcke",
   "license": "MIT",
   "bugs": {
@@ -34,27 +36,22 @@
   "homepage": "https://github.com/udevbe/westfield#readme",
   "contributors": [],
   "scripts": {
-    "postinstall": "cmake-js",
-    "build": "cmake-js && tsc",
-    "clean": "rimraf build/ dist/ types/",
-    "test": "jest"
+    "build:native": "mkdir -p build && cmake -G Ninja -B./build -S./ && ninja -C ./build",
+    "postinstall": "yarn build:native",
+    "build": "tsc && yarn build:native",
+    "clean": "rm -rf build/ dist/ types/"
   },
   "devDependencies": {
-    "@tsconfig/node16": "^1.0.2",
-    "@types/jest": "^27.4.1",
-    "@types/node": "^17.0.23",
-    "@typescript-eslint/eslint-plugin": "^5.16.0",
-    "@typescript-eslint/parser": "^5.16.0",
-    "cmake-js": "^6.2.1",
+    "@tsconfig/node16": "^1.0.3",
+    "@types/node": "^18.0.6",
+    "@typescript-eslint/eslint-plugin": "^5.30.7",
+    "@typescript-eslint/parser": "^5.30.7",
     "epoll": "^4.0.1",
-    "eslint": "^8.11.0",
+    "eslint": "^8.20.0",
     "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-prettier": "^4.0.0",
-    "jest": "^27.5.1",
-    "prettier": "^2.6.0",
-    "rimraf": "^3.0.2",
-    "ts-jest": "^27.1.4",
-    "ts-node": "^10.7.0",
-    "typescript": "^4.6.2"
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.7.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.7.4"
   }
 }
