@@ -1,4 +1,4 @@
-import westfieldNative from './westfield-native'
+import westfieldAddon from './westfield-addon'
 
 export const {
   createDisplay,
@@ -13,6 +13,7 @@ export const {
   flush,
   getFd,
   initShm,
+  initDrm,
   setRegistryCreatedCallback,
   emitGlobals,
   createWlMessage,
@@ -28,7 +29,7 @@ export const {
   makePipe,
   equalValueExternal,
   getXWaylandDisplay,
-} = westfieldNative
+} = westfieldAddon
 
 export class Fixed {
   static parse(number: number): Fixed {

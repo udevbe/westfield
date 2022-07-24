@@ -11,12 +11,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <signal.h>
-#include <wait.h>
-#include "wayland-server/wayland-private.h"
-#include "wayland-server/wayland-server.h"
+#include <assert.h>
 #include "wayland-server/wayland-util.h"
-
-#include "string-helpers.h"
 
 struct westfield_process;
 
@@ -55,7 +51,7 @@ struct westfield_xwayland {
 static struct wl_list child_process_list;
 
 int
-xwayland_get_display(struct westfield_xwayland *westfield_xwayland) {
+westfield_xwayland_get_display(struct westfield_xwayland *westfield_xwayland) {
     return westfield_xwayland->xserver->display;
 }
 
@@ -112,6 +108,42 @@ bind_to_unix_socket(int display) {
     }
 
     return fd;
+}
+
+/* Convert string to integer
+ *
+ * Parses a base-10 number from the given string.  Checks that the
+ * string is not blank, contains only numerical characters, and is
+ * within the range of INT32_MIN to INT32_MAX.  If the validation is
+ * successful the result is stored in *value; otherwise *value is
+ * unchanged and errno is set appropriately.
+ *
+ * \return true if the number parsed successfully, false on error
+ */
+static inline bool
+safe_strtoint(const char *str, int32_t *value)
+{
+    long ret;
+    char *end;
+
+    assert(str != NULL);
+
+    errno = 0;
+    ret = strtol(str, &end, 10);
+    if (errno != 0) {
+        return false;
+    } else if (end == str || *end != '\0') {
+        errno = EINVAL;
+        return false;
+    }
+
+    if ((long)((int32_t)ret) != ret) {
+        errno = ERANGE;
+        return false;
+    }
+    *value = (int32_t)ret;
+
+    return true;
 }
 
 static int
@@ -186,7 +218,7 @@ create_lockfile(int display, char *lockfile, size_t lsize) {
 }
 
 void
-teardown_xwayland(struct westfield_xwayland *wxw) {
+westfield_xwayland_teardown(struct westfield_xwayland *wxw) {
     struct westfield_xserver *wxs = wxw->xserver;
     if (!wxs)
         return;
@@ -388,10 +420,10 @@ xserver_cleanup(struct westfield_process *process, int status) {
 }
 
 struct westfield_xwayland *
-setup_xwayland(struct wl_dislay *wl_display,
-               void *user_data,
-               westfield_xserver_starting_func_t starting_func,
-               westfield_xserver_destroyed_func_t destroyed_func) {
+westfield_xwayland_setup(struct wl_display *wl_display,
+                         void *user_data,
+                         westfield_xserver_starting_func_t starting_func,
+                         westfield_xserver_destroyed_func_t destroyed_func) {
     sigset_t mask;
     struct westfield_xserver *westfield_xserver;
     struct westfield_xwayland *westfield_xwayland;
@@ -400,7 +432,7 @@ setup_xwayland(struct wl_dislay *wl_display,
     sigaddset(&mask, SIGPIPE);
     pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
-    westfield_xserver = malloc(sizeof *westfield_xserver);
+    westfield_xserver = calloc(sizeof *westfield_xserver, 1);
     if (westfield_xserver == NULL)
         return NULL;
     westfield_xserver->user_data = user_data;
@@ -408,7 +440,7 @@ setup_xwayland(struct wl_dislay *wl_display,
     westfield_xserver->starting_func = starting_func;
     westfield_xserver->destroyed_func = destroyed_func;
 
-    westfield_xwayland = malloc(sizeof *westfield_xwayland);
+    westfield_xwayland = calloc(sizeof *westfield_xwayland, 1);
     if (!westfield_xwayland) {
         free(westfield_xserver);
         return NULL;
@@ -428,6 +460,6 @@ setup_xwayland(struct wl_dislay *wl_display,
 }
 
 void
-init_westfield_xwayland(void) {
+westfield_xwayland_init(void) {
     wl_list_init(&child_process_list);
 }

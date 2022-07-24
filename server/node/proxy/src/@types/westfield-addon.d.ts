@@ -1,4 +1,4 @@
-declare namespace westfieldNative {
+declare namespace westfieldAddon {
   function createDisplay(
     onClientCreated: (wlClient: unknown) => void,
     onGlobalCreated: (globalName: number) => void,
@@ -32,6 +32,12 @@ declare namespace westfieldNative {
   function getFd(wlDisplay: unknown): number
 
   function initShm(wlDisplay: unknown): void
+
+  /**
+   * Returns initialized EGL context
+   * @param wlDisplay
+   */
+  function initDrm(wlDisplay: unknown): unknown
 
   function setRegistryCreatedCallback(
     wlClient: unknown,
@@ -77,4 +83,4 @@ declare namespace westfieldNative {
   function getXWaylandDisplay(xWayland: unknown): number
 }
 
-export = westfieldNative
+export = westfieldAddon

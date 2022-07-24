@@ -49,7 +49,7 @@
 #include "wayland-server-private.h"
 #include "wayland-server.h"
 #include "wayland-os.h"
-#include "westfield-extra.h"
+#include "westfield-wayland-server-extra.h"
 
 /* This is the size of the char array in struct sock_addr_un.
  * No Wayland socket can be created with a path longer than this,
@@ -2429,6 +2429,11 @@ wl_get_server_object_ids_batch(struct wl_client *client, uint32_t *ids, uint32_t
 WL_EXPORT void
 wl_resource_destroy_silently(struct wl_resource *resource)
 {
+    if(resource== NULL) {
+        // resource already destroyed
+        return;
+    }
+
 	struct wl_client *client = resource->client;
 	uint32_t id;
 	uint32_t flags;
