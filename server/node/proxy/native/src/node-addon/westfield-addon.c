@@ -566,19 +566,12 @@ flush(napi_env env, napi_callback_info info) {
     size_t argc = 1;
     napi_value argv[argc], client_value, return_value;
     struct wl_client *client;
-    struct wl_display *display;
 
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL))
 
     client_value = argv[0];
     NAPI_CALL(env, napi_get_value_external(env, client_value, (void **) &client))
-
-    display = wl_client_get_display(client);
-    struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
-            display, on_display_destroyed);
-    display_destruction_listener->env = env;
     wl_connection_flush(wl_client_get_connection(client));
-    display_destruction_listener->env = NULL;
 
     NAPI_CALL(env, napi_get_undefined(env, &return_value))
     return return_value;
