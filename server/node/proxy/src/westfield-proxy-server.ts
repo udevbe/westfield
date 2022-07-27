@@ -73,8 +73,8 @@ export class MessageInterceptor {
     wlDisplay: unknown,
     wlDisplayInterceptorConstructor: WlDisplayInterceptorConstructor,
     userData: unknown,
+    interceptors: Record<number, any>,
   ): MessageInterceptor {
-    const interceptors: Record<number, any> = {}
     interceptors[1] = new wlDisplayInterceptorConstructor(wlClient, interceptors, 1, wlDisplay, userData)
     return new MessageInterceptor(interceptors)
   }
