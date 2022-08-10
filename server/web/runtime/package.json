@@ -1,6 +1,6 @@
 {
   "name": "westfield-runtime-server",
-  "version": "1.0.0-alpha.0",
+  "version": "1.0.0-alpha.1",
   "description": "Wayland HTML5 runtime for Node.js",
   "module": "dist/index.js",
   "typings": "types/index.d.ts",
@@ -34,18 +34,17 @@
     "prepare:generate:xdgshell": "westfield-scanner-server ../../../protocol/xdg-shell.xml -o src/protocol",
     "prepare:generate:wayland": "westfield-scanner-server ../../../protocol/wayland.xml -o src/protocol",
     "prepare:generate": "mkdir -p src/protocol/ && yarn prepare:generate:wayland && yarn prepare:generate:xdgshell && yarn prepare:generate:webshm && yarn prepare:generate:webgl",
-    "prebuild": "rimraf dist types && yarn prepare:generate",
+    "prebuild": "rm -rf dist types && yarn prepare:generate",
     "build": "tsc"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.16.0",
-    "@typescript-eslint/parser": "^5.16.0",
-    "eslint": "^8.11.0",
+    "@typescript-eslint/eslint-plugin": "^5.32.0",
+    "@typescript-eslint/parser": "^5.32.0",
+    "eslint": "^8.21.0",
     "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-prettier": "^4.0.0",
-    "prettier": "^2.6.0",
-    "rimraf": "^3.0.2",
-    "typescript": "^4.6.2",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.7.1",
+    "typescript": "^4.7.4",
     "westfield-runtime-common": "1.0.0-alpha.0",
     "westfield-scanner-server": "^0.5.1"
   },
