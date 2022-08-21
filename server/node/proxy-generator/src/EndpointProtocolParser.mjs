@@ -205,11 +205,12 @@ export default class EndpointProtocolParser {
 
     // constructor
     interceptorOut.write(
-      "\tconstructor (wlClient, interceptors, version, wlResource, userData) {\n"
+      "\tconstructor (wlClient, interceptors, version, wlResource, userData, creationArgs) {\n"
     );
     interceptorOut.write("\t\tthis.wlClient = wlClient\n");
     interceptorOut.write("\t\tthis.wlResource = wlResource\n");
     interceptorOut.write("\t\tthis.userData = userData\n");
+    interceptorOut.write("\t\tthis.creationArgs = creationArgs\n");
 
     // constructor request handlers
     interceptorOut.write("\t\tthis.requestHandlers = {\n");
@@ -391,13 +392,12 @@ export default class EndpointProtocolParser {
         const evArgs = itfRequest.arg;
         for (let i = 0; i < evArgs.length; i++) {
           const reqArg = evArgs[i];
-          if (i !== 0) {
-            resourceOut.write(", ");
-          }
-          resourceOut.write(`${reqArg.$.name}`);
           if (reqArg.$.type === "new_id") {
+            resourceOut.write(`${reqArg.$.name}`);
             resourceName = reqArg.$.interface;
             resourceIdArgName = reqArg.$.name;
+            resourceOut.write(", ...constructionArgs");
+            break
           }
         }
       }
@@ -428,7 +428,7 @@ export default class EndpointProtocolParser {
             `\t\t\t\t\tconst remoteResource = createWlResource(wlClient, ${resourceIdArgName}, version, require(\`./${resourceName}_interface\`))\n`
           );
           resourceOut.write(
-            `\t\t\t\t\tinterceptors[${resourceIdArgName}] =  new (require(\`./${resourceName}_interceptor\`))(wlClient, interceptors, version, remoteResource, userData)\n`
+            `\t\t\t\t\tinterceptors[${resourceIdArgName}] =  new (require(\`./${resourceName}_interceptor\`))(wlClient, interceptors, version, remoteResource, userData, constructionArgs)\n`
           );
           resourceOut.write(`\t\t\t\t\treturn 0\n`);
         }
