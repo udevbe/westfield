@@ -1,6 +1,6 @@
 {
   "name": "westfield-proxy-generator",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "bin": "src/index.mjs",
   "type": "module",
   "description": "Wayland HTML5 endpoint generator for Node.js",
@@ -24,8 +24,7 @@
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
   "contributors": [],
-  "scripts": {
-  },
+  "scripts": {},
   "dependencies": {
     "camelcase": "^7.0.0",
     "meow": "^10.1.3",
