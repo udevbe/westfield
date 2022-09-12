@@ -31,6 +31,11 @@ export const {
   getXWaylandDisplay,
 } = westfieldAddon
 
+export type MessageDestination = {
+  native: boolean
+  browser: boolean
+}
+
 export class Fixed {
   static parse(number: number): Fixed {
     return new Fixed((number * 256.0) >> 0)
@@ -82,17 +87,23 @@ export class MessageInterceptor {
   constructor(public readonly interceptors: Record<number, any>) {}
 
   /**
-   * @return  where the message should be send to. 0 = browser only, 1 native only, 2 both.
+   * @return  where the message should be sent to
    */
   interceptRequest(
     objectId: number,
     opcode: number,
     message: { buffer: ArrayBuffer; fds: number[]; bufferOffset: number; consumed: number; size: number },
-  ): 0 | 1 | 2 {
+  ): MessageDestination {
     const interceptor = this.interceptors[objectId]
-    let destination: 0 | 1 | 2 = 1
+    let destination: MessageDestination = {
+      native: true,
+      browser: false,
+    }
     if (interceptor) {
-      destination = 0
+      destination = {
+        native: false,
+        browser: true,
+      }
       const interception = interceptor[`R${opcode}`]
       if (interception) {
         destination = interception.call(interceptor, message)
