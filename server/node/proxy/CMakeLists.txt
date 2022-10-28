@@ -24,6 +24,7 @@ add_library(wayland-server SHARED
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wayland-server/event-loop.c
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wayland-server/wayland-os.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wayland-server/wayland-os.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wayland-server/wayland-server-protocol.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wayland-server/wayland-private.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wayland-server/wayland-server.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wayland-server/wayland-server.c
@@ -48,6 +49,7 @@ set_target_properties(wayland-server
         SOVERSION 0
 )
 file(GLOB WESTFIELD_WAYLAND_SERVER_PUBLIC_HEADERS
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wayland-server/wayland-server-protocol.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wayland-server/wayland-server.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wayland-server/wayland-server-core.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wayland-server/wayland-util.h
@@ -67,7 +69,6 @@ add_library(westfield SHARED
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-egl.c
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-egl.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-surface.c
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-surface.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/addon.c
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/addon.h

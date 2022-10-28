@@ -2,6 +2,7 @@
 
 /*
  * Copyright © 2014, 2015 Collabora, Ltd.
+ * Copyright © 2022 Erik De Rijcke
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -25,7 +26,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "wayland-util.h"
+#include "westfield.h"
 
 #ifndef __has_attribute
 # define __has_attribute(x) 0  /* Compatibility with non-clang compilers. */

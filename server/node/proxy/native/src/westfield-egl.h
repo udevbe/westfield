@@ -5,7 +5,7 @@
 #include <errno.h>
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-#include "wayland-server-core.h"
+#include "wayland-server/wayland-server-core.h"
 #include "westfield-dmabuf.h"
 #include "westfield-util.h"
 

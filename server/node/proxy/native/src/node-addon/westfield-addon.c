@@ -4,7 +4,6 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/types.h>
-#include "wayland-server-core.h"
 #include "westfield-wayland-server-extra.h"
 #include "westfield.h"
 #include "westfield-linux-dmabuf-v1.h"

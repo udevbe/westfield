@@ -1,7 +1,7 @@
 #ifndef WESTFIELD_WESTFIELD_UTIL_ADDON_H
 #define WESTFIELD_WESTFIELD_UTIL_ADDON_H
 
-#include <wayland-server-core.h>
+#include "wayland-server/wayland-server-core.h"
 
 struct addon_set {
 	// private state

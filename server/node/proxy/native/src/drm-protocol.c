@@ -28,7 +28,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "wayland-util.h"
+#include "wayland-server/wayland-util.h"
 
 #ifndef __has_attribute
 # define __has_attribute(x) 0  /* Compatibility with non-clang compilers. */

@@ -1,6 +1,6 @@
 #include <assert.h>
 #include <string.h>
-#include <wayland-server-core.h>
+#include "wayland-server/wayland-server-core.h"
 #include "addon.h"
 
 void addon_set_init(struct addon_set *set) {

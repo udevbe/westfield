@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
-#include "wayland-server.h"
+#include "wayland-server/wayland-server-core.h"
 #include "addon.h"
 #include "westfield-dmabuf.h"
 
