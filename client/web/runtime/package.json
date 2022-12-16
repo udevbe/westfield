@@ -1,6 +1,6 @@
 {
   "name": "westfield-runtime-client",
-  "version": "1.0.0-alpha.0",
+  "version": "1.0.0-alpha.1",
   "description": "Wayland HTML5 core client protocol",
   "module": "dist/index.js",
   "typings": "types/index.d.ts",
@@ -35,17 +35,17 @@
   },
   "homepage": "https://github.com/udevbe/westfield#readme",
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.45.1",
-    "@typescript-eslint/parser": "^5.45.1",
+    "@typescript-eslint/eslint-plugin": "^5.46.1",
+    "@typescript-eslint/parser": "^5.46.1",
     "eslint": "^8.29.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.2.1",
-    "prettier": "^2.8.0",
-    "typescript": "^4.9.3",
-    "westfield-runtime-common": "1.0.0-alpha.0",
-    "westfield-scanner-client": "0.3.2"
+    "prettier": "^2.8.1",
+    "typescript": "^4.9.4",
+    "westfield-runtime-common": "1.0.0-alpha.1",
+    "westfield-scanner-client": "1.0.0-alpha.0"
   },
   "peerDependencies": {
-    "westfield-runtime-common": "1.0.0-alpha.0"
+    "westfield-runtime-common": "1.0.0-alpha.1"
   }
 }
