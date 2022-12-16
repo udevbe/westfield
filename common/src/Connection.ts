@@ -25,32 +25,20 @@ const textDecoder = new TextDecoder('utf8')
 
 export class WlObject {
   [opcode: number]: (wlMessage: WlMessage) => void | Promise<void>
-
-  readonly id: number
-  // @ts-ignore
-  private _destroyResolver: () => void
-  private readonly _destroyPromise: Promise<void> = new Promise((resolve) => (this._destroyResolver = resolve))
-  private _destroyListeners: ((wlObject: WlObject) => void)[] = []
-
-  constructor(id: number) {
-    this.id = id
-    this._destroyPromise.then(() => this._destroyListeners.forEach((destroyListener) => destroyListener(this)))
-  }
+  private destroyListeners: ((wlObject: WlObject) => void)[] = []
+  constructor(readonly id: number) {}
 
   destroy() {
-    this._destroyResolver()
+    this.destroyListeners.forEach((destroyListener) => destroyListener(this))
+    this.destroyListeners = []
   }
 
   addDestroyListener(destroyListener: (wlObject: WlObject) => void) {
-    this._destroyListeners.push(destroyListener)
+    this.destroyListeners.push(destroyListener)
   }
 
   removeDestroyListener(destroyListener: (wlObject: WlObject) => void) {
-    this._destroyListeners = this._destroyListeners.filter((item) => item !== destroyListener)
-  }
-
-  onDestroy() {
-    return this._destroyPromise
+    this.destroyListeners = this.destroyListeners.filter((item) => item !== destroyListener)
   }
 }
 
@@ -86,14 +74,13 @@ export class Fixed {
   }
 }
 
-export interface WebFD {
-  readonly handle: unknown
-  readonly type: string | 'unknown'
-  readonly host: string
-}
+/**
+ * An FD's real type depends on the protocol message it is used in as well as the client type (remote or web).
+ */
+export type FD = unknown
 
 export interface MessageMarshallingContext<
-  V extends number | WebFD | Fixed | WlObject | 0 | string | ArrayBufferView | undefined,
+  V extends number | FD | Fixed | WlObject | 0 | string | ArrayBufferView | undefined,
   T extends 'u' | 'h' | 'i' | 'f' | 'o' | 'n' | 's' | 'a',
   S extends 0 | 4 | number,
 > {
@@ -101,13 +88,13 @@ export interface MessageMarshallingContext<
   readonly type: T
   readonly size: number
   readonly optional: boolean
-  readonly _marshallArg: (wireMsg: { buffer: ArrayBuffer; fds: Array<WebFD>; bufferOffset: number }) => void
+  readonly _marshallArg: (wireMsg: { buffer: ArrayBuffer; fds: Array<FD>; bufferOffset: number }) => void
   readonly toString: () => string
 }
 
 export interface WlMessage {
   buffer: Uint32Array
-  fds: Array<WebFD>
+  fds: Array<FD>
   bufferOffset: number
   consumed: number
   size: number
@@ -115,7 +102,7 @@ export interface WlMessage {
 
 export interface SendMessage {
   buffer: ArrayBuffer
-  fds: Array<WebFD>
+  fds: Array<FD>
 }
 
 export function uint(arg: number): MessageMarshallingContext<number, 'u', 4> {
@@ -135,13 +122,11 @@ export function uint(arg: number): MessageMarshallingContext<number, 'u', 4> {
 }
 
 export function fileDescriptor(
-  arg: WebFD,
-  marshallArg: (wireMsg: { buffer: ArrayBuffer; fds: Array<WebFD>; bufferOffset: number }) => void = function (
-    wireMsg,
-  ) {
+  arg: FD,
+  marshallArg: (wireMsg: { buffer: ArrayBuffer; fds: Array<FD>; bufferOffset: number }) => void = function (wireMsg) {
     wireMsg.fds.push(arg)
   },
-): MessageMarshallingContext<WebFD, 'h', 0> {
+): MessageMarshallingContext<FD, 'h', 0> {
   return {
     value: arg,
     type: 'h',
@@ -220,7 +205,7 @@ export function objectOptional(arg?: WlObject): MessageMarshallingContext<WlObje
 
 export function newObject(): MessageMarshallingContext<0, 'n', 4> {
   return {
-    value: 0, // id filled in by _marshallConstructor
+    value: 0, // id filled in by marshallConstructor
     type: 'n',
     size: 4,
     optional: false,
@@ -498,7 +483,7 @@ export function a(message: WlMessage): ArrayBuffer {
   return arg
 }
 
-export function h(message: WlMessage): WebFD {
+export function h(message: WlMessage): FD {
   // file descriptor {number}
   if (message.fds.length > 0) {
     const webFd = message.fds.shift()
@@ -544,7 +529,7 @@ export class Connection {
   /**
    * Handle received wire messages.
    */
-  async message(incomingWireMessages: { buffer: Uint32Array; fds: Array<WebFD> }): Promise<void> {
+  async message(incomingWireMessages: { buffer: Uint32Array; fds: Array<FD> }): Promise<void> {
     if (this.closed) {
       return
     }
