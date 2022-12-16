@@ -98,7 +98,7 @@
   resolved "https://registry.yarnpkg.com/@types/semver/-/semver-7.3.13.tgz#da4bfd73f49bd541d28920ab0e2bf0ee80f71c91"
   integrity sha512-21cFJr9z3g5dW8B0CVI9g2O9beqaThGQ6ZFBqHfwhzLDKUxaqTIy3vnfah/UPkfOiF2pLq+tGz+W8RyCskuslw==
 
-"@typescript-eslint/eslint-plugin@^5.45.1":
+"@typescript-eslint/eslint-plugin@^5.46.1":
   version "5.46.1"
   resolved "https://registry.yarnpkg.com/@typescript-eslint/eslint-plugin/-/eslint-plugin-5.46.1.tgz#098abb4c9354e19f460d57ab18bff1f676a6cff0"
   integrity sha512-YpzNv3aayRBwjs4J3oz65eVLXc9xx0PDbIRisHj+dYhvBn02MjYOD96P8YGiWEIFBrojaUjxvkaUpakD82phsA==
@@ -113,7 +113,7 @@
     semver "^7.3.7"
     tsutils "^3.21.0"
 
-"@typescript-eslint/parser@^5.45.1":
+"@typescript-eslint/parser@^5.46.1":
   version "5.46.1"
   resolved "https://registry.yarnpkg.com/@typescript-eslint/parser/-/parser-5.46.1.tgz#1fc8e7102c1141eb64276c3b89d70da8c0ba5699"
   integrity sha512-RelQ5cGypPh4ySAtfIMBzBGyrNerQcmfA1oJvPj5f+H4jI59rl9xxpn4bonC0tQvUKOEN7eGBFWxFLK3Xepneg==
@@ -1062,7 +1062,7 @@ prettier-linter-helpers@^1.0.0:
   dependencies:
     fast-diff "^1.1.2"
 
-prettier@^2.8.0:
+prettier@^2.8.1:
   version "2.8.1"
   resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.8.1.tgz#4e1fd11c34e2421bc1da9aea9bd8127cd0a35efc"
   integrity sha512-lqGoSJBQNJidqCHE80vqZJHWHRFoNYsSpP9AjFhlhi9ODCJA541svILes/+/1GM3VaL/abZi7cpFzOpdR9UPKg==
@@ -1301,7 +1301,7 @@ type-fest@^0.8.1:
   resolved "https://registry.yarnpkg.com/type-fest/-/type-fest-0.8.1.tgz#09e249ebde851d3b1e48d27c105444667f17b83d"
   integrity sha512-4dbzIzqvjtgiM5rw1k5rEHtBANKmdudhGyBEajN01fEyhaAIhsoKNy6y7+IN93IfpFtwY9iqi7kD+xwKhQsNJA==
 
-typescript@^4.9.3:
+typescript@^4.9.4:
   version "4.9.4"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.9.4.tgz#a2a3d2756c079abda241d75f149df9d561091e78"
   integrity sha512-Uz+dTXYzxXXbsFpM86Wh3dKCxrQqUcVMxwU54orwlJjOpO3ao8L7j5lH+dWfTwgCwIuM9GQ2kvVotzYJMXTBZg==
@@ -1328,15 +1328,15 @@ validate-npm-package-license@^3.0.1:
     spdx-correct "^3.0.0"
     spdx-expression-parse "^3.0.0"
 
-westfield-runtime-common@1.0.0-alpha.0:
-  version "1.0.0-alpha.0"
-  resolved "https://registry.yarnpkg.com/westfield-runtime-common/-/westfield-runtime-common-1.0.0-alpha.0.tgz#4046703dc1805c6e8312011711ffa8ecabfc0032"
-  integrity sha512-ReMWr3OufRJe54wn/PympGNehvecyfaBcvVpWRgLKcAgileljpiMIMwen1RGprADpQ+6maG6rHyG660bOglW8g==
+westfield-runtime-common@1.0.0-alpha.1:
+  version "1.0.0-alpha.1"
+  resolved "https://registry.yarnpkg.com/westfield-runtime-common/-/westfield-runtime-common-1.0.0-alpha.1.tgz#57d34d737bccd04792e9ae1a60e566cc9fe24d96"
+  integrity sha512-F+5iC7B+7EWuZaZbxohNOwaMtauoziGSTKx+ZIXnr+bi7Wv6ngR0U2JS/2up1p2DJzZMmjftYTeJFt2NtNFgvw==
 
-westfield-scanner-server@^0.5.1:
-  version "0.5.1"
-  resolved "https://registry.yarnpkg.com/westfield-scanner-server/-/westfield-scanner-server-0.5.1.tgz#2c6c9668bef63e07568f3b99a973e71eb7d8b890"
-  integrity sha512-W6+sGdkcnX59VYzAQr1eu7XbtFGiP15ZthBtE347WxGvHOGLISnc+BdS8Ksh0NM0ZTjYWn7ekxr5TRbvV4nriQ==
+westfield-scanner-server@1.0.0-alpha.0:
+  version "1.0.0-alpha.0"
+  resolved "https://registry.yarnpkg.com/westfield-scanner-server/-/westfield-scanner-server-1.0.0-alpha.0.tgz#df56b21f480f552d8312d2921c6d1815ecfee774"
+  integrity sha512-IMNdHw3d2NhMHnMxQSiNzyPViEm4rf29hd1jrsNX6x3ZdL6vYGfWAuQSdPriBaEnuN8K0qpb/biVGxik1C1d2g==
   dependencies:
     camelcase "6.2.0"
     meow "^9.0.0"
