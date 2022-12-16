@@ -1,4 +1,3 @@
 export * from './wayland'
-export * from './gr_web_gl'
-export * from './gr_web_shm'
+export * from './gf_web_buffer'
 export * from './xdg_shell'

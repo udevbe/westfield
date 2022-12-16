@@ -30,11 +30,6 @@ import Display from './src/Display'
 import Global from './src/Global'
 
 /**
- * @type {{Resource: Resource, Client: Client, Display: Display, Fixed: Fixed, Global: Global, WebFD: WebFD}}
+ * @type {{Resource: Resource, Client: Client, Display: Display }}
  */
-export {
-  Resource,
-  Client,
-  Display,
-  Global
-}
+export { Resource, Client, Display, Global }

@@ -29,9 +29,9 @@ export class Client implements DisplayRequests {
   private _syncEventSerial = 0
   // @ts-ignore
   private _destroyedResolver: (value?: PromiseLike<void> | void) => void
-  private _destroyPromise = new Promise<void>((resolve) => (this._destroyedResolver = resolve))
-  private _resourceDestroyListeners: ((resource: Resource) => void)[] = []
-  private _resourceCreatedListeners: ((resource: Resource) => void)[] = []
+  private destroyPromise = new Promise<void>((resolve) => (this._destroyedResolver = resolve))
+  private resourceDestroyListeners: ((resource: Resource) => void)[] = []
+  private resourceCreatedListeners: ((resource: Resource) => void)[] = []
   /*
    * IDs allocated by the client are in the range [1, 0xfeffffff] while IDs allocated by the server are
    * in the range [0xff000000, 0xffffffff]. The 0 ID is reserved to represent a null or non-existent object
@@ -55,7 +55,7 @@ export class Client implements DisplayRequests {
   }
 
   onClose() {
-    return this._destroyPromise
+    return this.destroyPromise
   }
 
   registerResource(resource: Resource) {
@@ -73,28 +73,28 @@ export class Client implements DisplayRequests {
     } else {
       this.recycledIds.push(resource.id)
     }
-    this._resourceDestroyListeners.forEach((listener) => listener(resource))
+    this.resourceDestroyListeners.forEach((listener) => listener(resource))
   }
 
   addResourceCreatedListener(listener: (resource: Resource) => void) {
-    this._resourceCreatedListeners.push(listener)
+    this.resourceCreatedListeners.push(listener)
   }
 
   removeResourceCreatedListener(listener: (resource: Resource) => void) {
-    const idx = this._resourceCreatedListeners.indexOf(listener)
+    const idx = this.resourceCreatedListeners.indexOf(listener)
     if (idx !== -1) {
-      this._resourceCreatedListeners.splice(idx, 1)
+      this.resourceCreatedListeners.splice(idx, 1)
     }
   }
 
   addResourceDestroyListener(listener: (resource: Resource) => void) {
-    this._resourceDestroyListeners.push(listener)
+    this.resourceDestroyListeners.push(listener)
   }
 
   removeResourceDestroyListener(listener: (resource: Resource) => void) {
-    const idx = this._resourceDestroyListeners.indexOf(listener)
+    const idx = this.resourceDestroyListeners.indexOf(listener)
     if (idx !== -1) {
-      this._resourceDestroyListeners.splice(idx, 1)
+      this.resourceDestroyListeners.splice(idx, 1)
     }
   }
 
