@@ -22,55 +22,55 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 SOFTWARE.
 */
 
-'use strict'
+"use strict";
 
 class ProtocolArguments {
   /**
    * @param {string}argName
    * @return {{signature: string, jsType: string, marshallGen: string}}
    */
-  static fd (argName) {
+  static fd(argName) {
     return {
-      signature: 'h(message)',
-      jsType: 'WebFD',
-      marshallGen: `fileDescriptor(${argName})`
-    }
+      signature: "h(message)",
+      jsType: "FD",
+      marshallGen: `fileDescriptor(${argName})`,
+    };
   }
 
   /**
    * @param {string}argName
    * @return {{signature: string, jsType: string, marshallGen: string}}
    */
-  static uint (argName) {
+  static uint(argName) {
     return {
-      signature: 'u(message)',
-      jsType: 'number',
-      marshallGen: `uint(${argName})`
-    }
+      signature: "u(message)",
+      jsType: "number",
+      marshallGen: `uint(${argName})`,
+    };
   }
 
   /**
    * @param {string}argName
    * @return {{signature: string, jsType: string, marshallGen: string}}
    */
-  static int (argName) {
+  static int(argName) {
     return {
-      signature: 'i(message)',
-      jsType: 'number',
-      marshallGen: `int(${argName})`
-    }
+      signature: "i(message)",
+      jsType: "number",
+      marshallGen: `int(${argName})`,
+    };
   }
 
   /**
    * @param {string}argName
    * @return {{signature: string, jsType: string, marshallGen: string}}
    */
-  static fixed (argName) {
+  static fixed(argName) {
     return {
-      signature: 'f(message)',
-      jsType: 'Fixed',
-      marshallGen: `fixed(${argName})`
-    }
+      signature: "f(message)",
+      jsType: "Fixed",
+      marshallGen: `fixed(${argName})`,
+    };
   }
 
   /**
@@ -79,37 +79,30 @@ class ProtocolArguments {
    * @param {string}resourceName
    * @return {{signature: string, jsType: string, marshallGen: string}}
    */
-  static object (argName, optional, resourceName) {
+  static object(argName, optional, resourceName) {
     return {
-      signature: optional ? `oOptional<${resourceName}>(message, this.client.connection)` : `o<${resourceName}>(message, this.client.connection)`,
-      jsType: optional ? `Westfield.${resourceName}|undefined` : `Westfield.${resourceName}`,
-      marshallGen: optional ? `objectOptional(${argName})` : `object(${argName})`
-    }
+      signature: optional
+        ? `oOptional<${resourceName}>(message, this.client.connection)`
+        : `o<${resourceName}>(message, this.client.connection)`,
+      jsType: optional
+        ? `Westfield.${resourceName}|undefined`
+        : `Westfield.${resourceName}`,
+      marshallGen: optional
+        ? `objectOptional(${argName})`
+        : `object(${argName})`,
+    };
   }
 
   /**
    * @param {string}argName
    * @return {{signature: string, jsType: string, marshallGen: string}}
    */
-  static new_id (argName) {
+  static new_id(argName) {
     return {
-      signature: 'n(message)',
-      jsType: 'number',
-      marshallGen: 'newObject()'
-    }
-  }
-
-  /**
-   * @param {string}argName
-   * @param {boolean}optional
-   * @return {{signature: string, jsType: string, marshallGen: string}}
-   */
-  static string (argName, optional) {
-    return {
-      signature: optional ? `sOptional(message)` : 's(message)',
-      jsType: optional ? 'string|undefined' : 'string',
-      marshallGen: optional ? `stringOptional(${argName})` : `string(${argName})`
-    }
+      signature: "n(message)",
+      jsType: "number",
+      marshallGen: "newObject()",
+    };
   }
 
   /**
@@ -117,13 +110,28 @@ class ProtocolArguments {
    * @param {boolean}optional
    * @return {{signature: string, jsType: string, marshallGen: string}}
    */
-  static array (argName, optional) {
+  static string(argName, optional) {
     return {
-      signature: optional ? `aOptional(message, ${optional})` : 'a(message)',
-      jsType: optional ? 'ArrayBufferView|undefined' : 'ArrayBufferView',
-      marshallGen: optional ? `arrayOptional(${argName})` : `array(${argName})`
-    }
+      signature: optional ? `sOptional(message)` : "s(message)",
+      jsType: optional ? "string|undefined" : "string",
+      marshallGen: optional
+        ? `stringOptional(${argName})`
+        : `string(${argName})`,
+    };
+  }
+
+  /**
+   * @param {string}argName
+   * @param {boolean}optional
+   * @return {{signature: string, jsType: string, marshallGen: string}}
+   */
+  static array(argName, optional) {
+    return {
+      signature: optional ? `aOptional(message, ${optional})` : "a(message)",
+      jsType: optional ? "ArrayBufferView|undefined" : "ArrayBufferView",
+      marshallGen: optional ? `arrayOptional(${argName})` : `array(${argName})`,
+    };
   }
 }
 
-module.exports = ProtocolArguments
+module.exports = ProtocolArguments;
