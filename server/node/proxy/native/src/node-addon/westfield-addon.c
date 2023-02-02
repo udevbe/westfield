@@ -677,8 +677,6 @@ initShm(napi_env env, napi_callback_info info) {
     wl_display_init_shm(display);
 
     // FIXME don't hardcode shm formats here
-    wl_display_add_shm_format(display, WL_SHM_FORMAT_ARGB8888);
-    wl_display_add_shm_format(display, WL_SHM_FORMAT_XRGB8888);
     wl_display_add_shm_format(display, WL_SHM_FORMAT_YUV420);
     wl_display_add_shm_format(display, WL_SHM_FORMAT_NV12);
     wl_display_add_shm_format(display, WL_SHM_FORMAT_YUV444);
