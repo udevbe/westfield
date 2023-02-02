@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include "westfield-egl.h"
 #include "westfield-util.h"
+#include "drm_format_set.h"
 
 struct westfield_egl {
     int drm_fd;
@@ -336,109 +337,6 @@ get_egl_device_from_drm_fd(struct westfield_egl *westfield_egl,
     return egl_device;
 }
 
-static inline struct drm_format **
-format_set_get_ref(struct drm_format_set *set, uint32_t format) {
-    for (size_t i = 0; i < set->len; ++i) {
-        if (set->formats[i]->format == format) {
-            return &set->formats[i];
-        }
-    }
-
-    return NULL;
-}
-
-static inline const struct drm_format *
-drm_format_set_get(const struct drm_format_set *set, uint32_t format) {
-    struct drm_format **ptr =
-            format_set_get_ref((struct drm_format_set *) set, format);
-    return ptr ? *ptr : NULL;
-}
-
-static inline bool
-drm_format_set_has(const struct drm_format_set *set,
-                   uint32_t format, uint64_t modifier) {
-    const struct drm_format *fmt = drm_format_set_get(set, format);
-    if (!fmt) {
-        return false;
-    }
-    return drm_format_has(fmt, modifier);
-}
-
-static inline bool
-drm_format_add(struct drm_format **fmt_ptr, uint64_t modifier) {
-    struct drm_format *fmt = *fmt_ptr;
-
-    if (drm_format_has(fmt, modifier)) {
-        return true;
-    }
-
-    if (fmt->len == fmt->capacity) {
-        size_t capacity = fmt->capacity ? fmt->capacity * 2 : 4;
-
-        fmt = realloc(fmt, sizeof(*fmt) + sizeof(fmt->modifiers[0]) * capacity);
-        if (!fmt) {
-            wfl_log_errno(stderr, "Allocation failed");
-            return false;
-        }
-
-        fmt->capacity = capacity;
-        *fmt_ptr = fmt;
-    }
-
-    fmt->modifiers[fmt->len++] = modifier;
-    return true;
-}
-
-static inline struct drm_format *
-drm_format_create(uint32_t format) {
-    size_t capacity = 4;
-    struct drm_format *fmt =
-            calloc(1, sizeof(*fmt) + sizeof(fmt->modifiers[0]) * capacity);
-    if (!fmt) {
-        wfl_log_errno(stderr, "Allocation failed");
-        return NULL;
-    }
-    fmt->format = format;
-    fmt->capacity = capacity;
-    return fmt;
-}
-
-static inline bool
-drm_format_set_add(struct drm_format_set *set, uint32_t format, uint64_t modifier) {
-    assert(format != DRM_FORMAT_INVALID);
-
-    struct drm_format **ptr = format_set_get_ref(set, format);
-    if (ptr) {
-        return drm_format_add(ptr, modifier);
-    }
-
-    struct drm_format *fmt = drm_format_create(format);
-    if (!fmt) {
-        return false;
-    }
-    if (!drm_format_add(&fmt, modifier)) {
-        return false;
-    }
-
-    if (set->len == set->capacity) {
-        size_t new = set->capacity ? set->capacity * 2 : 4;
-
-        struct drm_format **tmp = realloc(set->formats,
-                                          sizeof(*fmt) + sizeof(fmt->modifiers[0]) * new);
-        if (!tmp) {
-            wfl_log_errno(stderr, "Allocation failed");
-            free(fmt);
-            return false;
-        }
-
-        set->capacity = new;
-        set->formats = tmp;
-    }
-
-    set->formats[set->len++] = fmt;
-    return true;
-}
-
 static inline int
 get_egl_dmabuf_modifiers(struct westfield_egl *westfield_egl, int format,
                          uint64_t **modifiers, EGLBoolean **external_only) {
@@ -506,7 +404,7 @@ get_egl_dmabuf_formats(struct westfield_egl *westfield_egl, int **formats) {
         static const int num = sizeof(fallback_formats) /
                                sizeof(fallback_formats[0]);
 
-        *formats = calloc(num, sizeof(int));
+        *formats = calloc(num, sizeof(EGLint));
         if (!*formats) {
             wfl_log_errno(stderr, "Allocation failed");
             return -1;
@@ -558,11 +456,25 @@ init_dmabuf_formats(struct westfield_egl *westfield_egl) {
 
         has_modifiers = has_modifiers || modifiers_len > 0;
 
-        // EGL always supports implicit modifiers
+        bool all_external_only = true;
+        for (int j = 0; j < modifiers_len; j++) {
+            drm_format_set_add(&westfield_egl->egl.dmabuf_texture_formats, fmt,
+                                   modifiers[j]);
+            if (!external_only[j]) {
+                drm_format_set_add(&westfield_egl->egl.dmabuf_texture_formats, fmt,
+                                       modifiers[j]);
+                all_external_only = false;
+            }
+        }
+
+        // EGL always supports implicit modifiers. If at least one modifier supports rendering,
+        // assume the implicit modifier supports rendering too.
         drm_format_set_add(&westfield_egl->egl.dmabuf_texture_formats, fmt,
-                           DRM_FORMAT_MOD_INVALID);
-        drm_format_set_add(&westfield_egl->egl.dmabuf_render_formats, fmt,
-                           DRM_FORMAT_MOD_INVALID);
+                               DRM_FORMAT_MOD_INVALID);
+        if (modifiers_len == 0 || !all_external_only) {
+            drm_format_set_add(&westfield_egl->egl.dmabuf_texture_formats, fmt,
+                                   DRM_FORMAT_MOD_INVALID);
+        }
 
         if (modifiers_len == 0) {
             // Assume the linear layout is supported if the driver doesn't
@@ -572,36 +484,15 @@ init_dmabuf_formats(struct westfield_egl *westfield_egl) {
             drm_format_set_add(&westfield_egl->egl.dmabuf_render_formats, fmt,
                                DRM_FORMAT_MOD_LINEAR);
         }
-        for (int j = 0; j < modifiers_len; j++) {
-            drm_format_set_add(&westfield_egl->egl.dmabuf_texture_formats, fmt,
-                               modifiers[j]);
-            if (!external_only[j]) {
-                drm_format_set_add(&westfield_egl->egl.dmabuf_render_formats, fmt,
-                                   modifiers[j]);
-            }
-        }
 
         free(modifiers);
         free(external_only);
     }
-
-    char *str_formats = malloc(formats_len * 5 + 1);
-    if (str_formats == NULL) {
-        goto out;
-    }
-    for (int i = 0; i < formats_len; i++) {
-        snprintf(&str_formats[i * 5], (formats_len - i) * 5 + 1, "%.4s ",
-                 (char *) &formats[i]);
-    }
-    wfl_log(stdout, "Supported DMA-BUF formats: %s\n", str_formats);
-    wfl_log(stdout, "EGL DMA-BUF format modifiers %s\n",
-            has_modifiers ? "supported" : "unsupported");
-    free(str_formats);
-
-    westfield_egl->egl.has_modifiers = has_modifiers;
-
-    out:
     free(formats);
+    westfield_egl->egl.has_modifiers = has_modifiers;
+    wfl_log(stderr, "EGL DMA-BUF format modifiers %s",
+            has_modifiers ? "supported" : "unsupported");
+
 }
 
 static inline bool

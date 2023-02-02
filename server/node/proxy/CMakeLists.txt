@@ -72,8 +72,6 @@ add_library(westfield SHARED
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-surface.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/addon.c
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/addon.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-linux-dmabuf-v1.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-linux-dmabuf-v1.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-buffer.c
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-buffer.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-dmabuf.h
@@ -81,10 +79,14 @@ add_library(westfield SHARED
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/linux-dmabuf-unstable-v1-protocol.h
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/linux-dmabuf-unstable-v1-protocol.c
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-util.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-drm.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/westfield-drm.c
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/drm-protocol.c
         ${CMAKE_CURRENT_SOURCE_DIR}/native/src/drm-protocol.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/drm_format_set.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/drm_format_set.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wlr_linux_dmabuf_v1.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wlr_linux_dmabuf_v1.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wlr_drm.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/src/wlr_drm.h
         )
 target_include_directories(westfield PRIVATE
         ${CMAKE_SOURCE_DIR}/native/src

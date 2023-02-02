@@ -88,6 +88,7 @@ struct wl_client {
 	wl_connection_wire_message_t wire_message_cb;
 	wl_connection_wire_message_end_t wire_message_end_cb;
 	wl_registry_created_t registry_created_cb;
+    wl_sync_done_t sync_done_cb;
 };
 
 struct wl_display {
@@ -973,10 +974,24 @@ static const struct wl_registry_interface registry_interface = {
 	registry_bind
 };
 
+struct callback_done_args {
+    struct wl_client *client;
+    uint32_t callback_id;
+};
+
+void
+on_callback_done(void *data) {
+    struct callback_done_args *callback_done_args = data;
+    if (callback_done_args->client->sync_done_cb) {
+        callback_done_args->client->sync_done_cb(callback_done_args->client, callback_done_args->callback_id);
+    }
+}
+
 static void
 display_sync(struct wl_client *client,
 	     struct wl_resource *resource, uint32_t id)
 {
+    /*
 	struct wl_resource *callback;
 	uint32_t serial;
 
@@ -989,6 +1004,13 @@ display_sync(struct wl_client *client,
 	serial = wl_display_get_serial(client->display);
 	wl_callback_send_done(callback, serial);
 	wl_resource_destroy(callback);
+	*/
+
+    struct wl_event_loop *wl_event_loop = wl_display_get_event_loop(client->display);
+    struct callback_done_args *callback_done_args = calloc(1, sizeof(*callback_done_args));
+    callback_done_args->callback_id = id;
+    callback_done_args->client = client;
+    wl_event_loop_add_idle(wl_event_loop, on_callback_done, callback_done_args);
 }
 
 static void
@@ -2398,6 +2420,12 @@ wl_registry_emit_globals(struct wl_resource *registry_resource)
 				global->name,
 				global->interface->name,
 				global->version);
+}
+
+WL_EXPORT void
+wl_client_set_sync_done_cb(struct wl_client *client, wl_sync_done_t sync_done_cb)
+{
+    client->sync_done_cb = sync_done_cb;
 }
 
 WL_EXPORT void

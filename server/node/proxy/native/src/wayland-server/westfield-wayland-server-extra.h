@@ -64,6 +64,11 @@ typedef void (*wl_registry_created_t)(struct wl_client *client, struct wl_resour
 void
 wl_client_set_registry_created_cb(struct wl_client *client, wl_registry_created_t registry_created_cb);
 
+typedef void (*wl_sync_done_t)(struct wl_client *client, uint32_t callback_id);
+
+void
+wl_client_set_sync_done_cb(struct wl_client *client, wl_sync_done_t sync_done_cb);
+
 void
 wl_registry_emit_globals(struct wl_resource *registry_resource);
 

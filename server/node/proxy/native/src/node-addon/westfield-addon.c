@@ -6,8 +6,8 @@
 #include <sys/types.h>
 #include "westfield-wayland-server-extra.h"
 #include "westfield.h"
-#include "westfield-linux-dmabuf-v1.h"
-#include "westfield-drm.h"
+#include "wlr_drm.h"
+#include "wlr_linux_dmabuf_v1.h"
 
 #define DECLARE_NAPI_METHOD(name, func)                          \
   { name, 0, func, 0, 0, 0, napi_default, 0 }
@@ -47,6 +47,7 @@ struct client_destruction_listener {
     napi_ref wire_message_end_cb_ref;
     napi_ref registry_created_cb_ref;
     napi_ref buffer_created_cb_ref;
+    napi_ref sync_done_cb_ref;
 };
 
 struct weston_xwayland_callbacks {
@@ -103,6 +104,9 @@ on_client_destroyed(struct wl_listener *listener, void *data) {
         }
         if (destruction_listener->registry_created_cb_ref) {
             NAPI_CALL(env, napi_delete_reference(env, destruction_listener->registry_created_cb_ref))
+        }
+        if (destruction_listener->sync_done_cb_ref) {
+            NAPI_CALL(env, napi_delete_reference(env, destruction_listener->sync_done_cb_ref))
         }
         if (destruction_listener->buffer_created_cb_ref) {
             NAPI_CALL(env, napi_delete_reference(env, destruction_listener->buffer_created_cb_ref))
@@ -206,6 +210,27 @@ on_registry_created(struct wl_client *client, struct wl_resource *registry, uint
 }
 
 static void
+on_sync_done(struct wl_client *client, uint32_t callback_id) {
+    struct client_destruction_listener *destruction_listener = (struct client_destruction_listener *) wl_client_get_destroy_listener(
+            client,
+            on_client_destroyed);
+
+    if (destruction_listener->sync_done_cb_ref) {
+        struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
+                wl_client_get_display(client), on_display_destroyed);
+        napi_env env = display_destruction_listener->env;
+        napi_value cb, callback_id_value, global, cb_result;
+
+        NAPI_CALL(env, napi_create_uint32(env, callback_id, &callback_id_value))
+        napi_value argv[1] = {callback_id_value};
+
+        NAPI_CALL(env, napi_get_reference_value(env, destruction_listener->sync_done_cb_ref, &cb))
+        NAPI_CALL(env, napi_get_global(env, &global))
+        NAPI_CALL(env, napi_call_function(env, global, cb, 1, argv, &cb_result))
+    }
+}
+
+static void
 on_resource_created(struct wl_listener *listener, void *data) {
     struct wl_resource *resource = data;
     struct wl_client *client = wl_resource_get_client(resource);
@@ -253,6 +278,7 @@ on_client_created(struct wl_listener *listener, void *data) {
     wl_client_set_wire_message_cb(client, on_wire_message);
     wl_client_set_wire_message_end_cb(client, on_wire_message_end);
     wl_client_set_registry_created_cb(client, on_registry_created);
+    wl_client_set_sync_done_cb(client, on_sync_done);
 
     struct wl_listener *resource_listener = malloc(sizeof(struct wl_listener));
     resource_listener->notify = on_resource_created;
@@ -550,7 +576,9 @@ dispatchRequests(napi_env env, napi_callback_info info) {
     struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
             display, on_display_destroyed);
     display_destruction_listener->env = env;
+    wl_display_flush_clients(display);
     wl_event_loop_dispatch(wl_display_get_event_loop(display), 0);
+    wl_display_flush_clients(display);
 
     NAPI_CALL(env, napi_get_undefined(env, &return_value))
     return return_value;
@@ -696,14 +724,43 @@ initDrm(napi_env env, napi_callback_info info) {
     // init wayland egl related buffer protocols
     if(westfield_egl) {
         // TODO do something with the global objects?
-        westfield_linux_dmabuf_v1_create(display, westfield_egl);
-        westfield_drm_create(display, westfield_egl);
+        wlr_linux_dmabuf_v1_create_with_renderer(display, 4, westfield_egl);
+        wlr_drm_create(display, westfield_egl);
     } else {
         fprintf(stderr, "Can't initialize EGL, wl_dmabuf and wl_drm disabled.");
     }
 
     NAPI_CALL(env, napi_create_external(env, westfield_egl, finalize_westfield_drm, NULL, &return_value))
 
+    return return_value;
+}
+
+// expected arguments in order:
+// - Object client
+// - onSyncDone(Object client, number callbackId):void
+// return:
+// - void
+napi_value
+setSyncDoneCallback(napi_env env, napi_callback_info info) {
+    size_t argc = 2;
+    napi_value argv[argc], client_value, js_cb, return_value;
+    napi_ref js_cb_ref;
+
+    struct wl_client *client;
+    struct client_destruction_listener *destruction_listener;
+
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, NULL, NULL))
+    client_value = argv[0];
+    js_cb = argv[1];
+
+    NAPI_CALL(env, napi_get_value_external(env, client_value, (void **) &client))
+    NAPI_CALL(env, napi_create_reference(env, js_cb, 1, &js_cb_ref))
+
+    destruction_listener = (struct client_destruction_listener *) wl_client_get_destroy_listener(client,
+                                                                                                 on_client_destroyed);
+    destruction_listener->sync_done_cb_ref = js_cb_ref;
+
+    NAPI_CALL(env, napi_get_undefined(env, &return_value))
     return return_value;
 }
 
@@ -1120,6 +1177,7 @@ init(napi_env env, napi_value exports) {
             DECLARE_NAPI_METHOD("setWireMessageEndCallback", setWireMessageEndCallback),
             DECLARE_NAPI_METHOD("setClientDestroyedCallback", setClientDestroyedCallback),
             DECLARE_NAPI_METHOD("setRegistryCreatedCallback", setRegistryCreatedCallback),
+            DECLARE_NAPI_METHOD("setSyncDoneCallback", setSyncDoneCallback),
             DECLARE_NAPI_METHOD("emitGlobals", emitGlobals),
             DECLARE_NAPI_METHOD("createWlMessage", createWlMessage),
             DECLARE_NAPI_METHOD("initWlInterface", initWlInterface),

@@ -15,6 +15,7 @@ export const {
   initShm,
   initDrm,
   setRegistryCreatedCallback,
+  setSyncDoneCallback,
   emitGlobals,
   createWlMessage,
   initWlInterface,

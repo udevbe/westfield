@@ -1,12 +1,13 @@
-#ifndef WESTFIELD_WESTFIELD_DRM_H
-#define WESTFIELD_WESTFIELD_DRM_H
+#ifndef WESTFIELD_WLR_DRM_H
+#define WESTFIELD_WLR_DRM_H
 
 #include "wayland-server/wayland-server-core.h"
 #include "westfield-egl.h"
 #include "westfield-buffer.h"
 #include "westfield-dmabuf.h"
+#include "drm_format_set.h"
 
-struct westfield_drm_buffer {
+struct wlr_drm_buffer {
     struct westfield_buffer base;
 
     struct wl_resource *resource; // can be NULL if the client destroyed it
@@ -21,26 +22,27 @@ struct westfield_drm_buffer {
  * It only implements the minimum necessary for modern clients to behave
  * properly. In particular, flink handles are left unimplemented.
  */
-struct westfield_drm {
+struct wlr_drm {
     struct wl_global *global;
-    struct westfield_egl *westfield_egl;
-    char *node_name;
 
     struct {
         struct wl_signal destroy;
     } events;
 
-//    struct wl_listener display_destroy;
-//    struct wl_listener renderer_destroy;
+    // private state
+
+    char *node_name;
+    struct drm_format_set formats;
+
+    struct wl_listener display_destroy;
 };
 
-bool
-westfield_drm_buffer_is_resource(struct wl_resource *resource);
+bool wlr_drm_buffer_is_resource(struct wl_resource *resource);
 
-struct westfield_drm_buffer *
-westfield_drm_buffer_from_resource(struct wl_resource *resource);
+struct wlr_drm_buffer *wlr_drm_buffer_from_resource(
+        struct wl_resource *resource);
 
-struct westfield_drm *
-westfield_drm_create(struct wl_display *display, struct westfield_egl *westfield_egl);
+struct wlr_drm *wlr_drm_create(struct wl_display *display,
+                               struct westfield_egl *renderer);
 
-#endif //WESTFIELD_WESTFIELD_DRM_H
+#endif //WESTFIELD_WLR_DRM_H

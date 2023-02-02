@@ -424,6 +424,11 @@ export default class EndpointProtocolParser {
             `\t\t\t\t\tinterceptors[${resourceIdArgName}] =  new (require(\`./${resourceName}_interceptor\`))(wlClient, interceptors, version, null, userData)\n`
           );
           resourceOut.write(`\t\t\t\t\treturn { native: true, browser: true }\n`);
+        } else if (reqName === "sync" && protocolItf.$.name === "wl_display") {
+          resourceOut.write(
+            `\t\t\t\t\tinterceptors[${resourceIdArgName}] =  new (require(\`./${resourceName}_interceptor\`))(wlClient, interceptors, version, null, userData)\n`
+          );
+          resourceOut.write(`\t\t\t\t\treturn { native: true, browser: true }\n`);
         } else {
           resourceOut.write(
             `\t\t\t\t\tconst remoteResource = createWlResource(wlClient, ${resourceIdArgName}, version, require(\`./${resourceName}_interface\`))\n`

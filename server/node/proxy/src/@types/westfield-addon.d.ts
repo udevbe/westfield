@@ -44,6 +44,11 @@ declare namespace westfieldAddon {
     onRegistryCreated: (wlRegistry: unknown, registryId: number) => void,
   ): void
 
+  function setSyncDoneCallback(
+    wlClient: unknown,
+    onSyncDone: (callbackId: number) => void,
+  ): void
+
   function emitGlobals(wlRegistry: unknown): void
 
   function createWlMessage(name: string, signature: string, wlInterfaces: unknown[]): unknown
