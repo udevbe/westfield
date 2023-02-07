@@ -878,6 +878,11 @@ static void linux_dmabuf_get_surface_feedback(struct wl_client *client,
     struct wlr_linux_dmabuf_v1 *linux_dmabuf =
             linux_dmabuf_from_resource(resource);
     struct westfield_surface *wlr_surface = wl_resource_get_user_data(surface_resource);
+    if(wlr_surface == NULL) {
+        wlr_surface = calloc(1, sizeof(*wlr_surface));
+        addon_set_init(&wlr_surface->addons);
+        wl_resource_set_user_data(surface_resource, wlr_surface);
+    }
 
     struct wlr_linux_dmabuf_v1_surface *surface =
             surface_get_or_create(linux_dmabuf, wlr_surface);
