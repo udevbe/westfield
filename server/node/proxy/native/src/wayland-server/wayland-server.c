@@ -991,20 +991,13 @@ static void
 display_sync(struct wl_client *client,
 	     struct wl_resource *resource, uint32_t id)
 {
-    /*
 	struct wl_resource *callback;
-	uint32_t serial;
 
 	callback = wl_resource_create(client, &wl_callback_interface, 1, id);
 	if (callback == NULL) {
 		wl_client_post_no_memory(client);
 		return;
 	}
-
-	serial = wl_display_get_serial(client->display);
-	wl_callback_send_done(callback, serial);
-	wl_resource_destroy(callback);
-	*/
 
     struct wl_event_loop *wl_event_loop = wl_display_get_event_loop(client->display);
     struct callback_done_args *callback_done_args = calloc(1, sizeof(*callback_done_args));

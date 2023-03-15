@@ -35,6 +35,7 @@ export const {
 export type MessageDestination = {
   native: boolean
   browser: boolean
+  neverReplies?: boolean
 }
 
 export class Fixed {

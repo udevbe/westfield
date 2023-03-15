@@ -104,3 +104,5 @@ fabric.properties
 /server/node/proxy/native/src/wayland-upstream/
 /server/node/proxy/dist/
 /server/node/proxy/types/
+/server/node/proxy/cmake-build-debug/
+/client/web/runtime/dist/

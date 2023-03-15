@@ -25,7 +25,7 @@
  *
  */
 
-import { WlMessage, n, h, FD } from 'westfield-runtime-common'
+import { FD, h, n, WlMessage } from 'westfield-runtime-common'
 import * as Westfield from '..'
 
 /**

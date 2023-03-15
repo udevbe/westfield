@@ -28,7 +28,7 @@
  *
  */
 
-import { WlMessage, uint, int, array, u, i, oOptional, o, n, s } from 'westfield-runtime-common'
+import { array, i, int, n, o, oOptional, s, u, uint, WlMessage } from 'westfield-runtime-common'
 import * as Westfield from '..'
 
 /**
@@ -48,17 +48,17 @@ export class XdgWmBaseResource extends Westfield.Resource {
 
   /**
    *
-   *	The ping event asks the client if it's still alive. Pass the
-   *	serial specified in the event back to the compositor by sending
-   *	a "pong" request back with the specified serial. See xdg_wm_base.ping.
+   *  The ping event asks the client if it's still alive. Pass the
+   *  serial specified in the event back to the compositor by sending
+   *  a "pong" request back with the specified serial. See xdg_wm_base.ping.
    *
-   *	Compositors can use this to determine if the client is still
-   *	alive. It's unspecified what will happen if the client doesn't
-   *	respond to the ping request, or in what timeframe. Clients should
-   *	try to respond in a reasonable amount of time.
+   *  Compositors can use this to determine if the client is still
+   *  alive. It's unspecified what will happen if the client doesn't
+   *  respond to the ping request, or in what timeframe. Clients should
+   *  try to respond in a reasonable amount of time.
    *
-   *	A compositor is free to ping in any way it wants, but a client must
-   *	always respond to any xdg_wm_base object it created.
+   *  A compositor is free to ping in any way it wants, but a client must
+   *  always respond to any xdg_wm_base object it created.
    *
    *
    * @param serial pass this to the pong request
@@ -69,6 +69,7 @@ export class XdgWmBaseResource extends Westfield.Resource {
   ping(serial: number) {
     this.client.marshall(this.id, 0, [uint(serial)])
   }
+
   constructor(client: Westfield.Client, id: number, version: number) {
     super(client, id, version)
   }
@@ -76,9 +77,11 @@ export class XdgWmBaseResource extends Westfield.Resource {
   [0](message: WlMessage) {
     return this.implementation.destroy(this)
   }
+
   [1](message: WlMessage) {
     return this.implementation.createPositioner(this, n(message))
   }
+
   [2](message: WlMessage) {
     return this.implementation.getXdgSurface(
       this,
@@ -86,6 +89,7 @@ export class XdgWmBaseResource extends Westfield.Resource {
       o<Westfield.WlSurfaceResource>(message, this.client.connection),
     )
   }
+
   [3](message: WlMessage) {
     return this.implementation.pong(this, u(message))
   }
@@ -94,11 +98,11 @@ export class XdgWmBaseResource extends Westfield.Resource {
 export interface XdgWmBaseRequests {
   /**
    *
-   *	Destroy this xdg_wm_base object.
+   *  Destroy this xdg_wm_base object.
    *
-   *	Destroying a bound xdg_wm_base object while there are surfaces
-   *	still alive created by this xdg_wm_base object instance is illegal
-   *	and will result in a protocol error.
+   *  Destroying a bound xdg_wm_base object while there are surfaces
+   *  still alive created by this xdg_wm_base object instance is illegal
+   *  and will result in a protocol error.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -110,9 +114,9 @@ export interface XdgWmBaseRequests {
 
   /**
    *
-   *	Create a positioner object. A positioner object is used to position
-   *	surfaces relative to some parent surface. See the interface description
-   *	and xdg_surface.get_popup for details.
+   *  Create a positioner object. A positioner object is used to position
+   *  surfaces relative to some parent surface. See the interface description
+   *  and xdg_surface.get_popup for details.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -125,17 +129,17 @@ export interface XdgWmBaseRequests {
 
   /**
    *
-   *	This creates an xdg_surface for the given surface. While xdg_surface
-   *	itself is not a role, the corresponding surface may only be assigned
-   *	a role extending xdg_surface, such as xdg_toplevel or xdg_popup.
+   *  This creates an xdg_surface for the given surface. While xdg_surface
+   *  itself is not a role, the corresponding surface may only be assigned
+   *  a role extending xdg_surface, such as xdg_toplevel or xdg_popup.
    *
-   *	This creates an xdg_surface for the given surface. An xdg_surface is
-   *	used as basis to define a role to a given surface, such as xdg_toplevel
-   *	or xdg_popup. It also manages functionality shared between xdg_surface
-   *	based surface roles.
+   *  This creates an xdg_surface for the given surface. An xdg_surface is
+   *  used as basis to define a role to a given surface, such as xdg_toplevel
+   *  or xdg_popup. It also manages functionality shared between xdg_surface
+   *  based surface roles.
    *
-   *	See the documentation of xdg_surface for more details about what an
-   *	xdg_surface is and how it is used.
+   *  See the documentation of xdg_surface for more details about what an
+   *  xdg_surface is and how it is used.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -149,8 +153,8 @@ export interface XdgWmBaseRequests {
 
   /**
    *
-   *	A client must respond to a ping event with a pong request or
-   *	the client may be deemed unresponsive. See xdg_wm_base.ping.
+   *  A client must respond to a ping event with a pong request or
+   *  the client may be deemed unresponsive. See xdg_wm_base.ping.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -225,21 +229,27 @@ export class XdgPositionerResource extends Westfield.Resource {
   [0](message: WlMessage) {
     return this.implementation.destroy(this)
   }
+
   [1](message: WlMessage) {
     return this.implementation.setSize(this, i(message), i(message))
   }
+
   [2](message: WlMessage) {
     return this.implementation.setAnchorRect(this, i(message), i(message), i(message), i(message))
   }
+
   [3](message: WlMessage) {
     return this.implementation.setAnchor(this, u(message))
   }
+
   [4](message: WlMessage) {
     return this.implementation.setGravity(this, u(message))
   }
+
   [5](message: WlMessage) {
     return this.implementation.setConstraintAdjustment(this, u(message))
   }
+
   [6](message: WlMessage) {
     return this.implementation.setOffset(this, i(message), i(message))
   }
@@ -248,7 +258,7 @@ export class XdgPositionerResource extends Westfield.Resource {
 export interface XdgPositionerRequests {
   /**
    *
-   *	Notify the compositor that the xdg_positioner will no longer be used.
+   *  Notify the compositor that the xdg_positioner will no longer be used.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -260,11 +270,11 @@ export interface XdgPositionerRequests {
 
   /**
    *
-   *	Set the size of the surface that is to be positioned with the positioner
-   *	object. The size is in surface-local coordinates and corresponds to the
-   *	window geometry. See xdg_surface.set_window_geometry.
+   *  Set the size of the surface that is to be positioned with the positioner
+   *  object. The size is in surface-local coordinates and corresponds to the
+   *  window geometry. See xdg_surface.set_window_geometry.
    *
-   *	If a zero or negative size is set the invalid_input error is raised.
+   *  If a zero or negative size is set the invalid_input error is raised.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -278,16 +288,16 @@ export interface XdgPositionerRequests {
 
   /**
    *
-   *	Specify the anchor rectangle within the parent surface that the child
-   *	surface will be placed relative to. The rectangle is relative to the
-   *	window geometry as defined by xdg_surface.set_window_geometry of the
-   *	parent surface.
+   *  Specify the anchor rectangle within the parent surface that the child
+   *  surface will be placed relative to. The rectangle is relative to the
+   *  window geometry as defined by xdg_surface.set_window_geometry of the
+   *  parent surface.
    *
-   *	When the xdg_positioner object is used to position a child surface, the
-   *	anchor rectangle may not extend outside the window geometry of the
-   *	positioned child's parent surface.
+   *  When the xdg_positioner object is used to position a child surface, the
+   *  anchor rectangle may not extend outside the window geometry of the
+   *  positioned child's parent surface.
    *
-   *	If a negative size is set the invalid_input error is raised.
+   *  If a negative size is set the invalid_input error is raised.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -303,12 +313,12 @@ export interface XdgPositionerRequests {
 
   /**
    *
-   *	Defines the anchor point for the anchor rectangle. The specified anchor
-   *	is used derive an anchor point that the child surface will be
-   *	positioned relative to. If a corner anchor is set (e.g. 'top_left' or
-   *	'bottom_right'), the anchor point will be at the specified corner;
-   *	otherwise, the derived anchor point will be centered on the specified
-   *	edge, or in the center of the anchor rectangle if no edge is specified.
+   *  Defines the anchor point for the anchor rectangle. The specified anchor
+   *  is used derive an anchor point that the child surface will be
+   *  positioned relative to. If a corner anchor is set (e.g. 'top_left' or
+   *  'bottom_right'), the anchor point will be at the specified corner;
+   *  otherwise, the derived anchor point will be centered on the specified
+   *  edge, or in the center of the anchor rectangle if no edge is specified.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -321,12 +331,12 @@ export interface XdgPositionerRequests {
 
   /**
    *
-   *	Defines in what direction a surface should be positioned, relative to
-   *	the anchor point of the parent surface. If a corner gravity is
-   *	specified (e.g. 'bottom_right' or 'top_left'), then the child surface
-   *	will be placed towards the specified gravity; otherwise, the child
-   *	surface will be centered over the anchor point on any axis that had no
-   *	gravity specified.
+   *  Defines in what direction a surface should be positioned, relative to
+   *  the anchor point of the parent surface. If a corner gravity is
+   *  specified (e.g. 'bottom_right' or 'top_left'), then the child surface
+   *  will be placed towards the specified gravity; otherwise, the child
+   *  surface will be centered over the anchor point on any axis that had no
+   *  gravity specified.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -339,19 +349,19 @@ export interface XdgPositionerRequests {
 
   /**
    *
-   *	Specify how the window should be positioned if the originally intended
-   *	position caused the surface to be constrained, meaning at least
-   *	partially outside positioning boundaries set by the compositor. The
-   *	adjustment is set by constructing a bitmask describing the adjustment to
-   *	be made when the surface is constrained on that axis.
+   *  Specify how the window should be positioned if the originally intended
+   *  position caused the surface to be constrained, meaning at least
+   *  partially outside positioning boundaries set by the compositor. The
+   *  adjustment is set by constructing a bitmask describing the adjustment to
+   *  be made when the surface is constrained on that axis.
    *
-   *	If no bit for one axis is set, the compositor will assume that the child
-   *	surface should not change its position on that axis when constrained.
+   *  If no bit for one axis is set, the compositor will assume that the child
+   *  surface should not change its position on that axis when constrained.
    *
-   *	If more than one bit for one axis is set, the order of how adjustments
-   *	are applied is specified in the corresponding adjustment descriptions.
+   *  If more than one bit for one axis is set, the order of how adjustments
+   *  are applied is specified in the corresponding adjustment descriptions.
    *
-   *	The default adjustment is none.
+   *  The default adjustment is none.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -364,17 +374,17 @@ export interface XdgPositionerRequests {
 
   /**
    *
-   *	Specify the surface position offset relative to the position of the
-   *	anchor on the anchor rectangle and the anchor on the surface. For
-   *	example if the anchor of the anchor rectangle is at (x, y), the surface
-   *	has the gravity bottom|right, and the offset is (ox, oy), the calculated
-   *	surface position will be (x + ox, y + oy). The offset position of the
-   *	surface is the one used for constraint testing. See
-   *	set_constraint_adjustment.
+   *  Specify the surface position offset relative to the position of the
+   *  anchor on the anchor rectangle and the anchor on the surface. For
+   *  example if the anchor of the anchor rectangle is at (x, y), the surface
+   *  has the gravity bottom|right, and the offset is (ox, oy), the calculated
+   *  surface position will be (x + ox, y + oy). The offset position of the
+   *  surface is the one used for constraint testing. See
+   *  set_constraint_adjustment.
    *
-   *	An example use case is placing a popup menu on top of a user interface
-   *	element, while aligning the user interface element of the parent surface
-   *	with some user interface element placed somewhere in the popup surface.
+   *  An example use case is placing a popup menu on top of a user interface
+   *  element, while aligning the user interface element of the parent surface
+   *  with some user interface element placed somewhere in the popup surface.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -538,7 +548,7 @@ export enum XdgPositionerConstraintAdjustment {
  *      conditions must be met:
  *      (1) the client has assigned an xdg_surface-based role to the surface
  *      (2) the client has set and committed the xdg_surface state and the
- *	  role-dependent state to the surface
+ *    role-dependent state to the surface
  *      (3) the client has committed a buffer to the surface
  *
  *      A newly-unmapped surface is considered to have met condition (1) out
@@ -554,22 +564,22 @@ export class XdgSurfaceResource extends Westfield.Resource {
 
   /**
    *
-   *	The configure event marks the end of a configure sequence. A configure
-   *	sequence is a set of one or more events configuring the state of the
-   *	xdg_surface, including the final xdg_surface.configure event.
+   *  The configure event marks the end of a configure sequence. A configure
+   *  sequence is a set of one or more events configuring the state of the
+   *  xdg_surface, including the final xdg_surface.configure event.
    *
-   *	Where applicable, xdg_surface surface roles will during a configure
-   *	sequence extend this event as a latched state sent as events before the
-   *	xdg_surface.configure event. Such events should be considered to make up
-   *	a set of atomically applied configuration states, where the
-   *	xdg_surface.configure commits the accumulated state.
+   *  Where applicable, xdg_surface surface roles will during a configure
+   *  sequence extend this event as a latched state sent as events before the
+   *  xdg_surface.configure event. Such events should be considered to make up
+   *  a set of atomically applied configuration states, where the
+   *  xdg_surface.configure commits the accumulated state.
    *
-   *	Clients should arrange their surface for the new states, and then send
-   *	an ack_configure request with the serial sent in this configure event at
-   *	some point before committing the new surface.
+   *  Clients should arrange their surface for the new states, and then send
+   *  an ack_configure request with the serial sent in this configure event at
+   *  some point before committing the new surface.
    *
-   *	If the client receives multiple configure events before it can respond
-   *	to one, it is free to discard all but the last event it received.
+   *  If the client receives multiple configure events before it can respond
+   *  to one, it is free to discard all but the last event it received.
    *
    *
    * @param serial serial of the configure event
@@ -580,6 +590,7 @@ export class XdgSurfaceResource extends Westfield.Resource {
   configure(serial: number) {
     this.client.marshall(this.id, 0, [uint(serial)])
   }
+
   constructor(client: Westfield.Client, id: number, version: number) {
     super(client, id, version)
   }
@@ -587,9 +598,11 @@ export class XdgSurfaceResource extends Westfield.Resource {
   [0](message: WlMessage) {
     return this.implementation.destroy(this)
   }
+
   [1](message: WlMessage) {
     return this.implementation.getToplevel(this, n(message))
   }
+
   [2](message: WlMessage) {
     return this.implementation.getPopup(
       this,
@@ -598,9 +611,11 @@ export class XdgSurfaceResource extends Westfield.Resource {
       o<Westfield.XdgPositionerResource>(message, this.client.connection),
     )
   }
+
   [3](message: WlMessage) {
     return this.implementation.setWindowGeometry(this, i(message), i(message), i(message), i(message))
   }
+
   [4](message: WlMessage) {
     return this.implementation.ackConfigure(this, u(message))
   }
@@ -609,8 +624,8 @@ export class XdgSurfaceResource extends Westfield.Resource {
 export interface XdgSurfaceRequests {
   /**
    *
-   *	Destroy the xdg_surface object. An xdg_surface must only be destroyed
-   *	after its role object has been destroyed.
+   *  Destroy the xdg_surface object. An xdg_surface must only be destroyed
+   *  after its role object has been destroyed.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -622,11 +637,11 @@ export interface XdgSurfaceRequests {
 
   /**
    *
-   *	This creates an xdg_toplevel object for the given xdg_surface and gives
-   *	the associated wl_surface the xdg_toplevel role.
+   *  This creates an xdg_toplevel object for the given xdg_surface and gives
+   *  the associated wl_surface the xdg_toplevel role.
    *
-   *	See the documentation of xdg_toplevel for more details about what an
-   *	xdg_toplevel is and how it is used.
+   *  See the documentation of xdg_toplevel for more details about what an
+   *  xdg_toplevel is and how it is used.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -639,14 +654,14 @@ export interface XdgSurfaceRequests {
 
   /**
    *
-   *	This creates an xdg_popup object for the given xdg_surface and gives
-   *	the associated wl_surface the xdg_popup role.
+   *  This creates an xdg_popup object for the given xdg_surface and gives
+   *  the associated wl_surface the xdg_popup role.
    *
-   *	If null is passed as a parent, a parent surface must be specified using
-   *	some other protocol, before committing the initial state.
+   *  If null is passed as a parent, a parent surface must be specified using
+   *  some other protocol, before committing the initial state.
    *
-   *	See the documentation of xdg_popup for more details about what an
-   *	xdg_popup is and how it is used.
+   *  See the documentation of xdg_popup for more details about what an
+   *  xdg_popup is and how it is used.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -666,35 +681,35 @@ export interface XdgSurfaceRequests {
 
   /**
    *
-   *	The window geometry of a surface is its "visible bounds" from the
-   *	user's perspective. Client-side decorations often have invisible
-   *	portions like drop-shadows which should be ignored for the
-   *	purposes of aligning, placing and constraining windows.
+   *  The window geometry of a surface is its "visible bounds" from the
+   *  user's perspective. Client-side decorations often have invisible
+   *  portions like drop-shadows which should be ignored for the
+   *  purposes of aligning, placing and constraining windows.
    *
-   *	The window geometry is double buffered, and will be applied at the
-   *	time wl_surface.commit of the corresponding wl_surface is called.
+   *  The window geometry is double buffered, and will be applied at the
+   *  time wl_surface.commit of the corresponding wl_surface is called.
    *
-   *	When maintaining a position, the compositor should treat the (x, y)
-   *	coordinate of the window geometry as the top left corner of the window.
-   *	A client changing the (x, y) window geometry coordinate should in
-   *	general not alter the position of the window.
+   *  When maintaining a position, the compositor should treat the (x, y)
+   *  coordinate of the window geometry as the top left corner of the window.
+   *  A client changing the (x, y) window geometry coordinate should in
+   *  general not alter the position of the window.
    *
-   *	Once the window geometry of the surface is set, it is not possible to
-   *	unset it, and it will remain the same until set_window_geometry is
-   *	called again, even if a new subsurface or buffer is attached.
+   *  Once the window geometry of the surface is set, it is not possible to
+   *  unset it, and it will remain the same until set_window_geometry is
+   *  called again, even if a new subsurface or buffer is attached.
    *
-   *	If never set, the value is the full bounds of the surface,
-   *	including any subsurfaces. This updates dynamically on every
-   *	commit. This unset is meant for extremely simple clients.
+   *  If never set, the value is the full bounds of the surface,
+   *  including any subsurfaces. This updates dynamically on every
+   *  commit. This unset is meant for extremely simple clients.
    *
-   *	The arguments are given in the surface-local coordinate space of
-   *	the wl_surface associated with this xdg_surface.
+   *  The arguments are given in the surface-local coordinate space of
+   *  the wl_surface associated with this xdg_surface.
    *
-   *	The width and height must be greater than zero. Setting an invalid size
-   *	will raise an error. When applied, the effective window geometry will be
-   *	the set window geometry clamped to the bounding rectangle of the
-   *	combined geometry of the surface of the xdg_surface and the associated
-   *	subsurfaces.
+   *  The width and height must be greater than zero. Setting an invalid size
+   *  will raise an error. When applied, the effective window geometry will be
+   *  the set window geometry clamped to the bounding rectangle of the
+   *  combined geometry of the surface of the xdg_surface and the associated
+   *  subsurfaces.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -710,25 +725,25 @@ export interface XdgSurfaceRequests {
 
   /**
    *
-   *	When a configure event is received, if a client commits the
-   *	surface in response to the configure event, then the client
-   *	must make an ack_configure request sometime before the commit
-   *	request, passing along the serial of the configure event.
+   *  When a configure event is received, if a client commits the
+   *  surface in response to the configure event, then the client
+   *  must make an ack_configure request sometime before the commit
+   *  request, passing along the serial of the configure event.
    *
-   *	For instance, for toplevel surfaces the compositor might use this
-   *	information to move a surface to the top left only when the client has
-   *	drawn itself for the maximized or fullscreen state.
+   *  For instance, for toplevel surfaces the compositor might use this
+   *  information to move a surface to the top left only when the client has
+   *  drawn itself for the maximized or fullscreen state.
    *
-   *	If the client receives multiple configure events before it
-   *	can respond to one, it only has to ack the last configure event.
+   *  If the client receives multiple configure events before it
+   *  can respond to one, it only has to ack the last configure event.
    *
-   *	A client is not required to commit immediately after sending
-   *	an ack_configure request - it may even ack_configure several times
-   *	before its next surface commit.
+   *  A client is not required to commit immediately after sending
+   *  an ack_configure request - it may even ack_configure several times
+   *  before its next surface commit.
    *
-   *	A client may send multiple ack_configure requests before committing, but
-   *	only the last request sent before a commit indicates which configure
-   *	event the client really is responding to.
+   *  A client may send multiple ack_configure requests before committing, but
+   *  only the last request sent before a commit indicates which configure
+   *  event the client really is responding to.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -780,25 +795,25 @@ export class XdgToplevelResource extends Westfield.Resource {
 
   /**
    *
-   *	This configure event asks the client to resize its toplevel surface or
-   *	to change its state. The configured state should not be applied
-   *	immediately. See xdg_surface.configure for details.
+   *  This configure event asks the client to resize its toplevel surface or
+   *  to change its state. The configured state should not be applied
+   *  immediately. See xdg_surface.configure for details.
    *
-   *	The width and height arguments specify a hint to the window
-   *	about how its surface should be resized in window geometry
-   *	coordinates. See set_window_geometry.
+   *  The width and height arguments specify a hint to the window
+   *  about how its surface should be resized in window geometry
+   *  coordinates. See set_window_geometry.
    *
-   *	If the width or height arguments are zero, it means the client
-   *	should decide its own window dimension. This may happen when the
-   *	compositor needs to configure the state of the surface but doesn't
-   *	have any information about any previous or expected dimension.
+   *  If the width or height arguments are zero, it means the client
+   *  should decide its own window dimension. This may happen when the
+   *  compositor needs to configure the state of the surface but doesn't
+   *  have any information about any previous or expected dimension.
    *
-   *	The states listed in the event specify how the width/height
-   *	arguments should be interpreted, and possibly how it should be
-   *	drawn.
+   *  The states listed in the event specify how the width/height
+   *  arguments should be interpreted, and possibly how it should be
+   *  drawn.
    *
-   *	Clients must send an ack_configure in response to this event. See
-   *	xdg_surface.configure and xdg_surface.ack_configure for details.
+   *  Clients must send an ack_configure in response to this event. See
+   *  xdg_surface.configure and xdg_surface.ack_configure for details.
    *
    *
    * @param width
@@ -814,14 +829,14 @@ export class XdgToplevelResource extends Westfield.Resource {
 
   /**
    *
-   *	The close event is sent by the compositor when the user
-   *	wants the surface to be closed. This should be equivalent to
-   *	the user clicking the close button in client-side decorations,
-   *	if your application has any.
+   *  The close event is sent by the compositor when the user
+   *  wants the surface to be closed. This should be equivalent to
+   *  the user clicking the close button in client-side decorations,
+   *  if your application has any.
    *
-   *	This is only a request that the user intends to close the
-   *	window. The client may choose to ignore this request, or show
-   *	a dialog to ask the user to save their data, etc.
+   *  This is only a request that the user intends to close the
+   *  window. The client may choose to ignore this request, or show
+   *  a dialog to ask the user to save their data, etc.
    *
    * @since 1
    *
@@ -829,6 +844,7 @@ export class XdgToplevelResource extends Westfield.Resource {
   close() {
     this.client.marshall(this.id, 1, [])
   }
+
   constructor(client: Westfield.Client, id: number, version: number) {
     super(client, id, version)
   }
@@ -836,18 +852,22 @@ export class XdgToplevelResource extends Westfield.Resource {
   [0](message: WlMessage) {
     return this.implementation.destroy(this)
   }
+
   [1](message: WlMessage) {
     return this.implementation.setParent(
       this,
       oOptional<Westfield.XdgToplevelResource>(message, this.client.connection),
     )
   }
+
   [2](message: WlMessage) {
     return this.implementation.setTitle(this, s(message))
   }
+
   [3](message: WlMessage) {
     return this.implementation.setAppId(this, s(message))
   }
+
   [4](message: WlMessage) {
     return this.implementation.showWindowMenu(
       this,
@@ -857,9 +877,11 @@ export class XdgToplevelResource extends Westfield.Resource {
       i(message),
     )
   }
+
   [5](message: WlMessage) {
     return this.implementation.move(this, o<Westfield.WlSeatResource>(message, this.client.connection), u(message))
   }
+
   [6](message: WlMessage) {
     return this.implementation.resize(
       this,
@@ -868,27 +890,34 @@ export class XdgToplevelResource extends Westfield.Resource {
       u(message),
     )
   }
+
   [7](message: WlMessage) {
     return this.implementation.setMaxSize(this, i(message), i(message))
   }
+
   [8](message: WlMessage) {
     return this.implementation.setMinSize(this, i(message), i(message))
   }
+
   [9](message: WlMessage) {
     return this.implementation.setMaximized(this)
   }
+
   [10](message: WlMessage) {
     return this.implementation.unsetMaximized(this)
   }
+
   [11](message: WlMessage) {
     return this.implementation.setFullscreen(
       this,
       oOptional<Westfield.WlOutputResource>(message, this.client.connection),
     )
   }
+
   [12](message: WlMessage) {
     return this.implementation.unsetFullscreen(this)
   }
+
   [13](message: WlMessage) {
     return this.implementation.setMinimized(this)
   }
@@ -897,8 +926,8 @@ export class XdgToplevelResource extends Westfield.Resource {
 export interface XdgToplevelRequests {
   /**
    *
-   *	This request destroys the role surface and unmaps the surface;
-   *	see "Unmapping" behavior in interface section for details.
+   *  This request destroys the role surface and unmaps the surface;
+   *  see "Unmapping" behavior in interface section for details.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -910,22 +939,22 @@ export interface XdgToplevelRequests {
 
   /**
    *
-   *	Set the "parent" of this surface. This surface should be stacked
-   *	above the parent surface and all other ancestor surfaces.
+   *  Set the "parent" of this surface. This surface should be stacked
+   *  above the parent surface and all other ancestor surfaces.
    *
-   *	Parent windows should be set on dialogs, toolboxes, or other
-   *	"auxiliary" surfaces, so that the parent is raised when the dialog
-   *	is raised.
+   *  Parent windows should be set on dialogs, toolboxes, or other
+   *  "auxiliary" surfaces, so that the parent is raised when the dialog
+   *  is raised.
    *
-   *	Setting a null parent for a child window removes any parent-child
-   *	relationship for the child. Setting a null parent for a window which
-   *	currently has no parent is a no-op.
+   *  Setting a null parent for a child window removes any parent-child
+   *  relationship for the child. Setting a null parent for a window which
+   *  currently has no parent is a no-op.
    *
-   *	If the parent is unmapped then its children are managed as
-   *	though the parent of the now-unmapped parent has become the
-   *	parent of this surface. If no parent exists for the now-unmapped
-   *	parent then the children are managed as though they have no
-   *	parent surface.
+   *  If the parent is unmapped then its children are managed as
+   *  though the parent of the now-unmapped parent has become the
+   *  parent of this surface. If no parent exists for the now-unmapped
+   *  parent then the children are managed as though they have no
+   *  parent surface.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -938,13 +967,13 @@ export interface XdgToplevelRequests {
 
   /**
    *
-   *	Set a short title for the surface.
+   *  Set a short title for the surface.
    *
-   *	This string may be used to identify the surface in a task bar,
-   *	window list, or other user interface elements provided by the
-   *	compositor.
+   *  This string may be used to identify the surface in a task bar,
+   *  window list, or other user interface elements provided by the
+   *  compositor.
    *
-   *	The string must be encoded in UTF-8.
+   *  The string must be encoded in UTF-8.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -957,26 +986,26 @@ export interface XdgToplevelRequests {
 
   /**
    *
-   *	Set an application identifier for the surface.
+   *  Set an application identifier for the surface.
    *
-   *	The app ID identifies the general class of applications to which
-   *	the surface belongs. The compositor can use this to group multiple
-   *	surfaces together, or to determine how to launch a new application.
+   *  The app ID identifies the general class of applications to which
+   *  the surface belongs. The compositor can use this to group multiple
+   *  surfaces together, or to determine how to launch a new application.
    *
-   *	For D-Bus activatable applications, the app ID is used as the D-Bus
-   *	service name.
+   *  For D-Bus activatable applications, the app ID is used as the D-Bus
+   *  service name.
    *
-   *	The compositor shell will try to group application surfaces together
-   *	by their app ID. As a best practice, it is suggested to select app
-   *	ID's that match the basename of the application's .desktop file.
-   *	For example, "org.freedesktop.FooViewer" where the .desktop file is
-   *	"org.freedesktop.FooViewer.desktop".
+   *  The compositor shell will try to group application surfaces together
+   *  by their app ID. As a best practice, it is suggested to select app
+   *  ID's that match the basename of the application's .desktop file.
+   *  For example, "org.freedesktop.FooViewer" where the .desktop file is
+   *  "org.freedesktop.FooViewer.desktop".
    *
-   *	See the desktop-entry specification [0] for more details on
-   *	application identifiers and how they relate to well-known D-Bus
-   *	names and .desktop files.
+   *  See the desktop-entry specification [0] for more details on
+   *  application identifiers and how they relate to well-known D-Bus
+   *  names and .desktop files.
    *
-   *	[0] http://standards.freedesktop.org/desktop-entry-spec/
+   *  [0] http://standards.freedesktop.org/desktop-entry-spec/
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -989,17 +1018,17 @@ export interface XdgToplevelRequests {
 
   /**
    *
-   *	Clients implementing client-side decorations might want to show
-   *	a context menu when right-clicking on the decorations, giving the
-   *	user a menu that they can use to maximize or minimize the window.
+   *  Clients implementing client-side decorations might want to show
+   *  a context menu when right-clicking on the decorations, giving the
+   *  user a menu that they can use to maximize or minimize the window.
    *
-   *	This request asks the compositor to pop up such a window menu at
-   *	the given position, relative to the local surface coordinates of
-   *	the parent surface. There are no guarantees as to what menu items
-   *	the window menu contains.
+   *  This request asks the compositor to pop up such a window menu at
+   *  the given position, relative to the local surface coordinates of
+   *  the parent surface. There are no guarantees as to what menu items
+   *  the window menu contains.
    *
-   *	This request must be used in response to some sort of user action
-   *	like a button press, key press, or touch down event.
+   *  This request must be used in response to some sort of user action
+   *  like a button press, key press, or touch down event.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -1021,22 +1050,22 @@ export interface XdgToplevelRequests {
 
   /**
    *
-   *	Start an interactive, user-driven move of the surface.
+   *  Start an interactive, user-driven move of the surface.
    *
-   *	This request must be used in response to some sort of user action
-   *	like a button press, key press, or touch down event. The passed
-   *	serial is used to determine the type of interactive move (touch,
-   *	pointer, etc).
+   *  This request must be used in response to some sort of user action
+   *  like a button press, key press, or touch down event. The passed
+   *  serial is used to determine the type of interactive move (touch,
+   *  pointer, etc).
    *
-   *	The server may ignore move requests depending on the state of
-   *	the surface (e.g. fullscreen or maximized), or if the passed serial
-   *	is no longer valid.
+   *  The server may ignore move requests depending on the state of
+   *  the surface (e.g. fullscreen or maximized), or if the passed serial
+   *  is no longer valid.
    *
-   *	If triggered, the surface will lose the focus of the device
-   *	(wl_pointer, wl_touch, etc) used for the move. It is up to the
-   *	compositor to visually indicate that the move is taking place, such as
-   *	updating a pointer cursor, during the move. There is no guarantee
-   *	that the device focus will return when the move is completed.
+   *  If triggered, the surface will lose the focus of the device
+   *  (wl_pointer, wl_touch, etc) used for the move. It is up to the
+   *  compositor to visually indicate that the move is taking place, such as
+   *  updating a pointer cursor, during the move. There is no guarantee
+   *  that the device focus will return when the move is completed.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -1050,36 +1079,36 @@ export interface XdgToplevelRequests {
 
   /**
    *
-   *	Start a user-driven, interactive resize of the surface.
+   *  Start a user-driven, interactive resize of the surface.
    *
-   *	This request must be used in response to some sort of user action
-   *	like a button press, key press, or touch down event. The passed
-   *	serial is used to determine the type of interactive resize (touch,
-   *	pointer, etc).
+   *  This request must be used in response to some sort of user action
+   *  like a button press, key press, or touch down event. The passed
+   *  serial is used to determine the type of interactive resize (touch,
+   *  pointer, etc).
    *
-   *	The server may ignore resize requests depending on the state of
-   *	the surface (e.g. fullscreen or maximized).
+   *  The server may ignore resize requests depending on the state of
+   *  the surface (e.g. fullscreen or maximized).
    *
-   *	If triggered, the client will receive configure events with the
-   *	"resize" state enum value and the expected sizes. See the "resize"
-   *	enum value for more details about what is required. The client
-   *	must also acknowledge configure events using "ack_configure". After
-   *	the resize is completed, the client will receive another "configure"
-   *	event without the resize state.
+   *  If triggered, the client will receive configure events with the
+   *  "resize" state enum value and the expected sizes. See the "resize"
+   *  enum value for more details about what is required. The client
+   *  must also acknowledge configure events using "ack_configure". After
+   *  the resize is completed, the client will receive another "configure"
+   *  event without the resize state.
    *
-   *	If triggered, the surface also will lose the focus of the device
-   *	(wl_pointer, wl_touch, etc) used for the resize. It is up to the
-   *	compositor to visually indicate that the resize is taking place,
-   *	such as updating a pointer cursor, during the resize. There is no
-   *	guarantee that the device focus will return when the resize is
-   *	completed.
+   *  If triggered, the surface also will lose the focus of the device
+   *  (wl_pointer, wl_touch, etc) used for the resize. It is up to the
+   *  compositor to visually indicate that the resize is taking place,
+   *  such as updating a pointer cursor, during the resize. There is no
+   *  guarantee that the device focus will return when the resize is
+   *  completed.
    *
-   *	The edges parameter specifies how the surface should be resized,
-   *	and is one of the values of the resize_edge enum. The compositor
-   *	may use this information to update the surface position for
-   *	example when dragging the top left corner. The compositor may also
-   *	use this information to adapt its behavior, e.g. choose an
-   *	appropriate cursor image.
+   *  The edges parameter specifies how the surface should be resized,
+   *  and is one of the values of the resize_edge enum. The compositor
+   *  may use this information to update the surface position for
+   *  example when dragging the top left corner. The compositor may also
+   *  use this information to adapt its behavior, e.g. choose an
+   *  appropriate cursor image.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -1094,40 +1123,40 @@ export interface XdgToplevelRequests {
 
   /**
    *
-   *	Set a maximum size for the window.
+   *  Set a maximum size for the window.
    *
-   *	The client can specify a maximum size so that the compositor does
-   *	not try to configure the window beyond this size.
+   *  The client can specify a maximum size so that the compositor does
+   *  not try to configure the window beyond this size.
    *
-   *	The width and height arguments are in window geometry coordinates.
-   *	See xdg_surface.set_window_geometry.
+   *  The width and height arguments are in window geometry coordinates.
+   *  See xdg_surface.set_window_geometry.
    *
-   *	Values set in this way are double-buffered. They will get applied
-   *	on the next commit.
+   *  Values set in this way are double-buffered. They will get applied
+   *  on the next commit.
    *
-   *	The compositor can use this information to allow or disallow
-   *	different states like maximize or fullscreen and draw accurate
-   *	animations.
+   *  The compositor can use this information to allow or disallow
+   *  different states like maximize or fullscreen and draw accurate
+   *  animations.
    *
-   *	Similarly, a tiling window manager may use this information to
-   *	place and resize client windows in a more effective way.
+   *  Similarly, a tiling window manager may use this information to
+   *  place and resize client windows in a more effective way.
    *
-   *	The client should not rely on the compositor to obey the maximum
-   *	size. The compositor may decide to ignore the values set by the
-   *	client and request a larger size.
+   *  The client should not rely on the compositor to obey the maximum
+   *  size. The compositor may decide to ignore the values set by the
+   *  client and request a larger size.
    *
-   *	If never set, or a value of zero in the request, means that the
-   *	client has no expected maximum size in the given dimension.
-   *	As a result, a client wishing to reset the maximum size
-   *	to an unspecified state can use zero for width and height in the
-   *	request.
+   *  If never set, or a value of zero in the request, means that the
+   *  client has no expected maximum size in the given dimension.
+   *  As a result, a client wishing to reset the maximum size
+   *  to an unspecified state can use zero for width and height in the
+   *  request.
    *
-   *	Requesting a maximum size to be smaller than the minimum size of
-   *	a surface is illegal and will result in a protocol error.
+   *  Requesting a maximum size to be smaller than the minimum size of
+   *  a surface is illegal and will result in a protocol error.
    *
-   *	The width and height must be greater than or equal to zero. Using
-   *	strictly negative values for width and height will result in a
-   *	protocol error.
+   *  The width and height must be greater than or equal to zero. Using
+   *  strictly negative values for width and height will result in a
+   *  protocol error.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -1141,40 +1170,40 @@ export interface XdgToplevelRequests {
 
   /**
    *
-   *	Set a minimum size for the window.
+   *  Set a minimum size for the window.
    *
-   *	The client can specify a minimum size so that the compositor does
-   *	not try to configure the window below this size.
+   *  The client can specify a minimum size so that the compositor does
+   *  not try to configure the window below this size.
    *
-   *	The width and height arguments are in window geometry coordinates.
-   *	See xdg_surface.set_window_geometry.
+   *  The width and height arguments are in window geometry coordinates.
+   *  See xdg_surface.set_window_geometry.
    *
-   *	Values set in this way are double-buffered. They will get applied
-   *	on the next commit.
+   *  Values set in this way are double-buffered. They will get applied
+   *  on the next commit.
    *
-   *	The compositor can use this information to allow or disallow
-   *	different states like maximize or fullscreen and draw accurate
-   *	animations.
+   *  The compositor can use this information to allow or disallow
+   *  different states like maximize or fullscreen and draw accurate
+   *  animations.
    *
-   *	Similarly, a tiling window manager may use this information to
-   *	place and resize client windows in a more effective way.
+   *  Similarly, a tiling window manager may use this information to
+   *  place and resize client windows in a more effective way.
    *
-   *	The client should not rely on the compositor to obey the minimum
-   *	size. The compositor may decide to ignore the values set by the
-   *	client and request a smaller size.
+   *  The client should not rely on the compositor to obey the minimum
+   *  size. The compositor may decide to ignore the values set by the
+   *  client and request a smaller size.
    *
-   *	If never set, or a value of zero in the request, means that the
-   *	client has no expected minimum size in the given dimension.
-   *	As a result, a client wishing to reset the minimum size
-   *	to an unspecified state can use zero for width and height in the
-   *	request.
+   *  If never set, or a value of zero in the request, means that the
+   *  client has no expected minimum size in the given dimension.
+   *  As a result, a client wishing to reset the minimum size
+   *  to an unspecified state can use zero for width and height in the
+   *  request.
    *
-   *	Requesting a minimum size to be larger than the maximum size of
-   *	a surface is illegal and will result in a protocol error.
+   *  Requesting a minimum size to be larger than the maximum size of
+   *  a surface is illegal and will result in a protocol error.
    *
-   *	The width and height must be greater than or equal to zero. Using
-   *	strictly negative values for width and height will result in a
-   *	protocol error.
+   *  The width and height must be greater than or equal to zero. Using
+   *  strictly negative values for width and height will result in a
+   *  protocol error.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -1188,26 +1217,26 @@ export interface XdgToplevelRequests {
 
   /**
    *
-   *	Maximize the surface.
+   *  Maximize the surface.
    *
-   *	After requesting that the surface should be maximized, the compositor
-   *	will respond by emitting a configure event with the "maximized" state
-   *	and the required window geometry. The client should then update its
-   *	content, drawing it in a maximized state, i.e. without shadow or other
-   *	decoration outside of the window geometry. The client must also
-   *	acknowledge the configure when committing the new content (see
-   *	ack_configure).
+   *  After requesting that the surface should be maximized, the compositor
+   *  will respond by emitting a configure event with the "maximized" state
+   *  and the required window geometry. The client should then update its
+   *  content, drawing it in a maximized state, i.e. without shadow or other
+   *  decoration outside of the window geometry. The client must also
+   *  acknowledge the configure when committing the new content (see
+   *  ack_configure).
    *
-   *	It is up to the compositor to decide how and where to maximize the
-   *	surface, for example which output and what region of the screen should
-   *	be used.
+   *  It is up to the compositor to decide how and where to maximize the
+   *  surface, for example which output and what region of the screen should
+   *  be used.
    *
-   *	If the surface was already maximized, the compositor will still emit
-   *	a configure event with the "maximized" state.
+   *  If the surface was already maximized, the compositor will still emit
+   *  a configure event with the "maximized" state.
    *
-   *	If the surface is in a fullscreen state, this request has no direct
-   *	effect. It will alter the state the surface is returned to when
-   *	unmaximized if not overridden by the compositor.
+   *  If the surface is in a fullscreen state, this request has no direct
+   *  effect. It will alter the state the surface is returned to when
+   *  unmaximized if not overridden by the compositor.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -1219,27 +1248,27 @@ export interface XdgToplevelRequests {
 
   /**
    *
-   *	Unmaximize the surface.
+   *  Unmaximize the surface.
    *
-   *	After requesting that the surface should be unmaximized, the compositor
-   *	will respond by emitting a configure event without the "maximized"
-   *	state. If available, the compositor will include the window geometry
-   *	dimensions the window had prior to being maximized in the configure
-   *	event. The client must then update its content, drawing it in a
-   *	regular state, i.e. potentially with shadow, etc. The client must also
-   *	acknowledge the configure when committing the new content (see
-   *	ack_configure).
+   *  After requesting that the surface should be unmaximized, the compositor
+   *  will respond by emitting a configure event without the "maximized"
+   *  state. If available, the compositor will include the window geometry
+   *  dimensions the window had prior to being maximized in the configure
+   *  event. The client must then update its content, drawing it in a
+   *  regular state, i.e. potentially with shadow, etc. The client must also
+   *  acknowledge the configure when committing the new content (see
+   *  ack_configure).
    *
-   *	It is up to the compositor to position the surface after it was
-   *	unmaximized; usually the position the surface had before maximizing, if
-   *	applicable.
+   *  It is up to the compositor to position the surface after it was
+   *  unmaximized; usually the position the surface had before maximizing, if
+   *  applicable.
    *
-   *	If the surface was already not maximized, the compositor will still
-   *	emit a configure event without the "maximized" state.
+   *  If the surface was already not maximized, the compositor will still
+   *  emit a configure event without the "maximized" state.
    *
-   *	If the surface is in a fullscreen state, this request has no direct
-   *	effect. It will alter the state the surface is returned to when
-   *	unmaximized if not overridden by the compositor.
+   *  If the surface is in a fullscreen state, this request has no direct
+   *  effect. It will alter the state the surface is returned to when
+   *  unmaximized if not overridden by the compositor.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -1251,29 +1280,29 @@ export interface XdgToplevelRequests {
 
   /**
    *
-   *	Make the surface fullscreen.
+   *  Make the surface fullscreen.
    *
-   *	After requesting that the surface should be fullscreened, the
-   *	compositor will respond by emitting a configure event with the
-   *	"fullscreen" state and the fullscreen window geometry. The client must
-   *	also acknowledge the configure when committing the new content (see
-   *	ack_configure).
+   *  After requesting that the surface should be fullscreened, the
+   *  compositor will respond by emitting a configure event with the
+   *  "fullscreen" state and the fullscreen window geometry. The client must
+   *  also acknowledge the configure when committing the new content (see
+   *  ack_configure).
    *
-   *	The output passed by the request indicates the client's preference as
-   *	to which display it should be set fullscreen on. If this value is NULL,
-   *	it's up to the compositor to choose which display will be used to map
-   *	this surface.
+   *  The output passed by the request indicates the client's preference as
+   *  to which display it should be set fullscreen on. If this value is NULL,
+   *  it's up to the compositor to choose which display will be used to map
+   *  this surface.
    *
-   *	If the surface doesn't cover the whole output, the compositor will
-   *	position the surface in the center of the output and compensate with
-   *	with border fill covering the rest of the output. The content of the
-   *	border fill is undefined, but should be assumed to be in some way that
-   *	attempts to blend into the surrounding area (e.g. solid black).
+   *  If the surface doesn't cover the whole output, the compositor will
+   *  position the surface in the center of the output and compensate with
+   *  with border fill covering the rest of the output. The content of the
+   *  border fill is undefined, but should be assumed to be in some way that
+   *  attempts to blend into the surrounding area (e.g. solid black).
    *
-   *	If the fullscreened surface is not opaque, the compositor must make
-   *	sure that other screen content not part of the same surface tree (made
-   *	up of subsurfaces, popups or similarly coupled surfaces) are not
-   *	visible below the fullscreened surface.
+   *  If the fullscreened surface is not opaque, the compositor must make
+   *  sure that other screen content not part of the same surface tree (made
+   *  up of subsurfaces, popups or similarly coupled surfaces) are not
+   *  visible below the fullscreened surface.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -1286,22 +1315,22 @@ export interface XdgToplevelRequests {
 
   /**
    *
-   *	Make the surface no longer fullscreen.
+   *  Make the surface no longer fullscreen.
    *
-   *	After requesting that the surface should be unfullscreened, the
-   *	compositor will respond by emitting a configure event without the
-   *	"fullscreen" state.
+   *  After requesting that the surface should be unfullscreened, the
+   *  compositor will respond by emitting a configure event without the
+   *  "fullscreen" state.
    *
-   *	Making a surface unfullscreen sets states for the surface based on the following:
-   *	* the state(s) it may have had before becoming fullscreen
-   *	* any state(s) decided by the compositor
-   *	* any state(s) requested by the client while the surface was fullscreen
+   *  Making a surface unfullscreen sets states for the surface based on the following:
+   *  * the state(s) it may have had before becoming fullscreen
+   *  * any state(s) decided by the compositor
+   *  * any state(s) requested by the client while the surface was fullscreen
    *
-   *	The compositor may include the previous window geometry dimensions in
-   *	the configure event, if applicable.
+   *  The compositor may include the previous window geometry dimensions in
+   *  the configure event, if applicable.
    *
-   *	The client must also acknowledge the configure when committing the new
-   *	content (see ack_configure).
+   *  The client must also acknowledge the configure when committing the new
+   *  content (see ack_configure).
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -1313,14 +1342,14 @@ export interface XdgToplevelRequests {
 
   /**
    *
-   *	Request that the compositor minimize your surface. There is no
-   *	way to know if the surface is currently minimized, nor is there
-   *	any way to unset minimization on this surface.
+   *  Request that the compositor minimize your surface. There is no
+   *  way to know if the surface is currently minimized, nor is there
+   *  any way to unset minimization on this surface.
    *
-   *	If you are looking to throttle redrawing when minimized, please
-   *	instead use the wl_surface.frame event for this, as this will
-   *	also work with live previews on windows in Alt-Tab, Expose or
-   *	similar compositor features.
+   *  If you are looking to throttle redrawing when minimized, please
+   *  instead use the wl_surface.frame event for this, as this will
+   *  also work with live previews on windows in Alt-Tab, Expose or
+   *  similar compositor features.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -1434,13 +1463,13 @@ export class XdgPopupResource extends Westfield.Resource {
 
   /**
    *
-   *	This event asks the popup surface to configure itself given the
-   *	configuration. The configured state should not be applied immediately.
-   *	See xdg_surface.configure for details.
+   *  This event asks the popup surface to configure itself given the
+   *  configuration. The configured state should not be applied immediately.
+   *  See xdg_surface.configure for details.
    *
-   *	The x and y arguments represent the position the popup was placed at
-   *	given the xdg_positioner rule, relative to the upper left corner of the
-   *	window geometry of the parent surface.
+   *  The x and y arguments represent the position the popup was placed at
+   *  given the xdg_positioner rule, relative to the upper left corner of the
+   *  window geometry of the parent surface.
    *
    *
    * @param x x position relative to parent surface window geometry
@@ -1457,9 +1486,9 @@ export class XdgPopupResource extends Westfield.Resource {
 
   /**
    *
-   *	The popup_done event is sent out when a popup is dismissed by the
-   *	compositor. The client should destroy the xdg_popup object at this
-   *	point.
+   *  The popup_done event is sent out when a popup is dismissed by the
+   *  compositor. The client should destroy the xdg_popup object at this
+   *  point.
    *
    * @since 1
    *
@@ -1467,6 +1496,7 @@ export class XdgPopupResource extends Westfield.Resource {
   popupDone() {
     this.client.marshall(this.id, 1, [])
   }
+
   constructor(client: Westfield.Client, id: number, version: number) {
     super(client, id, version)
   }
@@ -1474,6 +1504,7 @@ export class XdgPopupResource extends Westfield.Resource {
   [0](message: WlMessage) {
     return this.implementation.destroy(this)
   }
+
   [1](message: WlMessage) {
     return this.implementation.grab(this, o<Westfield.WlSeatResource>(message, this.client.connection), u(message))
   }
@@ -1482,11 +1513,11 @@ export class XdgPopupResource extends Westfield.Resource {
 export interface XdgPopupRequests {
   /**
    *
-   *	This destroys the popup. Explicitly destroying the xdg_popup
-   *	object will also dismiss the popup, and unmap the surface.
+   *  This destroys the popup. Explicitly destroying the xdg_popup
+   *  object will also dismiss the popup, and unmap the surface.
    *
-   *	If this xdg_popup is not the "topmost" popup, a protocol error
-   *	will be sent.
+   *  If this xdg_popup is not the "topmost" popup, a protocol error
+   *  will be sent.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -1498,47 +1529,47 @@ export interface XdgPopupRequests {
 
   /**
    *
-   *	This request makes the created popup take an explicit grab. An explicit
-   *	grab will be dismissed when the user dismisses the popup, or when the
-   *	client destroys the xdg_popup. This can be done by the user clicking
-   *	outside the surface, using the keyboard, or even locking the screen
-   *	through closing the lid or a timeout.
+   *  This request makes the created popup take an explicit grab. An explicit
+   *  grab will be dismissed when the user dismisses the popup, or when the
+   *  client destroys the xdg_popup. This can be done by the user clicking
+   *  outside the surface, using the keyboard, or even locking the screen
+   *  through closing the lid or a timeout.
    *
-   *	If the compositor denies the grab, the popup will be immediately
-   *	dismissed.
+   *  If the compositor denies the grab, the popup will be immediately
+   *  dismissed.
    *
-   *	This request must be used in response to some sort of user action like a
-   *	button press, key press, or touch down event. The serial number of the
-   *	event should be passed as 'serial'.
+   *  This request must be used in response to some sort of user action like a
+   *  button press, key press, or touch down event. The serial number of the
+   *  event should be passed as 'serial'.
    *
-   *	The parent of a grabbing popup must either be an xdg_toplevel surface or
-   *	another xdg_popup with an explicit grab. If the parent is another
-   *	xdg_popup it means that the popups are nested, with this popup now being
-   *	the topmost popup.
+   *  The parent of a grabbing popup must either be an xdg_toplevel surface or
+   *  another xdg_popup with an explicit grab. If the parent is another
+   *  xdg_popup it means that the popups are nested, with this popup now being
+   *  the topmost popup.
    *
-   *	Nested popups must be destroyed in the reverse order they were created
-   *	in, e.g. the only popup you are allowed to destroy at all times is the
-   *	topmost one.
+   *  Nested popups must be destroyed in the reverse order they were created
+   *  in, e.g. the only popup you are allowed to destroy at all times is the
+   *  topmost one.
    *
-   *	When compositors choose to dismiss a popup, they may dismiss every
-   *	nested grabbing popup as well. When a compositor dismisses popups, it
-   *	will follow the same dismissing order as required from the client.
+   *  When compositors choose to dismiss a popup, they may dismiss every
+   *  nested grabbing popup as well. When a compositor dismisses popups, it
+   *  will follow the same dismissing order as required from the client.
    *
-   *	The parent of a grabbing popup must either be another xdg_popup with an
-   *	active explicit grab, or an xdg_popup or xdg_toplevel, if there are no
-   *	explicit grabs already taken.
+   *  The parent of a grabbing popup must either be another xdg_popup with an
+   *  active explicit grab, or an xdg_popup or xdg_toplevel, if there are no
+   *  explicit grabs already taken.
    *
-   *	If the topmost grabbing popup is destroyed, the grab will be returned to
-   *	the parent of the popup, if that parent previously had an explicit grab.
+   *  If the topmost grabbing popup is destroyed, the grab will be returned to
+   *  the parent of the popup, if that parent previously had an explicit grab.
    *
-   *	If the parent is a grabbing popup which has already been dismissed, this
-   *	popup will be immediately dismissed. If the parent is a popup that did
-   *	not take an explicit grab, an error will be raised.
+   *  If the parent is a grabbing popup which has already been dismissed, this
+   *  popup will be immediately dismissed. If the parent is a popup that did
+   *  not take an explicit grab, an error will be raised.
    *
-   *	During a popup grab, the client owning the grab will receive pointer
-   *	and touch events for all their surfaces as normal (similar to an
-   *	"owner-events" grab in X11 parlance), while the top most grabbing popup
-   *	will always have keyboard focus.
+   *  During a popup grab, the client owning the grab will receive pointer
+   *  and touch events for all their surfaces as normal (similar to an
+   *  "owner-events" grab in X11 parlance), while the top most grabbing popup
+   *  will always have keyboard focus.
    *
    *
    * @param resource The protocol resource of this implementation.

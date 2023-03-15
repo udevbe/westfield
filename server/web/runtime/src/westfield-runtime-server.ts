@@ -21,12 +21,9 @@ export interface ClientUserData {}
  */
 export class Client implements DisplayRequests {
   userData: ClientUserData = {}
-  readonly id: string
   readonly connection: Connection
   readonly displayResource: DisplayResource
   recycledIds: number[] = []
-  private _display: Display
-  private _syncEventSerial = 0
   // @ts-ignore
   private _destroyedResolver: (value?: PromiseLike<void> | void) => void
   private destroyPromise = new Promise<void>((resolve) => (this._destroyedResolver = resolve))
@@ -37,9 +34,7 @@ export class Client implements DisplayRequests {
    * in the range [0xff000000, 0xffffffff]. The 0 ID is reserved to represent a null or non-existent object
    */
   private _nextId: number = SERVER_OBJECT_ID_BASE
-  constructor(display: Display, id: string) {
-    this.id = id
-    this._display = display
+  constructor(readonly display: Display, readonly id: string) {
     this.connection = new Connection()
     this.displayResource = new DisplayResource(this, 1, 0)
     this.displayResource.implementation = this
@@ -122,12 +117,12 @@ export class Client implements DisplayRequests {
 
   sync(resource: DisplayResource, id: number) {
     const syncCallbackResource = new SyncCallbackResource(resource.client, id, 1)
-    syncCallbackResource.done(++this._syncEventSerial)
+    syncCallbackResource.done(resource.client.display.eventSerial)
     syncCallbackResource.destroy()
   }
 
   getRegistry(resource: DisplayResource, id: number) {
-    this._display.registry.publishGlobals(this._display.registry.createRegistryResource(this, id))
+    this.display.registry.publishGlobals(this.display.registry.createRegistryResource(this, id))
   }
 
   getNextId() {
@@ -166,6 +161,7 @@ export class Display {
   readonly clients: { [key: string]: Client } = {}
   readonly onclientcreated?: (clienet: Client) => void
   readonly onclientdestroyed?: (client: Client) => void
+  private _eventSerial = 0
 
   createClient(clientId: string) {
     const client = new Client(this, clientId)
@@ -180,6 +176,14 @@ export class Display {
 
   flushClients() {
     Object.values(this.clients).forEach((client) => client.connection.flush())
+  }
+
+  nextEventSerial(): number {
+    return ++this._eventSerial
+  }
+
+  get eventSerial(): number {
+    return this._eventSerial
   }
 }
 
