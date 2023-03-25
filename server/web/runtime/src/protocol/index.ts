@@ -1,3 +1,3 @@
 export * from './wayland'
-export * from './gf_web_buffer'
+export * from './web_bitmapbuf'
 export * from './xdg_shell'

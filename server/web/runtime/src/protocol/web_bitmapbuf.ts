@@ -1,6 +1,6 @@
 /*
  *
- *        Copyright © 2019 Erik De Rijcke
+ *        Copyright © 2023 Erik De Rijcke
  *
  *        Permission is hereby granted, free of charge, to any person
  *        obtaining a copy of this software and associated documentation files
@@ -35,11 +35,11 @@ import * as Westfield from '..'
  *            Clients can create wl_buffer objects using the create_buffer request.
  *
  */
-export class GfWebBufferFactoryResource extends Westfield.Resource {
-  static readonly protocolName = 'gf_web_buffer_factory'
+export class WebBitmapbufFactoryResource extends Westfield.Resource {
+  static readonly protocolName = 'web_bitmapbuf_factory'
 
   //@ts-ignore Should always be set when resource is created.
-  implementation: GfWebBufferFactoryRequests
+  implementation: WebBitmapbufFactoryRequests
 
   constructor(client: Westfield.Client, id: number, version: number) {
     super(client, id, version)
@@ -50,10 +50,10 @@ export class GfWebBufferFactoryResource extends Westfield.Resource {
   }
 }
 
-export interface GfWebBufferFactoryRequests {
+export interface WebBitmapbufFactoryRequests {
   /**
    *
-   *                Create a wl_buffer object from an HTML bitmap, so it can be used with a surface.
+   *                Create a wl_buffer object by wrapping an HTML bitmap, so it can be used with a surface.
    *
    *
    * @param resource The protocol resource of this implementation.
@@ -63,5 +63,5 @@ export interface GfWebBufferFactoryRequests {
    * @since 1
    *
    */
-  createBuffer(resource: GfWebBufferFactoryResource, id: number, bitmap: FD): void
+  createBuffer(resource: WebBitmapbufFactoryResource, id: number, bitmap: FD): void
 }

@@ -1,6 +1,6 @@
 /*
  *
- *        Copyright © 2019 Erik De Rijcke
+ *        Copyright © 2023 Erik De Rijcke
  *
  *        Permission is hereby granted, free of charge, to any person
  *        obtaining a copy of this software and associated documentation files
@@ -25,9 +25,9 @@
  *
  */
 
-import { Connection, fileDescriptor, newObject, FD } from 'westfield-runtime-common'
+import { Connection, FD, fileDescriptor, newObject } from 'westfield-runtime-common'
 import * as Westfield from '.'
-import { Proxy, Display } from '../westfield-runtime-client'
+import { Display, Proxy } from '../westfield-runtime-client'
 
 /**
  *
@@ -36,7 +36,7 @@ import { Proxy, Display } from '../westfield-runtime-client'
  *            Clients can create wl_buffer objects using the create_buffer request.
  *
  */
-export class GfWebBufferFactoryProxy extends Proxy {
+export class WebBitmapbufFactoryProxy extends Proxy {
   /**
    * Do not construct proxies directly. Instead use one of the factory methods from other proxies.
    */
@@ -46,7 +46,7 @@ export class GfWebBufferFactoryProxy extends Proxy {
 
   /**
    *
-   *                Create a wl_buffer object from an HTML bitmap, so it can be used with a surface.
+   *                Create a wl_buffer object by wrapping an HTML bitmap, so it can be used with a surface.
    *
    * @since 1
    *
@@ -55,4 +55,5 @@ export class GfWebBufferFactoryProxy extends Proxy {
     return this.marshallConstructor(this.id, 0, Westfield.WlBufferProxy, [newObject(), fileDescriptor(bitmap)])
   }
 }
-export const GfWebBufferFactoryProtocolName = 'gf_web_buffer_factory'
+
+export const WebBitmapbufFactoryProtocolName = 'web_bitmapbuf_factory'

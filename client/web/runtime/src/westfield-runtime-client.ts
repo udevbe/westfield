@@ -11,6 +11,7 @@ import {
   WlMessage,
   WlObject,
 } from 'westfield-runtime-common'
+import { WlSurfaceProxy } from './protocol'
 
 export class Proxy extends WlObject {
   constructor(readonly display: Display, readonly connection: Connection, id: number) {
@@ -191,8 +192,11 @@ export class DisplayImpl implements Display {
   private readonly destroyPromise: Promise<void>
   errorHandler?: (error: Error) => void
 
-  constructor() {
+  constructor(public readonly messagePort: MessagePort) {
     this.connection = new Connection()
+    this.connection.onClose.then(() => {
+      this.messagePort.close()
+    })
     this.displayProxy = new WlDisplayProxy(this, this.connection, 1)
     this.destroyPromise = new Promise<void>((resolve, reject) => {
       this.destroyResolve = resolve
@@ -211,16 +215,16 @@ export class DisplayImpl implements Display {
     this.setupMessageHandling()
   }
 
-  setupMessageHandling() {
-    onmessage = (event: MessageEvent) => {
+  private setupMessageHandling() {
+    this.messagePort.onmessage = (event: MessageEvent) => {
       if (this.connection.closed) {
         return
       }
 
-      const webWorkerMessage = event.data as { protocolMessage: ArrayBuffer; meta: Transferable[] }
-      const buffer = new Uint32Array(/** @type {ArrayBuffer} */ webWorkerMessage.protocolMessage)
+      const message = event.data as { protocolMessage: ArrayBuffer; meta: Transferable[] }
+      const buffer = new Uint32Array(message.protocolMessage)
       try {
-        this.connection.message({ buffer, fds: webWorkerMessage.meta })
+        this.connection.message({ buffer, fds: message.meta })
       } catch (e: any) {
         if (this.errorHandler && typeof this.errorHandler === 'function') {
           this.errorHandler(e)
@@ -232,7 +236,7 @@ export class DisplayImpl implements Display {
       }
     }
 
-    this.connection.onFlush = function (wireMessages: { buffer: ArrayBuffer; fds: Array<FD> }[]): void {
+    this.connection.onFlush = (wireMessages: { buffer: ArrayBuffer; fds: Array<FD> }[]): void => {
       // convert to single arrayBuffer, so it can be sent over a data channel using zero copy semantics.
       const messagesSize = wireMessages.reduce(
         (previousValue, currentValue) => previousValue + currentValue.buffer.byteLength,
@@ -252,7 +256,7 @@ export class DisplayImpl implements Display {
         offset += message.length
       }
 
-      self.postMessage({ protocolMessage: sendBuffer.buffer, meta }, [sendBuffer.buffer, ...meta])
+      this.messagePort.postMessage({ protocolMessage: sendBuffer.buffer, meta }, [sendBuffer.buffer, ...meta])
     }
   }
 
@@ -305,4 +309,74 @@ export class DisplayImpl implements Display {
   flush() {
     this.connection.flush()
   }
+}
+
+export function frame(wlSurfaceProxy: WlSurfaceProxy): () => Promise<number> {
+  return () => {
+    return new Promise((resolve) => {
+      const wlCallbackProxy = wlSurfaceProxy.frame()
+      wlCallbackProxy.listener = {
+        done: (data: number) => {
+          resolve(data)
+          wlCallbackProxy.destroy()
+        },
+      }
+    })
+  }
+}
+
+type GreenfieldMessage = {
+  type: 'ConnectAck'
+}
+
+function isGreenfieldMessage(message: any): message is GreenfieldMessage {
+  return message.type === 'ConnectAck'
+}
+
+export function connect(): Promise<Display> {
+  if (window.parent === window) {
+    throw new Error('Not running in an iframe.')
+  }
+
+  return new Promise<Display>((resolve) => {
+    self.addEventListener(
+      'message',
+      (ev) => {
+        const message = ev.data
+        if (isGreenfieldMessage(message) && message.type === 'ConnectAck') {
+          const messagePort = ev.ports[0]
+          const display = connectTo(messagePort)
+          resolve(display)
+        }
+      },
+      {
+        passive: true,
+        once: true,
+      },
+    )
+
+    window.parent.postMessage(
+      {
+        type: 'ConnectReq',
+      },
+      '*',
+    )
+  })
+}
+
+export function connectTo(messagePort: MessagePort): Display {
+  return new DisplayImpl(messagePort)
+}
+
+export function terminate() {
+  if (window.parent === window) {
+    throw new Error('Not running in an iframe.')
+  }
+
+  window.parent.postMessage(
+    {
+      type: 'Terminate',
+    },
+    '*',
+  )
 }

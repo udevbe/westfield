@@ -22,24 +22,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 SOFTWARE.
 */
 
-import { Display, DisplayImpl, Proxy } from './westfield-runtime-client'
-import { WlSurfaceProxy } from './protocol'
-
-const display = new DisplayImpl()
-function frame(wlSurfaceProxy: WlSurfaceProxy): () => Promise<number> {
-  return () => {
-    return new Promise((resolve) => {
-      const wlCallbackProxy = wlSurfaceProxy.frame()
-      wlCallbackProxy.listener = {
-        done: (data: number) => {
-          resolve(data)
-          wlCallbackProxy.destroy()
-        },
-      }
-    })
-  }
-}
-
-export { display, Display, frame, Proxy }
+export { Display, frame, Proxy, connect, connectTo, terminate } from './westfield-runtime-client'
 
 export * from './protocol'

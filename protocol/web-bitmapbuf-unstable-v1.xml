@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<protocol name="gf_web_buffer">
+<protocol name="web_bitmapbuf">
     <copyright>
-        Copyright © 2019 Erik De Rijcke
+        Copyright © 2023 Erik De Rijcke
 
         Permission is hereby granted, free of charge, to any person
         obtaining a copy of this software and associated documentation files
@@ -25,7 +25,7 @@
         SOFTWARE.
     </copyright>
 
-    <interface name="gf_web_buffer_factory" version="1">
+    <interface name="web_bitmapbuf_factory" version="1">
         <description summary="web buffer support">
             A singleton global object that provides support for web buffers.
 
@@ -34,10 +34,10 @@
 
         <request name="create_buffer">
             <description summary="create a buffer">
-                Create a wl_buffer object from an HTML bitmap, so it can be used with a surface.
+                Create a wl_buffer object by wrapping an HTML bitmap, so it can be used with a surface.
             </description>
             <arg name="id" type="new_id" interface="wl_buffer" summary="The buffer to create."/>
-            <arg name="bitmap" type="fd" summary="The bitmap contents" />
+            <arg name="bitmap" type="fd" summary="The bitmap contents"/>
         </request>
     </interface>
 </protocol>
