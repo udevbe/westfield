@@ -22,6 +22,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 SOFTWARE.
 */
 
-export { Display, frame, Proxy, connect, connectTo, terminate } from './westfield-runtime-client'
+export { Display, frame, Proxy, connect, terminate } from './westfield-runtime-client'
 
 export * from './protocol'

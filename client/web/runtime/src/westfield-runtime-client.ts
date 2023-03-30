@@ -325,47 +325,82 @@ export function frame(wlSurfaceProxy: WlSurfaceProxy): () => Promise<number> {
   }
 }
 
-type GreenfieldMessage = {
-  type: 'ConnectAck'
-}
+type GreenfieldMessage =
+  | {
+      type: 'ConnectReq'
+      connectionId: string
+    }
+  | {
+      type: 'ConnectAck'
+      connectionId: string
+    }
+  | {
+      type: 'Disconnect'
+      connectionId: string
+    }
 
 function isGreenfieldMessage(message: any): message is GreenfieldMessage {
-  return message.type === 'ConnectAck'
+  return message.type === 'ConnectAck' || message.type === 'Disconnect'
 }
 
-export function connect(): Promise<Display> {
+let nextClientConnectionId = 0
+const connections: Record<
+  string,
+  { display?: Display; connectionResolve: (display: Display) => void; readonly terminateOnDisconnect: boolean }
+> = {}
+const connectionHandler = (ev: MessageEvent<any>) => {
+  const message = ev.data
+  if (isGreenfieldMessage(message)) {
+    if (message.type === 'ConnectAck') {
+      const connectionRecord = connections[message.connectionId]
+      if (connectionRecord === undefined || connectionRecord.display !== undefined) {
+        ev.ports[0]?.close()
+        return
+      }
+
+      const messagePort = ev.ports[0]
+      const display: Display = new DisplayImpl(messagePort)
+
+      display.onClose().then(() => {
+        if (connectionRecord.terminateOnDisconnect) {
+          terminate()
+        }
+        delete connections[message.connectionId]
+      })
+      connectionRecord.display = display
+      connectionRecord.connectionResolve(display)
+    } else if (message.type === 'Disconnect') {
+      const connectionRecord = connections[message.connectionId]
+      if (connectionRecord === undefined || connectionRecord.display === undefined) {
+        return
+      }
+      connectionRecord.display.close()
+      connectionRecord.display = undefined
+      delete connections[message.connectionId]
+    }
+  }
+}
+self.addEventListener('message', connectionHandler)
+
+export function connect(terminateOnDisconnect = true): Promise<Display> {
   if (window.parent === window) {
     throw new Error('Not running in an iframe.')
   }
 
   return new Promise<Display>((resolve) => {
-    self.addEventListener(
-      'message',
-      (ev) => {
-        const message = ev.data
-        if (isGreenfieldMessage(message) && message.type === 'ConnectAck') {
-          const messagePort = ev.ports[0]
-          const display = connectTo(messagePort)
-          resolve(display)
-        }
-      },
-      {
-        passive: true,
-        once: true,
-      },
-    )
+    const connectionId = nextClientConnectionId++
 
-    window.parent.postMessage(
-      {
-        type: 'ConnectReq',
-      },
-      '*',
-    )
+    connections[connectionId] = {
+      connectionResolve: resolve,
+      terminateOnDisconnect,
+    }
+
+    const connectionReq: GreenfieldMessage = {
+      type: 'ConnectReq',
+      connectionId: `${connectionId}`,
+    }
+    window.parent.postMessage(connectionReq, '*')
   })
-}
-
-export function connectTo(messagePort: MessagePort): Display {
-  return new DisplayImpl(messagePort)
 }
 
 export function terminate() {
