@@ -497,6 +497,7 @@ export function h(message: WlMessage): FD {
 }
 
 export class Connection {
+  // FIXME replace wlObjects with an array where newly created elements are added last, this way we can always destroy them in reverse order on client disconnect.
   readonly wlObjects: { [key: number]: WlObject } = {}
   closed = false
   onFlush?: (outMsg: SendMessage[]) => void

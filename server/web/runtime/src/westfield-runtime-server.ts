@@ -34,6 +34,7 @@ export class Client implements DisplayRequests {
    * in the range [0xff000000, 0xffffffff]. The 0 ID is reserved to represent a null or non-existent object
    */
   private _nextId: number = SERVER_OBJECT_ID_BASE
+
   constructor(readonly display: Display, readonly id: string) {
     this.connection = new Connection()
     this.displayResource = new DisplayResource(this, 1, 0)
@@ -44,9 +45,14 @@ export class Client implements DisplayRequests {
 
   close() {
     if (!this.connection.closed) {
+      const wlObjects = Object.values(this.connection.wlObjects).sort((a, b) => b.id - a.id)
+      for (const wlObject of wlObjects) {
+        wlObject.destroy()
+      }
+
       this.connection.close()
+      this._destroyedResolver()
     }
-    this._destroyedResolver()
   }
 
   onClose() {
