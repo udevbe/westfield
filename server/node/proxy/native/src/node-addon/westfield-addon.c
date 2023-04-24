@@ -401,6 +401,11 @@ static void
 on_global_destroyed(struct wl_display *display, uint32_t global_name) {
     struct display_destruction_listener *display_destruction_listener = (struct display_destruction_listener *) wl_display_get_destroy_listener(
             display, on_display_destroyed);
+    if(display_destruction_listener == NULL) {
+        // If the destruction listener is NULL then the whole display is being destroyed. Not much we can do here.
+        return;
+    }
+
     napi_value cb, global, global_name_value, cb_result;
     napi_env env = display_destruction_listener->env;
 
