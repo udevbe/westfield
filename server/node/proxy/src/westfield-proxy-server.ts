@@ -30,7 +30,20 @@ export const {
   makePipe,
   equalValueExternal,
   getXWaylandDisplay,
+  getCredentials,
 } = westfieldAddon
+
+export type {
+  WlClient,
+  WlDisplay,
+  WlRegistry,
+  WlInterface,
+  WlMessage,
+  WlResource,
+  ExternalType,
+  DRMHandle,
+  XWaylandHandle
+} from './westfield-addon'
 
 export type MessageDestination = {
   native: boolean

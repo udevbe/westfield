@@ -1,91 +1,107 @@
 declare namespace westfieldAddon {
-  function createDisplay(
-    onClientCreated: (wlClient: unknown) => void,
-    onGlobalCreated: (globalName: number) => void,
-    onGlobalDestroyed: (globalName: number) => void,
-  ): unknown
+    export type WlClient = { _client_type: never }
+    export type WlDisplay = { _display_type: never }
+    export type WlRegistry = { _registry_type: never }
+    export type WlInterface = { _interface_type: never }
+    export type WlMessage = { _message_type: never }
+    export type WlResource = { _resource_type: never }
+    export type DRMHandle = { _drm_handle_type: never }
+    export type XWaylandHandle = { _xWayland_handle_type: never }
+    export type ExternalType =
+        WlClient
+        | WlDisplay
+        | WlRegistry
+        | WlInterface
+        | WlMessage
+        | WlResource
+        | DRMHandle
+        | XWaylandHandle
 
-  function setClientDestroyedCallback(wlClient: unknown, onClientDestroyed: (wlClient: unknown) => void): void
+    function createDisplay(
+        onClientCreated: (wlClient: WlClient) => void,
+        onGlobalCreated: (globalName: number) => void,
+        onGlobalDestroyed: (globalName: number) => void,
+    ): WlDisplay
 
-  function setWireMessageCallback(
-    wlClient: unknown,
-    onWireMessage: (wlClient: unknown, wiresMessages: ArrayBuffer, objectId: number, opcode: number) => number,
-  ): void
+    function setClientDestroyedCallback(wlClient: WlClient, onClientDestroyed: (wlClient: WlClient) => void): void
 
-  function setWireMessageEndCallback(
-    wlClient: unknown,
-    onWireMessageEnd: (wlClient: unknown, fdsIn: ArrayBuffer) => void,
-  ): void
+    function setWireMessageCallback(
+        wlClient: WlClient,
+        onWireMessage: (wlClient: WlClient, wiresMessages: ArrayBuffer, objectId: number, opcode: number) => number,
+    ): void
 
-  function destroyDisplay(wlDisplay: unknown): void
+    function setWireMessageEndCallback(
+        wlClient: WlClient,
+        onWireMessageEnd: (wlClient: WlClient, fdsIn: ArrayBuffer) => void,
+    ): void
 
-  function addSocketAuto(wlDisplay: unknown): string
+    function destroyDisplay(wlDisplay: WlDisplay): void
 
-  function destroyClient(wlClient: unknown): void
+    function addSocketAuto(wlDisplay: WlDisplay): string
 
-  function sendEvents(wlClient: unknown, wireMessages: Uint32Array, fdsOut: Uint32Array): void
+    function destroyClient(wlClient: WlClient): void
 
-  function dispatchRequests(wlDisplay: unknown): void
+    function sendEvents(wlClient: WlClient, wireMessages: Uint32Array, fdsOut: Uint32Array): void
 
-  function flush(wlClient: unknown): void
+    function dispatchRequests(wlDisplay: WlDisplay): void
 
-  function getFd(wlDisplay: unknown): number
+    function flush(wlClient: WlClient): void
 
-  function initShm(wlDisplay: unknown): void
+    function getFd(wlDisplay: WlDisplay): number
 
-  /**
-   * Returns initialized EGL context
-   * @param wlDisplay
-   */
-  function initDrm(wlDisplay: unknown): unknown
+    function initShm(wlDisplay: WlDisplay): void
 
-  function setRegistryCreatedCallback(
-    wlClient: unknown,
-    onRegistryCreated: (wlRegistry: unknown, registryId: number) => void,
-  ): void
+    function initDrm(wlDisplay: WlDisplay): DRMHandle
 
-  function setSyncDoneCallback(
-    wlClient: unknown,
-    onSyncDone: (callbackId: number) => void,
-  ): void
+    function setRegistryCreatedCallback(
+        wlClient: WlClient,
+        onRegistryCreated: (wlRegistry: WlRegistry, registryId: number) => void,
+    ): void
 
-  function emitGlobals(wlRegistry: unknown): void
+    function setSyncDoneCallback(
+        wlClient: WlClient,
+        onSyncDone: (callbackId: number) => void,
+    ): void
 
-  function createWlMessage(name: string, signature: string, wlInterfaces: unknown[]): unknown
+    function emitGlobals(wlRegistry: WlRegistry): void
 
-  function initWlInterface(
-    wlInterface: unknown,
-    name: string,
-    version: number,
-    wlMessageRequests: unknown[],
-    wlMessageEvents: unknown[],
-  ): void
+    function createWlMessage(name: string, signature: string, wlInterfaces: WlInterface[]): WlMessage
 
-  function createWlInterface(): unknown
+    function initWlInterface(
+        wlInterface: WlInterface,
+        name: string,
+        version: number,
+        wlMessageRequests: WlMessage[],
+        wlMessageEvents: WlMessage[],
+    ): void
 
-  function createWlResource(wlClient: unknown, id: number, version: number, wlInterface: unknown): unknown
+    function createWlInterface(): WlInterface
 
-  function destroyWlResourceSilently(wlClient: unknown, wlResourceId: number): void
+    function createWlResource(wlClient: WlClient, id: number, version: number, wlInterface: WlInterface): WlResource
 
-  function setupXWayland(
-    wlDisplay: unknown,
-    onXWaylandStarting: (wmFd: number, wlClient: unknown) => void,
-    onXWaylandDestroyed: () => void,
-  ): unknown
+    function destroyWlResourceSilently(wlClient: WlClient, wlResourceId: number): void
 
-  function teardownXWayland(westfieldXWayland: unknown): void
+    function setupXWayland(
+        wlDisplay: WlDisplay,
+        onXWaylandStarting: (wmFd: number, wlClient: WlClient) => void,
+        onXWaylandDestroyed: () => void,
+    ): XWaylandHandle
 
-  function setBufferCreatedCallback(wlClient: unknown, onBufferCreated: (bufferId: number) => void): void
+    function teardownXWayland(westfieldXWayland: XWaylandHandle): void
 
-  function createMemoryMappedFile(contents: Buffer): number
+    function setBufferCreatedCallback(wlClient: WlClient, onBufferCreated: (bufferId: number) => void): void
 
-  function getServerObjectIdsBatch(wlClient: unknown, ids: Uint32Array): void
+    function createMemoryMappedFile(contents: Buffer): number
 
-  function makePipe(resultBuffer: Uint32Array): void
+    function getServerObjectIdsBatch(wlClient: WlClient, ids: Uint32Array): void
 
-  function equalValueExternal(objectA: unknown, objectB: unknown): boolean
+    function makePipe(resultBuffer: Uint32Array): void
 
-  function getXWaylandDisplay(xWayland: unknown): number
+    function equalValueExternal(objectA: ExternalType, objectB: ExternalType): boolean
+
+    function getXWaylandDisplay(xWayland: XWaylandHandle): number
+
+    function getCredentials(wlClient: WlClient, pidUidGid: Uint32Array): void
 }
 
 export = westfieldAddon
